@@ -1,5 +1,5 @@
-# Analytic package for Qass Tools
+# Networking package for Qass Tools
 
 ```py
-from qass_tools import analytic
+from qass_tools import networking
 ```
