@@ -3,9 +3,7 @@ import json
 import time
 from enum import Enum, auto
 from typing import Any, Dict
-
 from sqlalchemy import false
-
 
 class Amplitudes(Enum):
     AMP_1 = 64
@@ -26,31 +24,53 @@ class Amplitudes(Enum):
     
     @property
     def get_list(self):
+        """Property lists all allowed amplitudes to generate sine wave from:
+
+        :rtype: List
+        """
         return list(Amplitudes)
     
 class AnalyzerCmd():
     """ Class to communicate with Analyzer over network socket. Implied Methods: start/ end measuring, set process comment, set appVars and start/stop sine generator with spefici parameters. Functions that communicate
     with an analyzer build a dictionary to store user-given settings. With the help of the "send" function each dictionary will be converted to a JSON File and send to the connected analyzer. Each response from analyzer 
     will be read out and can be saved in a dictionary."""
-    pro_comm = ""
-    #def __init__(self, ip, port, flag=False):
-    def __init__(self, ip, port):
-        """ Constructor of the class connects the PC to an analyzer reachable over user-given Input of IP (self.ip) and Port (self.port). A created object of the class AnalyzerCmd(ip, port) automaticly 
-        connects to given network adress. The message ID provides a method to assign commands to the analyzer and to this corresponding response from analyzer. Message ID increments in method send(self,command).
-        Thrid argument "flag" is by default False. The user has to actively decide to change that variable and create an dictionary of commands wihtin (see method send). Most of the time only interesting in case
-        of debugging. """
+    def __init__(self, ip: str, port=17000):
+        """Constructor of the class connects the machine to an analyzer reachable over user-given Input of IP (self.ip) and Port (self.port) vian TCP.
+        
+        .. note:: The message ID provides a possibility to assign commands and there corresponding response from analyzer. And can be used for debugging.
+        :param ip: Analyzer IP in network.
+        :type ip: str
+        :param port: Required Analyzer port by the default always 17000.
+        :type ip: int
+
+        ::Example::
+            analyzer = AnalyzerCmd(ip="192.168.2.67", port=17000)
+        """
         self.ip = ip
         self.port = port
-        #self.flag = flag
         # message ID to assign command to analyzer and specific response
         self.msgid = 0
-        # list to document last commands
-        #self._executed_commands = []
         # connect to socket
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.settimeout(1)
         self.s.connect((self.ip, self.port))
 
+    @property
+    def get_ip(self):
+        """Property that gives out connected IP.
+
+        :rtype: str
+        """
+        return self.ip
+    
+    @property
+    def get_port(self):
+        """Property that gives out connected Port.
+
+        :rtype: int
+        """
+        return self.port
+    
     def start_measuring(self):
         """Method sends a command to the connected analyzer to start a maesuring process.
         """
@@ -60,6 +80,8 @@ class AnalyzerCmd():
 
     def start_sineGenerator(self, frequency: int, amplitude: int):
         """Method sends command that sine generator generates a sine wave with custom frequency and amplitude settings.
+
+        Note that you should consider that the sine generator needs a couple µs to start.
 
         :param frequency: Used frequency to generate sine wave.
         :type frequency: int
@@ -80,7 +102,6 @@ class AnalyzerCmd():
             NEWamp = input("Enter new sine amplitude:")
             NEWf = input("Enter new sine frequency:")
             self.start_sineGenerator(NEWf, NEWamp)
-    
 
     def stop_sineGenerator(self):
         """Command to stop generating sine waves.
@@ -158,7 +179,6 @@ class AnalyzerCmd():
         return int(obj["processnumber"])
         
     #TODO: test function
-    
     def create_project(self, project_name:str):
         """Create new project after used template with custom name.
 
@@ -172,8 +192,7 @@ class AnalyzerCmd():
         response = self._send(command)
         self._handle_commserver_response(response) 
     
-        #TODO: Test function
-    
+    #TODO: Test function
     def send_AppCmd(self, param_one:str, param_two=None):
         """General method to send arbitrary AppCmd to analyzer.
 
@@ -193,7 +212,6 @@ class AnalyzerCmd():
         response = self._send(command)
         self._handle_appcmd_response(response)
         
-
     def set_preamp(self, user_dict=None, **kwargs):
         """Method to set preamp settings for multiplexer.
 
@@ -253,11 +271,9 @@ class AnalyzerCmd():
             command.update(default_dict)
         
         self._send(command)
-
     
-    #TODO: new function "CommunicationServer Command zum exportieren des Operatoren Netzes als JSON File"
-    
-    def get_info(self):
+    #TODO: new function "CommunicationServer Command zum exportieren des Operatoren Netzes als JSON File" 
+    def get_info(self)  -> Dict:
         """Method to read out anlyzer informations as current used project ID/name or analyer version.
 
         :return: Informations out of info window in analyzer.
@@ -282,15 +298,6 @@ class AnalyzerCmd():
         return obj
 
     def _send(self, command: Dict)  -> Dict:
-        """_summary_
-
-        _extended_summary_
-
-        :param command: Command which should be send to analyzer
-        :type command: Dict
-        :return response: Sended response from analyzer.
-        :rtype: Dict
-        """
         # print every sended command
         print(f"Sended command:\n{command}")
         # prepare command
@@ -301,6 +308,7 @@ class AnalyzerCmd():
         # actual sending command
         self.s.sendall(cmd_str)
 
+        # handle special cases
         # setpreamp doesn't send a response at all
         if not "setpreamp" in command['cmd']:
             response = self.s.recv(4096) # readed byte count
@@ -310,22 +318,3 @@ class AnalyzerCmd():
         """Method to close the socket connection between machine and analyzer.
         """
         self.s.close()
-
-
-
-# Example
-analyzer = AnalyzerCmd(ip="192.168.2.67", port=17000)
-#analyzer.set_process_comment("test-set-comment-remote2")
-#analyzer.set_preamp(gain=800)
-
-analyzer.get_process_number()
-
-
-info =analyzer.get_info()
-print(info)
-#analyzer.start_measuring()
-# analyzer.start_sineGenerator(500, 191)
-# time.sleep(2)
-# analyzer.set_process_comment("Hey ich bims, eins Kommentar")
-# analyzer.stop_sineGenerator()
-# analyzer.stop_measuring()
