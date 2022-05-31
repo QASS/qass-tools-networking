@@ -4,6 +4,8 @@ import time
 from enum import Enum, auto
 from typing import Any, Dict
 
+from sqlalchemy import false
+
 
 class Amplitudes(Enum):
     AMP_1 = 64
@@ -53,7 +55,8 @@ class AnalyzerCmd():
         """Method sends a command to the connected analyzer to start a maesuring process.
         """
         command = {'cmd': "AppCmd", "msgid": self.msgid, "p1": "startMeasuring"}
-        self._send(command)
+        response = self._send(command)
+        self._handle_appcmd_response(response)
 
     def start_sineGenerator(self, frequency: int, amplitude: int):
         """Method sends command that sine generator generates a sine wave with custom frequency and amplitude settings.
@@ -137,7 +140,7 @@ class AnalyzerCmd():
         :rtype: int
         """
         command = {'cmd': "getprocessnumber", "msgid": self.msgid}
-        return self._send(command)
+        self._send(command)
         
     #TODO: test function
     def create_project(self, project_name:str):
@@ -169,7 +172,8 @@ class AnalyzerCmd():
         else:
             raise TypeError("Second parameter has to be a string.")
   
-        self._send(command)
+        reponse = self._send(command)
+        
 
     def set_preamp(self, user_dict=None, **kwargs):
         """Method to set preamp settings for multiplexer.
@@ -229,7 +233,8 @@ class AnalyzerCmd():
             # fill command with updated default dict values
             command.update(default_dict)
         
-        self._send(command)      
+        self._send(command)
+
     
     #TODO: new function "CommunicationServer Command zum exportieren des Operatoren Netzes als JSON File"
     
@@ -240,17 +245,26 @@ class AnalyzerCmd():
         :rtype: Dict
         """
         command = {'cmd': "getinfo", "msgid": self.msgid}
-        return self._send(command)
+        self._send(command)
+
+    def _handle_appcmd_response(self, response):
+        response = response.decode("utf-8") #utf-8 decode type
         
-    def _send(self, command: Dict):
+        status = response.get("ok")
+        if status == false:
+            raise Exception("Analyzer could not perform action") 
+        print(f"Optimizer response:\n{response}")
+
+
+    def _send(self, command: Dict)  -> Dict:
         """_summary_
 
         _extended_summary_
 
         :param command: Command which should be send to analyzer
         :type command: Dict
-        :return : _description_
-        :rtype: _type_
+        :return response: Sended response from analyzer.
+        :rtype: Dict
         """
         # print every sended command
         print(f"Sended command:\n{command}")
@@ -261,28 +275,11 @@ class AnalyzerCmd():
         self.msgid += 1
         # actual sending command
         self.s.sendall(cmd_str)
-        
-        # handle special cases reponse
 
         # setpreamp doesn't send a response at all
         if not "setpreamp" in command['cmd']:
             response = self.s.recv(4096) # readed byte count
-            
-            # all AppCmd resopnses have to be decoded by utf-8 and printed out
-            if "AppCmd" in command['cmd']:
-                response = response.decode("utf-8") #utf-8 decode type
-                print(f"Optimizer response:\n{response}")
-        
-            elif "getprocessnumber" in command['cmd']:
-                response = response[2:].decode()
-                obj = json.loads(response)
-                #print(f"Processnumber: {obj.gets("processnumber")}")
-                return int(obj["processnumber"])
-            
-            else:
-                response = response[2:].decode()
-                obj = json.loads(response)
-                return obj
+            return response
 
     def close(self):
         """Method to close the socket connection between machine and analyzer.
@@ -290,31 +287,16 @@ class AnalyzerCmd():
         self.s.close()
 
 
-    # @property
-    # def last_command(self):
-    #     """ Class property for user. Reads out the last send command and corresponding response of the analyzer saved in method send. This functions ist only avaible by choosing flag=True as an class variable. Is set by
-    #     initialization of analyzer object (see __init__ function).
-    #     This sets if-statement located in method "send" to True, therefore a dictionary will be generated. Out of this generated dictionary the last saved entry is printed. """
-    #     return self._executed_commands[-1]
-
-    # @property
-    # def all_commands(self):
-    #     """ Class property for user. Reads out all sended commands since connection was enabled and the response of the analyzer saved in method send. This functions ist only avaible by choosing flag=True 
-    #     as an class variable. This sets if condition in method send to True and a dictionary will be generated. Out of this generated dictionary the last saved entry is printed. """    
-    #     return self._executed_commands
-   
-   
-
 
 # Example
-#analyzer = AnalyzerCmd(ip="192.168.2.67", port=17000)
+analyzer = AnalyzerCmd(ip="192.168.2.67", port=17000)
 #analyzer.set_process_comment("test-set-comment-remote2")
 #analyzer.set_preamp(gain=800)
 #proc_nr = analyzer.get_current_process_number()
 #print(proc_nr)
 #info =analyzer.get_info()
 #print(info)
-#analyzer.start_measuring()
+analyzer.start_measuring()
 # analyzer.start_sineGenerator(500, 191)
 # time.sleep(2)
 # analyzer.set_process_comment("Hey ich bims, eins Kommentar")
