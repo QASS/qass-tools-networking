@@ -119,7 +119,8 @@ class AnalyzerCmd():
         :type app_var_value: any
         """
         command = {'cmd': "SetAppVar", "msgid": self.msgid, "p1": f"{app_var_name:}", "p2": f"{app_var_value}"}
-        self._send(command)    
+        response = self._send(command)
+        self._handle_commserver_response(response)    
     
     def set_app_var_appcmd(self, app_var_name:str, value:any):
         """Parse value to specific AppVar operator in operator network of analyzer.
@@ -141,13 +142,23 @@ class AnalyzerCmd():
         """Send command to give out process number as return.
 
         .. note:: Analyzer response contains more information than only the process number. Private method will extract claimed information.
+        :raise: Check for status of response. If status (key: "ok") is False, exception is risen.
         :return: Process number of current selected process
         :rtype: int
         """
         command = {'cmd': "getprocessnumber", "msgid": self.msgid}
-        self._send(command)
+        
+        response = self._send(command)
+        obj = self._handle_commserver_response(response) 
+        
+        if obj.get("ok") == False:
+            print(f"Optimizer response:\n{obj}")
+            raise Exception("Analyzer could not perform action")
+        
+        return int(obj["processnumber"])
         
     #TODO: test function
+    
     def create_project(self, project_name:str):
         """Create new project after used template with custom name.
 
@@ -157,10 +168,12 @@ class AnalyzerCmd():
         :type project_name: str
         """
         command = {'cmd': "createloadproject", 'msgid': self.msgid, 'p1': project_name}
-        self._send(command)
+        
+        response = self._send(command)
+        self._handle_commserver_response(response) 
     
-    #cmd="getpreampinfo" p1=portnumber
         #TODO: Test function
+    
     def send_AppCmd(self, param_one:str, param_two=None):
         """General method to send arbitrary AppCmd to analyzer.
 
@@ -304,8 +317,10 @@ class AnalyzerCmd():
 analyzer = AnalyzerCmd(ip="192.168.2.67", port=17000)
 #analyzer.set_process_comment("test-set-comment-remote2")
 #analyzer.set_preamp(gain=800)
-#proc_nr = analyzer.get_current_process_number()
-#print(proc_nr)
+
+analyzer.get_process_number()
+
+
 info =analyzer.get_info()
 print(info)
 #analyzer.start_measuring()
