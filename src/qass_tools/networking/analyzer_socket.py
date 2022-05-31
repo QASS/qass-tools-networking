@@ -249,11 +249,10 @@ class AnalyzerCmd():
 
     def _handle_appcmd_response(self, response):
         response = response.decode("utf-8") #utf-8 decode type
-        
-        status = response.get("ok")
-        if status == false:
+        response = json.loads(response[2:])
+        if response.get("ok") == False:
+            print(f"Optimizer response:\n{response}")
             raise Exception("Analyzer could not perform action") 
-        print(f"Optimizer response:\n{response}")
 
 
     def _send(self, command: Dict)  -> Dict:
