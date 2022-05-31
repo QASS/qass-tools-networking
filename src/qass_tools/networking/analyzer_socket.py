@@ -3,7 +3,7 @@ import json
 import time
 from enum import Enum, auto
 from typing import Any, Dict
-from sqlalchemy import false
+#from sqlalchemy import false
 
 class Amplitudes(Enum):
     AMP_1 = 64
@@ -33,7 +33,27 @@ class Amplitudes(Enum):
 class AnalyzerCmd():
     """ Class to communicate with Analyzer over network socket. Implied Methods: start/ end measuring, set process comment, set appVars and start/stop sine generator with spefici parameters. Functions that communicate
     with an analyzer build a dictionary to store user-given settings. With the help of the "send" function each dictionary will be converted to a JSON File and send to the connected analyzer. Each response from analyzer 
-    will be read out and can be saved in a dictionary."""
+    will be read out and can be saved in a dictionary.
+    
+    ::Example::
+        import time
+        opti = AnalyzerCmd(ip="192.168.2.67", port=17000)
+
+        info = opti.get_info()
+        print(info)
+
+        opti.set_preamp(gain=800)
+
+        proc = opti.get_process_number()
+
+        opti.set_process_comment("Hey ich bims, eins Kommentar")
+
+        opti.start_measuring()
+        opti.start_sineGenerator(500, 191)
+        time.sleep(2)
+        opti.stop_sineGenerator()
+        opti.stop_measuring()
+    """
     def __init__(self, ip: str, port=17000):
         """Constructor of the class connects the machine to an analyzer reachable over user-given Input of IP (self.ip) and Port (self.port) vian TCP.
         
