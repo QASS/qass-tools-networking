@@ -71,7 +71,8 @@ class AnalyzerCmd():
         try:
             if amplitude in Amplitudes:
                 command = {'cmd': "AppCmd", "msgid": self.msgid, "p1": "StartSineGen", "p2": f"{frequency} {amplitude}"}
-                self._send(command)
+                response = self._send(command)
+                self._handle_appcmd_response(response)
             else: 
                 raise ValueError
         except ValueError: 
@@ -85,13 +86,15 @@ class AnalyzerCmd():
         """Command to stop generating sine waves.
         """
         command = {'cmd': "AppCmd", "msgid": self.msgid, "p1": "StopSineGen"}
-        self._send(command)
+        response = self._send(command)
+        self._handle_appcmd_response(response)
 
     def stop_measuring(self):
         """Command to stop current measuring process.
         """
         command = {'cmd': "AppCmd", "msgid": self.msgid, "p1": "stopMeasuring"}
-        self._send(command)
+        response = self._send(command)
+        self._handle_appcmd_response(response)
 
     def set_process_comment(self, proc_comm: str):
         """Set a process comment for current selected process.
@@ -102,7 +105,8 @@ class AnalyzerCmd():
         :type proc_comm: str
         """
         command = {'cmd': "AppCmd", "msgid": self.msgid, "p1": "setprocesscomment", "p2": f"{proc_comm}"}
-        self._send(command)
+        response = self._send(command)
+        self._handle_appcmd_response(response)
 
     def set_app_var(self, app_var_name:str, app_var_value:any):
         """Parse value to specific AppVar operator in operator network of analyzer.
@@ -130,7 +134,8 @@ class AnalyzerCmd():
         :type app_var_value: any
         """
         command = {'cmd': "AppCmd", "msgid": self.msgid, "p1": "SetAppVar", "p2": f"{app_var_name} {value}"}
-        self._send(command)
+        response = self._send(command)
+        self._handle_appcmd_response(response)
 
     def get_process_number(self) -> int:
         """Send command to give out process number as return.
@@ -172,7 +177,8 @@ class AnalyzerCmd():
         else:
             raise TypeError("Second parameter has to be a string.")
   
-        reponse = self._send(command)
+        response = self._send(command)
+        self._handle_appcmd_response(response)
         
 
     def set_preamp(self, user_dict=None, **kwargs):
@@ -248,8 +254,10 @@ class AnalyzerCmd():
         self._send(command)
 
     def _handle_appcmd_response(self, response):
+        # change appearance
         response = response.decode("utf-8") #utf-8 decode type
         response = json.loads(response[2:])
+        # rais exception if not performed right
         if response.get("ok") == False:
             print(f"Optimizer response:\n{response}")
             raise Exception("Analyzer could not perform action") 
