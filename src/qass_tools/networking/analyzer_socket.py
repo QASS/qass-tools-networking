@@ -251,7 +251,8 @@ class AnalyzerCmd():
         :rtype: Dict
         """
         command = {'cmd': "getinfo", "msgid": self.msgid}
-        self._send(command)
+        response = self._send(command)
+        return self._handle_commserver_response(response)
 
     def _handle_appcmd_response(self, response):
         # change appearance
@@ -262,6 +263,10 @@ class AnalyzerCmd():
             print(f"Optimizer response:\n{response}")
             raise Exception("Analyzer could not perform action") 
 
+    def _handle_commserver_response(self, response) -> Dict:
+        response = response[2:].decode()
+        obj = json.loads(response)
+        return obj
 
     def _send(self, command: Dict)  -> Dict:
         """_summary_
@@ -301,9 +306,9 @@ analyzer = AnalyzerCmd(ip="192.168.2.67", port=17000)
 #analyzer.set_preamp(gain=800)
 #proc_nr = analyzer.get_current_process_number()
 #print(proc_nr)
-#info =analyzer.get_info()
-#print(info)
-analyzer.start_measuring()
+info =analyzer.get_info()
+print(info)
+#analyzer.start_measuring()
 # analyzer.start_sineGenerator(500, 191)
 # time.sleep(2)
 # analyzer.set_process_comment("Hey ich bims, eins Kommentar")
