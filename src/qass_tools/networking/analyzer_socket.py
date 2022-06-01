@@ -203,6 +203,21 @@ class AnalyzerCmd():
         """ Method uses communication server command to return a dictionary with analyzer information. Part of the information is the analyzer version as current used project ID and name."""
         command = {'cmd': "getinfo", "msgid": self.msgid}
         return self._send(command)
+    
+    def import_projcect(self, path, project_name, overwrite=False):
+        """
+        Imports a project from a settings export (tar.gz or sqlite export).
+        :param path: The (local) path where to find the project settings export.
+        This file has to be located on the target Optimizer4D.
+        :param project_name: The new project`s name.
+        :param overwrite: In case of an already existing project with the same name - should we overwrite the project`s settings? Defaults to False.
+        """
+        params = f"{path} {project_name}"
+        if overwrite:
+            params += " overwrite"
+        
+        command = {'cmd': "AppCmd", "msgid": self.msgid, "p1": "ImportProjectArchive", "p2": params}
+        return self._send(command)
         
     def _send(self, command: Dict):
         """ Private method to transform the creates dictioanries in JSON Format and send them to the analyzer. Every sended message got its own unique message ID. After sending the message, the analyzer responses. The
