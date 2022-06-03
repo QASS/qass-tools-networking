@@ -204,7 +204,7 @@ class AnalyzerCmd():
         command = {'cmd': "getinfo", "msgid": self.msgid}
         return self._send(command)
     
-    def import_projcect(self, path, project_name, overwrite=False):
+    def import_project(self, path, project_name, overwrite=False):
         """
         Imports a project from a settings export (tar.gz or sqlite export).
         :param path: The (local) path where to find the project settings export.
