@@ -209,8 +209,11 @@ class AnalyzerCmd():
         Imports a project from a settings export (tar.gz or sqlite export).
         :param path: The (local) path where to find the project settings export.
         This file has to be located on the target Optimizer4D.
+        :type path: str
         :param project_name: The new project`s name.
+        :type project_name: str
         :param overwrite: In case of an already existing project with the same name - should we overwrite the project`s settings? Defaults to False.
+        :type overwrite: bool
         """
         params = f"{path} {project_name}"
         if overwrite:
