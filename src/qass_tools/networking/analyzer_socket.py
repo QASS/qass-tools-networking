@@ -212,7 +212,6 @@ class AnalyzerCmd():
         response = self._send(command)
         self._handle_commserver_response(response) 
     
-    #TODO: Test function
     def send_AppCmd(self, param_one:str, param_two=None):
         """General method to send arbitrary AppCmd to analyzer.
 
@@ -271,6 +270,7 @@ class AnalyzerCmd():
                         'gain': "800",
                         'subport': "0" 
                         }
+    
         # command to build for analyzer
         command = {'cmd': "setpreamp", 'msgid': self.msgid}
         
@@ -338,3 +338,9 @@ class AnalyzerCmd():
         """Method to close the socket connection between machine and analyzer.
         """
         self.s.close()
+
+
+opti = AnalyzerCmd(ip="192.168.2.67", port=17000)
+
+info = opti.get_info()
+print(info)
