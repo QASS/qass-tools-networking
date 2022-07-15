@@ -4,6 +4,7 @@ import time
 from enum import Enum, auto
 from typing import Any, Dict
 import logging
+import sys
 
 
 class Amplitudes(Enum):
@@ -75,6 +76,11 @@ class AnalyzerCmd():
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.settimeout(1)
         self.s.connect((self.ip, self.port))
+
+        #short solution
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
+        format='[%(asctime)s] - %(funcName)s - %(levelname)s - %(message)s')
+        self.logger = logging.getLogger()
 
     @property
     def get_ip(self):
@@ -194,7 +200,7 @@ class AnalyzerCmd():
         obj = self._handle_commserver_response(response) 
         
         if obj.get("ok") == False:
-            logging.info(f"Optimizer response:\n{obj}")
+            self.logger.info(f"Optimizer response:\n{obj}")
             raise Exception("Analyzer could not perform action")
         
         return int(obj["processnumber"])
@@ -280,11 +286,11 @@ class AnalyzerCmd():
             for kwarg in kwargs:
                 if kwarg in default_dict.keys():
                     default_dict.update({kwarg: kwargs[kwarg]})
-                    logging.info(f"Updated {kwarg} to {kwargs[kwarg]}")
+                    self.logger.info(f"Updated {kwarg} to {kwargs[kwarg]}")
         
         # handle case that user input complete new dict 
         if user_dict and user_dict.keys() == default_dict.keys():
-            logging.info("Use of user defined settings for preamp.")
+            self.logger.info("Use of user defined settings for preamp.")
             # fill command with user defined settings values
             command.update(user_dict)
         else:
@@ -310,7 +316,7 @@ class AnalyzerCmd():
         response = json.loads(response[2:])
         # rais exception if not performed right
         if response.get("ok") == False:
-            logging.info(f"Optimizer response:\n{response}")
+            self.logger.info(f"Optimizer response:\n{response}")
             raise Exception("Analyzer could not perform action. Check your command details.") 
 
     def _handle_commserver_response(self, response) -> Dict:
@@ -320,7 +326,7 @@ class AnalyzerCmd():
 
     def _send(self, command: Dict)  -> Dict:
         # print every sended command
-        logging.info(f"Sended command:\n{command}")
+        self.logger.info(f"Sended command:\n{command}")
         # prepare command
         cmd_str = json.dumps(command).encode()
         cmd_str = (len(cmd_str)).to_bytes(2, 'big') + cmd_str
@@ -333,6 +339,7 @@ class AnalyzerCmd():
         # setpreamp doesn't send a response at all
         if not "setpreamp" in command['cmd']:
             response = self.s.recv(4096) # readed byte count
+            self.logger.info(response)
             return response
 
     def close(self):
@@ -342,7 +349,7 @@ class AnalyzerCmd():
 
 
 #opti = AnalyzerCmd(ip="192.168.2.67", port=17000)
-
+#opti.start_measuring()
 #info = opti.get_info()
 #print(info)
 
