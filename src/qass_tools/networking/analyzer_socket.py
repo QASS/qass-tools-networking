@@ -77,9 +77,9 @@ class AnalyzerCmd():
         self.s.settimeout(1)
         self.s.connect((self.ip, self.port))
 
-        #short solution
+        #short solution logger to sys.stdout
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
-        format='[%(asctime)s] - %(funcName)s - %(levelname)s - %(message)s')
+        format='[%(asctime)s] - %(levelname)s - %(message)s')
         self.logger = logging.getLogger()
 
     @property
@@ -322,6 +322,7 @@ class AnalyzerCmd():
     def _handle_commserver_response(self, response) -> Dict:
         response = response[2:].decode()
         obj = json.loads(response)
+        self.logger.info(obj)
         return obj
 
     def _send(self, command: Dict)  -> Dict:
@@ -351,5 +352,6 @@ class AnalyzerCmd():
 #opti = AnalyzerCmd(ip="192.168.2.67", port=17000)
 #opti.start_measuring()
 #info = opti.get_info()
-#print(info)
-
+#print("info:", info)
+proc = opti.get_process_number()
+#print("proc:", proc)
