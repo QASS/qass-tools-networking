@@ -79,7 +79,7 @@ class AnalyzerCmd():
 
         #short solution logger to sys.stdout
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
-        format='[%(asctime)s] - %(levelname)s - %(message)s')
+        format ='[%(asctime)s] - %(levelname)s - %(message)s')
         self.logger = logging.getLogger()
 
     @property
@@ -340,7 +340,7 @@ class AnalyzerCmd():
         # setpreamp doesn't send a response at all
         if not "setpreamp" in command['cmd']:
             response = self.s.recv(4096) # readed byte count
-            self.logger.info(response)
+            self.logger.debug(response)
             return response
 
     def close(self):
@@ -349,9 +349,5 @@ class AnalyzerCmd():
         self.s.close()
 
 
-#opti = AnalyzerCmd(ip="192.168.2.67", port=17000)
-#opti.start_measuring()
-#info = opti.get_info()
-#print("info:", info)
-proc = opti.get_process_number()
-#print("proc:", proc)
+opti = AnalyzerCmd(ip="192.168.2.67", port=17000)
+opti.start_measuring()
