@@ -3,7 +3,8 @@ import json
 import time
 from enum import Enum, auto
 from typing import Any, Dict
-#from sqlalchemy import false
+import logging
+
 
 class Amplitudes(Enum):
     AMP_1 = 64
@@ -61,7 +62,7 @@ class AnalyzerCmd():
         :param ip: Analyzer IP in network.
         :type ip: str
         :param port: Required Analyzer port by the default always 17000.
-        :type ip: int
+        :type port: int
 
         ::Example::
             analyzer = AnalyzerCmd(ip="192.168.2.67", port=17000)
@@ -193,7 +194,7 @@ class AnalyzerCmd():
         obj = self._handle_commserver_response(response) 
         
         if obj.get("ok") == False:
-            print(f"Optimizer response:\n{obj}")
+            logging.info(f"Optimizer response:\n{obj}")
             raise Exception("Analyzer could not perform action")
         
         return int(obj["processnumber"])
@@ -279,11 +280,11 @@ class AnalyzerCmd():
             for kwarg in kwargs:
                 if kwarg in default_dict.keys():
                     default_dict.update({kwarg: kwargs[kwarg]})
-                    print(f"Updated {kwarg} to {kwargs[kwarg]}")
+                    logging.info(f"Updated {kwarg} to {kwargs[kwarg]}")
         
         # handle case that user input complete new dict 
         if user_dict and user_dict.keys() == default_dict.keys():
-            print("Use of user defined settings for preamp")
+            logging.info("Use of user defined settings for preamp.")
             # fill command with user defined settings values
             command.update(user_dict)
         else:
@@ -309,8 +310,8 @@ class AnalyzerCmd():
         response = json.loads(response[2:])
         # rais exception if not performed right
         if response.get("ok") == False:
-            print(f"Optimizer response:\n{response}")
-            raise Exception("Analyzer could not perform action") 
+            logging.info(f"Optimizer response:\n{response}")
+            raise Exception("Analyzer could not perform action. Check your command details.") 
 
     def _handle_commserver_response(self, response) -> Dict:
         response = response[2:].decode()
@@ -319,7 +320,7 @@ class AnalyzerCmd():
 
     def _send(self, command: Dict)  -> Dict:
         # print every sended command
-        print(f"Sended command:\n{command}")
+        logging.info(f"Sended command:\n{command}")
         # prepare command
         cmd_str = json.dumps(command).encode()
         cmd_str = (len(cmd_str)).to_bytes(2, 'big') + cmd_str
@@ -340,7 +341,8 @@ class AnalyzerCmd():
         self.s.close()
 
 
-opti = AnalyzerCmd(ip="192.168.2.67", port=17000)
+#opti = AnalyzerCmd(ip="192.168.2.67", port=17000)
 
-info = opti.get_info()
-print(info)
+#info = opti.get_info()
+#print(info)
+

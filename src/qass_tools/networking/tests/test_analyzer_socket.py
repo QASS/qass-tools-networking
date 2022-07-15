@@ -1,16 +1,16 @@
 import pytest
-from networking.analyzer_socket import AnalyzerCmd
+import mock
+from analyzer_socket import AnalyzerCmd
+import socket
 
-def test_get_info(monkeypatch):
-    def send(command):
-        return command
+@pytest.fixture
+def create_instance_helper():
+    with mock.patch('socket.socket') as socket_mock:
+        obj = AnalyzerCmd(ip="192.168.2.67")
+        return obj
+
+def test_start_measuring(create_instance_helper):
+
+    analyzer = create_instance_helper.start_measuring()
     
-    def handle_response(response):
-        return response
-    
-    #monkeypatch.setattr(AnalyzerCmd, "_send", send)
-    #monkeypatch.setattr(AnalyzerCmd, "_handle_commserver_response", handle_response)
-    
-    opti = AnalyzerCmd(ip="192.168.2.67")
-    sended_command = opti.get_info()
-    assert sended_command['cmd'] == "getinfo"
+    analyzer.tcp_socket.connect.asssert_called_with(ip="192.168.2.67")    
