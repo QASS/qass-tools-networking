@@ -314,6 +314,7 @@ class AnalyzerCmd():
         # change appearance
         response = response.decode("utf-8") #utf-8 decode type
         response = json.loads(response[2:])
+        self.logger.warning(response)
         # rais exception if not performed right
         if response.get("ok") == False:
             self.logger.info(f"Optimizer response:\n{response}")
@@ -334,13 +335,13 @@ class AnalyzerCmd():
         # adding msgid 
         self.msgid += 1
         # actual sending command
+        print("WHHAAAATTT!")
         self.s.sendall(cmd_str)
 
         # handle special cases
         # setpreamp doesn't send a response at all
         if not "setpreamp" in command['cmd']:
             response = self.s.recv(4096) # readed byte count
-            self.logger.debug(response)
             return response
 
     def close(self):
