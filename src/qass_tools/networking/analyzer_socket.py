@@ -8,6 +8,8 @@ import sys
 
 
 class Amplitudes(Enum):
+    """ Enum class to list and check avaible amplitudes in mV to generate sine wave. 
+    """
     AMP_1 = 64
     AMP_2 = 128
     AMP_3 = 191
