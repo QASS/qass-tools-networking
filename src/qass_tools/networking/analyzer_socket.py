@@ -96,7 +96,7 @@ class AnalyzerCmd():
         self.s.close()
         self.logger.info("Socket connection closed")
         if exc_type != None:
-            self.logger.error(f"\nExecution type: \n{exc_type}\nTraceback: \n{traceback}")
+            self.logger.error(f"\nExecution type: {exc_type}\nTraceback: {traceback}")
 
     @property
     def get_ip(self):
@@ -330,10 +330,10 @@ class AnalyzerCmd():
         # change appearance
         response = response.decode("utf-8") #utf-8 decode type
         response = json.loads(response[2:])
-        #self.logger.warning(response)
+        self.logger.debug(response)
         # rais exception if not performed right
         if response.get("ok") == False:
-            self.logger.info(f"Optimizer response:\n{response}")
+            self.logger.info(f"Optimizer response:{response}")
             raise Exception("Analyzer could not perform action. Check your command details.") 
 
     def _handle_commserver_response(self, response) -> Dict:
@@ -359,12 +359,3 @@ class AnalyzerCmd():
         if not "setpreamp" in command['cmd']:
             response = self.s.recv(4096) # readed byte count
             return response
-
-    #def close(self):
-    #    """Method to close the socket connection between machine and analyzer.
-    #    """
-    #    self.s.close()
-
-with AnalyzerCmd(ip="192.168.1.50") as opti:
-    proc = opti.get_process_number()
-    print(proc)
