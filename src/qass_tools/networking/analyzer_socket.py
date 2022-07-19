@@ -64,7 +64,7 @@ class AnalyzerCmd():
         .. note:: The message ID provides a possibility to assign commands and there corresponding response from analyzer. And can be used for debugging.
         :param ip: Analyzer IP in network.
         :type ip: str
-        :param port: Required Analyzer port by the default always 17000.
+        :param port: Required Analyzer port, by the default always 17000.
         :type port: int
 
         ::Example::
@@ -76,15 +76,23 @@ class AnalyzerCmd():
         self.port = port
         # message ID to assign command to analyzer and specific response
         self.msgid = 0
-        # connect to socket
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.settimeout(1)
-        self.s.connect((self.ip, self.port))
-
+        
         #short solution logger to sys.stdout
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
         format ='[%(asctime)s] - %(levelname)s - %(message)s')
         self.logger = logging.getLogger()
+    
+    def __enter__(self):
+        # connect to socket
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s.settimeout(1)
+        self.s.connect((self.ip, self.port))
+        return self
+    
+    def __exit__(self,exc_type, exc_value, traceback):
+        self.s.close()
+        if exc_type != None:
+            self.logger.error(f"\nExecution type: \n{exc_type}\nTraceback: \n{traceback}")
 
     @property
     def get_ip(self):
@@ -318,7 +326,7 @@ class AnalyzerCmd():
         # change appearance
         response = response.decode("utf-8") #utf-8 decode type
         response = json.loads(response[2:])
-        self.logger.warning(response)
+        #self.logger.warning(response)
         # rais exception if not performed right
         if response.get("ok") == False:
             self.logger.info(f"Optimizer response:\n{response}")
@@ -327,7 +335,7 @@ class AnalyzerCmd():
     def _handle_commserver_response(self, response) -> Dict:
         response = response[2:].decode()
         obj = json.loads(response)
-        self.logger.info(obj)
+        #self.logger.info(obj)
         return obj
 
     def _send(self, command: Dict)  -> Dict:
@@ -339,7 +347,7 @@ class AnalyzerCmd():
         # adding msgid 
         self.msgid += 1
         # actual sending command
-        print("WHHAAAATTT!")
+   
         self.s.sendall(cmd_str)
 
         # handle special cases
@@ -348,11 +356,11 @@ class AnalyzerCmd():
             response = self.s.recv(4096) # readed byte count
             return response
 
-    def close(self):
-        """Method to close the socket connection between machine and analyzer.
-        """
-        self.s.close()
+    #def close(self):
+    #    """Method to close the socket connection between machine and analyzer.
+    #    """
+    #    self.s.close()
 
-
-opti = AnalyzerCmd(ip="192.168.2.67", port=17000)
-opti.start_measuring()
+with AnalyzerCmd(ip="192.168.1.50") as opti:
+    proc = opti.get_process_number()
+    print(proc)
