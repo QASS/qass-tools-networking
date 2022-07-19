@@ -333,8 +333,10 @@ class AnalyzerCmd():
         self.logger.debug(response)
         # rais exception if not performed right
         if response.get("ok") == False:
-            self.logger.info(f"Optimizer response:{response}")
+            self.logger.debug(f"Optimizer response:{response}")
+            self.logger.error("Analyzer could not perform action. Check your command details.")
             raise Exception("Analyzer could not perform action. Check your command details.") 
+            
 
     def _handle_commserver_response(self, response) -> Dict:
         response = response[2:].decode()
