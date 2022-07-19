@@ -69,6 +69,8 @@ class AnalyzerCmd():
 
         ::Example::
             analyzer = AnalyzerCmd(ip="192.168.2.67", port=17000)
+            analyzer = AnalyzerCmd(ip="192.168.2.67")
+            analyzer = AnalyzerCmd("192.168.2.67")
         """
         self.ip = ip
         self.port = port
@@ -211,7 +213,7 @@ class AnalyzerCmd():
     def create_project(self, project_name:str):
         """Create new project after used template with custom name.
 
-        .. note:: Avoid spaces in name or other typical forbidden characters.
+        .. note:: Avoid spaces or other typical forbidden characters in choosen name.
 
         :param project_name: Name of new project
         :type project_name: str
