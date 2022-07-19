@@ -59,7 +59,7 @@ class AnalyzerCmd():
         opti.stop_measuring()
     """
     def __init__(self, ip: str, port=17000):
-        """Constructor of the class connects the machine to an analyzer reachable over user-given Input of IP (self.ip) and Port (self.port) vian TCP.
+        """Constructor of the class defines details for logger object.
         
         .. note:: The message ID provides a possibility to assign commands and there corresponding response from analyzer. And can be used for debugging.
         :param ip: Analyzer IP in network.
@@ -83,6 +83,9 @@ class AnalyzerCmd():
         self.logger = logging.getLogger()
     
     def __enter__(self):
+        """ Connects the machine to an analyzer reachable over user-given Input of IP (self.ip) and Port (self.port) 
+        via TCP and returns an isntance of the class
+        """
         # connect to socket
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.settimeout(1)
@@ -91,6 +94,7 @@ class AnalyzerCmd():
     
     def __exit__(self,exc_type, exc_value, traceback):
         self.s.close()
+        self.logger.info("Socket connection closed")
         if exc_type != None:
             self.logger.error(f"\nExecution type: \n{exc_type}\nTraceback: \n{traceback}")
 
@@ -340,7 +344,7 @@ class AnalyzerCmd():
 
     def _send(self, command: Dict)  -> Dict:
         # print every sended command
-        self.logger.info(f"Sended command:\n{command}")
+        self.logger.info(f"Sended command:{command}")
         # prepare command
         cmd_str = json.dumps(command).encode()
         cmd_str = (len(cmd_str)).to_bytes(2, 'big') + cmd_str
