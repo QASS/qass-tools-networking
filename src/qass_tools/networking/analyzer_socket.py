@@ -454,7 +454,7 @@ class AnalyzerCmd():
         command = {'cmd': "setpendingcomment", "msgid": self.msgid, "p1":comment}
         response = self._send(command)
         return self._handle_commserver_response(response)
-
+    
     #TODO:Test
     def set_comment_current_process(self, comment:str):
         """ Sets comment for current activatet process.
@@ -465,6 +465,12 @@ class AnalyzerCmd():
         :type comment: str
         """
         command = {'cmd': "setcomment", "msgid": self.msgid, "p1":comment, "quiet":f"{False}"}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
+    #TODO:Test
+    def start_operator(self, operator_name:str, operator_command:str):
+        command = {'cmd': "startoperator", "msgid": self.msgid, "p1":operator_name, "p2": operator_command}
         response = self._send(command)
         return self._handle_commserver_response(response)
     
