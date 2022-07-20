@@ -499,6 +499,13 @@ class AnalyzerCmd():
         response = self._send(command)
         return self._handle_commserver_response(response)
 
+    # TODO:Test
+    def import_operators(self, operator_fielpath: str, force_load: str):
+        command = {'cmd': "startoperator", "msgid": self.msgid,
+                   "p1": operator_fielpath, "p2": force_load}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
     def _handle_appcmd_response(self, response):
         # change appearance
         response = response.decode("utf-8")  # utf-8 decode type
