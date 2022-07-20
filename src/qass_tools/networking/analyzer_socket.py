@@ -418,6 +418,12 @@ class AnalyzerCmd():
         command = {'cmd': "loaduserproject", "msgid": self.msgid}
         response = self._send(command)
         return self._handle_commserver_response(response)
+
+    #TODO:Test
+    def get_max__measure_positions(self):
+        command = {'cmd': "get_max_measure_positions", "msgid": self.msgid}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
     
     #TODO:Test
     def get_preamp_settings(self, port:int):
