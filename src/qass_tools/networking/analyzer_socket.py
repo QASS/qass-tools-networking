@@ -563,12 +563,39 @@ class AnalyzerCmd():
 
     # TODO:Test
     def set_io_report(self, enable: bool):
+        """Switches I/O register report on or off.
+
+        :param enable: Switch report to on (True) or off (False)
+        :type enable: bool
+        :return: standardized analyzer respond
+        :rtype: dict
+        """
         if enable:
             param = "true"
         else:
             param = "false"
 
         command = {'cmd': "reportio",
+                   "msgid": self.msgid,
+                   "p1": param}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
+    # TODO:Test
+    def set_process_number_report(self, enable: bool):
+        """Switches process number report on or off.
+
+        :param enable: Switch report to on (True) or off (False)
+        :type enable: bool
+        :return: standardized analyzer respond
+        :rtype: dict
+        """
+        if enable:
+            param = "true"
+        else:
+            param = "false"
+
+        command = {'cmd': "reportprocessnumber",
                    "msgid": self.msgid,
                    "p1": param}
         response = self._send(command)
