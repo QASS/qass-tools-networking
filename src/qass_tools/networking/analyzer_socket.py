@@ -419,6 +419,11 @@ class AnalyzerCmd():
         response = self._send(command)
         return self._handle_commserver_response(response)
     
+    #TODO:Test
+    def get_preamp_settings(self, port:int):
+        command = {'cmd': "getpreampinfo", "msgid": self.msgid, "p1":f"{port}"}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
 
     def _handle_appcmd_response(self, response):
         # change appearance
