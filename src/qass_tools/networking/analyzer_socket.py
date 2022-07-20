@@ -413,6 +413,12 @@ class AnalyzerCmd():
         response = self._send(command)
         return self._handle_commserver_response(response)
     
+    #TODO:Test
+    def load_last_user_project(self):
+        command = {'cmd': "loaduserproject", "msgid": self.msgid}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+    
 
     def _handle_appcmd_response(self, response):
         # change appearance
