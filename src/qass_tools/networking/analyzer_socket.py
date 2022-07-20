@@ -210,6 +210,12 @@ class AnalyzerCmd():
         response = self._send(command)
         self._handle_appcmd_response(response)
 
+    def get_app_var(self, app_var_name: str):
+        command = {'cmd': "getappvar", "msgid": self.msgid, "p1": app_var_name}
+
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
     def get_process_number(self) -> int:
         """Send command to give out process number as return.
 
@@ -439,7 +445,7 @@ class AnalyzerCmd():
         return self._handle_commserver_response(response)
 
     # TODO:Test
-    def get_max__measure_positions(self):
+    def get_max_measure_positions(self):
         command = {'cmd': "get_max_measure_positions", "msgid": self.msgid}
         response = self._send(command)
         return self._handle_commserver_response(response)
