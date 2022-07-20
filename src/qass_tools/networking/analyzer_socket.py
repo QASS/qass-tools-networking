@@ -501,8 +501,15 @@ class AnalyzerCmd():
 
     # TODO:Test
     def import_operators(self, operator_fielpath: str, force_load: str):
-        command = {'cmd': "startoperator", "msgid": self.msgid,
+        command = {'cmd': "importoperators", "msgid": self.msgid,
                    "p1": operator_fielpath, "p2": force_load}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
+    # TODO:Test
+    def import_patterns(self, directory_path: str):
+        command = {'cmd': "importpatterns",
+                   "msgid": self.msgid, "p1": directory_path}
         response = self._send(command)
         return self._handle_commserver_response(response)
 
