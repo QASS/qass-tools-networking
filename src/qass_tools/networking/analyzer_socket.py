@@ -513,6 +513,20 @@ class AnalyzerCmd():
         response = self._send(command)
         return self._handle_commserver_response(response)
 
+    # TODO:Test
+    def start_operator_results(self, start=True):
+        command = {'cmd': "startoperatorresults",
+                   "msgid": self.msgid, "p1": f"{start}"}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
+    # TODO:Test
+    def stop_operator_results(self):
+        command = {'cmd': "stopoperatorresults",
+                   "msgid": self.msgid}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
     def _handle_appcmd_response(self, response):
         # change appearance
         response = response.decode("utf-8")  # utf-8 decode type
