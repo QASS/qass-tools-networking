@@ -448,6 +448,26 @@ class AnalyzerCmd():
         command = {'cmd': "setpendingserial", "msgid": self.msgid, "p1":f"{serial_number}"}
         response = self._send(command)
         return self._handle_commserver_response(response)
+    
+    #TODO:Test
+    def set_comment_pending_process(self, comment:str):
+        command = {'cmd': "setpendingcomment", "msgid": self.msgid, "p1":comment}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
+    #TODO:Test
+    def set_comment_current_process(self, comment:str):
+        """ Sets comment for current activatet process.
+
+        Similair to set_proces_comment but as JSON communication Server command.
+
+        :param comment: Process comment to set
+        :type comment: str
+        """
+        command = {'cmd': "setcomment", "msgid": self.msgid, "p1":comment, "quiet":f"{False}"}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+    
 
     def _handle_appcmd_response(self, response):
         # change appearance
