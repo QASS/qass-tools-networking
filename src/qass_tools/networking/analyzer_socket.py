@@ -25,7 +25,7 @@ class Amplitudes(Enum):
     AMP_13 = 828
     AMP_14 = 891
     AMP_15 = 955
-    
+
     @property
     def get_list(self):
         """Property lists all allowed amplitudes to generate sine wave from:
@@ -33,12 +33,13 @@ class Amplitudes(Enum):
         :rtype: List
         """
         return list(Amplitudes)
-    
+
+
 class AnalyzerCmd():
     """ Class to communicate with Analyzer over network socket. Implied Methods: start/ end measuring, set process comment, set appVars and start/stop sine generator with spefici parameters. Functions that communicate
     with an analyzer build a dictionary to store user-given settings. With the help of the "send" function each dictionary will be converted to a JSON File and send to the connected analyzer. Each response from analyzer 
     will be read out and can be saved in a dictionary.
-    
+
     ::Example::
         import time
         opti = AnalyzerCmd(ip="192.168.2.67", port=17000)
@@ -58,9 +59,10 @@ class AnalyzerCmd():
         opti.stop_sineGenerator()
         opti.stop_measuring()
     """
+
     def __init__(self, ip: str, port=17000):
         """Constructor of the class defines details for logger object.
-        
+
         .. note:: The message ID provides a possibility to assign commands and there corresponding response from analyzer. And can be used for debugging.
         :param ip: Analyzer IP in network.
         :type ip: str
@@ -76,12 +78,12 @@ class AnalyzerCmd():
         self.port = port
         # message ID to assign command to analyzer and specific response
         self.msgid = 0
-        
-        #short solution logger to sys.stdout
+
+        # short solution logger to sys.stdout
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
-        format ='[%(asctime)s] - %(levelname)s - %(message)s')
+                            format='[%(asctime)s] - %(levelname)s - %(message)s')
         self.logger = logging.getLogger()
-    
+
     def __enter__(self):
         """ Connects the machine to an analyzer reachable over user-given Input of IP (self.ip) and Port (self.port) 
         via TCP and returns an isntance of the class
@@ -91,12 +93,13 @@ class AnalyzerCmd():
         self.s.settimeout(1)
         self.s.connect((self.ip, self.port))
         return self
-    
-    def __exit__(self,exc_type, exc_value, traceback):
+
+    def __exit__(self, exc_type, exc_value, traceback):
         self.s.close()
         self.logger.info("Socket connection closed")
         if exc_type != None:
-            self.logger.error(f"\nExecution type: {exc_type}\nTraceback: {traceback}")
+            self.logger.error(
+                f"\nExecution type: {exc_type}\nTraceback: {traceback}")
 
     @property
     def get_ip(self):
@@ -105,7 +108,7 @@ class AnalyzerCmd():
         :rtype: str
         """
         return self.ip
-    
+
     @property
     def get_port(self):
         """Property that gives out connected Port.
@@ -113,11 +116,12 @@ class AnalyzerCmd():
         :rtype: int
         """
         return self.port
-    
+
     def start_measuring(self):
         """Method sends a command to the connected analyzer to start a maesuring process.
         """
-        command = {'cmd': "AppCmd", "msgid": self.msgid, "p1": "startMeasuring"}
+        command = {'cmd': "AppCmd",
+                   "msgid": self.msgid, "p1": "startMeasuring"}
         response = self._send(command)
         self._handle_appcmd_response(response)
 
@@ -135,12 +139,13 @@ class AnalyzerCmd():
         a = list(Amplitudes)
         try:
             if amplitude in Amplitudes:
-                command = {'cmd': "AppCmd", "msgid": self.msgid, "p1": "StartSineGen", "p2": f"{frequency} {amplitude}"}
+                command = {'cmd': "AppCmd", "msgid": self.msgid,
+                           "p1": "StartSineGen", "p2": f"{frequency} {amplitude}"}
                 response = self._send(command)
                 self._handle_appcmd_response(response)
-            else: 
+            else:
                 raise ValueError
-        except ValueError: 
+        except ValueError:
             (f" Desiered amplitude cannot be set. Please enter one of the following amplitudes to continue: {a}")
             NEWamp = input("Enter new sine amplitude:")
             NEWf = input("Enter new sine frequency:")
@@ -168,11 +173,12 @@ class AnalyzerCmd():
         :param proc_comm: Text which should be seen and saved as process comment
         :type proc_comm: str
         """
-        command = {'cmd': "AppCmd", "msgid": self.msgid, "p1": "setprocesscomment", "p2": f"{proc_comm}"}
+        command = {'cmd': "AppCmd", "msgid": self.msgid,
+                   "p1": "setprocesscomment", "p2": f"{proc_comm}"}
         response = self._send(command)
         self._handle_appcmd_response(response)
 
-    def set_app_var(self, app_var_name:str, app_var_value:any):
+    def set_app_var(self, app_var_name: str, app_var_value: any):
         """Parse value to specific AppVar operator in operator network of analyzer.
 
         There has to be an already existing AppVar operator which can accessed by (matching) name.
@@ -182,11 +188,12 @@ class AnalyzerCmd():
         :param app_var_value: Value which should be assigned to operator. As value can be choosed any datatyp supported by python (e.g. float, int, str, json, ...).
         :type app_var_value: any
         """
-        command = {'cmd': "SetAppVar", "msgid": self.msgid, "p1": f"{app_var_name:}", "p2": f"{app_var_value}"}
+        command = {'cmd': "SetAppVar", "msgid": self.msgid,
+                   "p1": f"{app_var_name:}", "p2": f"{app_var_value}"}
         response = self._send(command)
-        self._handle_commserver_response(response)    
-    
-    def set_app_var_appcmd(self, app_var_name:str, value:any):
+        self._handle_commserver_response(response)
+
+    def set_app_var_appcmd(self, app_var_name: str, value: any):
         """Parse value to specific AppVar operator in operator network of analyzer.
 
         An extra method is provided because this method works with an general analyzer AppCommand.
@@ -198,7 +205,8 @@ class AnalyzerCmd():
         :param app_var_value: Value which should be assigned to operator. As value can be choosed any datatyp supported by python (e.g. float, int, str, json, ...).
         :type app_var_value: any
         """
-        command = {'cmd': "AppCmd", "msgid": self.msgid, "p1": "SetAppVar", "p2": f"{app_var_name} {value}"}
+        command = {'cmd': "AppCmd", "msgid": self.msgid,
+                   "p1": "SetAppVar", "p2": f"{app_var_name} {value}"}
         response = self._send(command)
         self._handle_appcmd_response(response)
 
@@ -211,18 +219,18 @@ class AnalyzerCmd():
         :rtype: int
         """
         command = {'cmd': "getprocessnumber", "msgid": self.msgid}
-        
+
         response = self._send(command)
-        obj = self._handle_commserver_response(response) 
-        
+        obj = self._handle_commserver_response(response)
+
         if obj.get("ok") == False:
             self.logger.info(f"Optimizer response:\n{obj}")
             raise Exception("Analyzer could not perform action")
-        
+
         return int(obj["processnumber"])
-        
-    #TODO: test function
-    def create_project(self, project_name:str):
+
+    # TODO: test function
+    def create_project(self, project_name: str):
         """Create new project after used template with custom name.
 
         .. note:: Avoid spaces or other typical forbidden characters in choosen name.
@@ -230,12 +238,13 @@ class AnalyzerCmd():
         :param project_name: Name of new project
         :type project_name: str
         """
-        command = {'cmd': "createloadproject", 'msgid': self.msgid, 'p1': project_name}
-        
+        command = {'cmd': "createloadproject",
+                   'msgid': self.msgid, 'p1': project_name}
+
         response = self._send(command)
-        self._handle_commserver_response(response) 
-    
-    def send_AppCmd(self, param_one:str, param_two=None):
+        self._handle_commserver_response(response)
+
+    def send_AppCmd(self, param_one: str, param_two=None):
         """General method to send arbitrary AppCmd to analyzer.
 
         :param param_one: Setting which AppCmd should be used.
@@ -244,21 +253,22 @@ class AnalyzerCmd():
         :type param_two: str, optional
         :raises TypeError: Type Check for second parameter, exception is raised if value is not equal to type str.
         """
-        command = {'cmd': "AppCmd", 'msgid': self.msgid, 'p1': param_one}        
-        
+        command = {'cmd': "AppCmd", 'msgid': self.msgid, 'p1': param_one}
+
         if param_two and param_two == str:
-            command = {'cmd': "AppCmd", 'msgid': self.msgid, 'p1': param_one, 'p2': param_two}    
+            command = {'cmd': "AppCmd", 'msgid': self.msgid,
+                       'p1': param_one, 'p2': param_two}
         else:
             raise TypeError("Second parameter has to be a string.")
-  
+
         response = self._send(command)
         self._handle_appcmd_response(response)
-        
+
     def set_preamp(self, user_dict=None, **kwargs):
         """Method to set preamp settings for multiplexer.
 
         By entering a new value as **kwargs, you are able to change specific values in the default dict, which will be sended. The use of whole new dict is possible to replace all settings with user-defined values. Have in mind that your new dictionary must have identical keys like the default one.
-        
+
         Default settings:
         | Type | Multiplexer     | Value |
         | ---- | --------------- | ----- |
@@ -282,7 +292,7 @@ class AnalyzerCmd():
         # helper dict with default values
         default_dict = {'channel': "0",
                         'chp': "0",
-                        'preampport': "0", 
+                        'preampport': "0",
                         'fft': "true",
                         'signal': "false",
                         'samplerate': "6",
@@ -291,20 +301,20 @@ class AnalyzerCmd():
                         'fftlogarithmic': "14",
                         'filter': "false",
                         'gain': "800",
-                        'subport': "0" 
+                        'subport': "0"
                         }
-    
+
         # command to build for analyzer
         command = {'cmd': "setpreamp", 'msgid': self.msgid}
-        
+
         # handle kwarg cases and update the default dict
         if kwargs:
             for kwarg in kwargs:
                 if kwarg in default_dict.keys():
                     default_dict.update({kwarg: kwargs[kwarg]})
                     self.logger.info(f"Updated {kwarg} to {kwargs[kwarg]}")
-        
-        # handle case that user input complete new dict 
+
+        # handle case that user input complete new dict
         if user_dict and user_dict.keys() == default_dict.keys():
             self.logger.info("Use of user defined settings for preamp.")
             # fill command with user defined settings values
@@ -312,11 +322,11 @@ class AnalyzerCmd():
         else:
             # fill command with updated default dict values
             command.update(default_dict)
-        
+
         self._send(command)
-    
-    #TODO: new function "CommunicationServer Command zum exportieren des Operatoren Netzes als JSON File" 
-    def get_info(self)  -> Dict:
+
+    # TODO: new function "CommunicationServer Command zum exportieren des Operatoren Netzes als JSON File"
+    def get_info(self) -> Dict:
         """Method to read out anlyzer informations as current used project ID/name or analyer version.
 
         :return: Informations out of info window in analyzer.
@@ -325,8 +335,8 @@ class AnalyzerCmd():
         command = {'cmd': "getversions", "msgid": self.msgid}
         response = self._send(command)
         return self._handle_commserver_response(response)
-    
-    #TODO:Test
+
+    # TODO:Test
     def get_project_info(self) -> Dict:
         """Method to read out anlyzer informations as current used project ID/name or analyer version.
 
@@ -336,8 +346,8 @@ class AnalyzerCmd():
         command = {'cmd': "getinfo", "msgid": self.msgid}
         response = self._send(command)
         return self._handle_commserver_response(response)
-    
-    #TODO:Test
+
+    # TODO:Test
     def get_heartbeat(self):
         """Method to read out anlyzer informations as current used project ID/name or analyer version.
 
@@ -347,25 +357,34 @@ class AnalyzerCmd():
         command = {'cmd': "heartbeat", "msgid": self.msgid}
         response = self._send(command)
         return self._handle_commserver_response(response)
-    
-    #TODO:Test
+
+    # TODO:Test
     def start_measuring_2(self, state="io"):
-        command = {'cmd': "startmeasuring", "msgid": self.msgid, "p1":state}
+        command = {'cmd': "startmeasuring", "msgid": self.msgid, "p1": state}
         response = self._send(command)
         return self._handle_commserver_response(response)
 
-    #TODO:Test
+    # TODO:Test
     def start_monitoring(self, state="io"):
-        command = {'cmd': "startmonitoring", "msgid": self.msgid, "p1":state}
+        """_summary_
+
+        _extended_summary_
+
+        :param state: _description_, defaults to "io"
+        :type state: str, optional
+        :return: _description_
+        :rtype: _type_
+        """
+        command = {'cmd': "startmonitoring", "msgid": self.msgid, "p1": state}
         response = self._send(command)
         return self._handle_commserver_response(response)
 
-    #TODO:Test
+    # TODO:Test
     def calc_max_amp_per_band(self, user_dict=None, **kwargs):
         """Method to calculate maximum amplitude per band. There are the opportunities to plot and save the result.
 
         By entering a new value as **kwargs, you are able to change specific values in the default dict, which will be sended. The use of whole new dict is possible to replace all settings with user-defined values. Have in mind that your new dictionary must have identical keys like the default one.
-        
+
         Default settings:
         | Type | Key             | Default value |
         | ---- | --------------- | ------------- |
@@ -381,21 +400,21 @@ class AnalyzerCmd():
         # helper dict with default values
         default_dict = {'channel': "0",
                         'plot': "0",
-                        'save': "0", 
+                        'save': "0",
                         'amplitudetype': "true"
                         }
-    
+
         # command to build for analyzer
         command = {'cmd': "calcmaxamplitude", 'msgid': self.msgid}
-        
+
         # handle kwarg cases and update the default dict
         if kwargs:
             for kwarg in kwargs:
                 if kwarg in default_dict.keys():
                     default_dict.update({kwarg: kwargs[kwarg]})
                     self.logger.info(f"Updated {kwarg} to {kwargs[kwarg]}")
-        
-        # handle case that user input complete new dict 
+
+        # handle case that user input complete new dict
         if user_dict and user_dict.keys() == default_dict.keys():
             self.logger.info("Use of user defined settings.")
             # fill command with user defined settings values
@@ -403,60 +422,64 @@ class AnalyzerCmd():
         else:
             # fill command with updated default dict values
             command.update(default_dict)
-        
+
         response = self._send(command)
         return self._handle_commserver_response(response)
-    
-    #TODO:Test
+
+    # TODO:Test
     def load_test_project(self):
         command = {'cmd': "loadtestproject", "msgid": self.msgid}
         response = self._send(command)
         return self._handle_commserver_response(response)
-    
-    #TODO:Test
+
+    # TODO:Test
     def load_last_user_project(self):
         command = {'cmd': "loaduserproject", "msgid": self.msgid}
         response = self._send(command)
         return self._handle_commserver_response(response)
 
-    #TODO:Test
+    # TODO:Test
     def get_max__measure_positions(self):
         command = {'cmd': "get_max_measure_positions", "msgid": self.msgid}
         response = self._send(command)
         return self._handle_commserver_response(response)
-    
-    #TODO:Test
-    def get_preamp_settings(self, port:int):
-        command = {'cmd': "getpreampinfo", "msgid": self.msgid, "p1":f"{port}"}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
-    
-    #TODO:Test
-    def start_operator_function_values(self, start=True):
-        command = {'cmd': "startoperatorfunctionvalues", "msgid": self.msgid, "p1":f"{start}"}
+
+    # TODO:Test
+    def get_preamp_settings(self, port: int):
+        command = {'cmd': "getpreampinfo",
+                   "msgid": self.msgid, "p1": f"{port}"}
         response = self._send(command)
         return self._handle_commserver_response(response)
 
-    #TODO:Test
+    # TODO:Test
+    def start_operator_function_values(self, start=True):
+        command = {'cmd': "startoperatorfunctionvalues",
+                   "msgid": self.msgid, "p1": f"{start}"}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
+    # TODO:Test
     def stopp_operator_function_values(self):
         command = {'cmd': "stoppoperatorfunctionvalues", "msgid": self.msgid}
         response = self._send(command)
         return self._handle_commserver_response(response)
 
-    #TODO:Test
-    def set_serial_number_pending_process(self, serial_number:int):
-        command = {'cmd': "setpendingserial", "msgid": self.msgid, "p1":f"{serial_number}"}
+    # TODO:Test
+    def set_serial_number_pending_process(self, serial_number: int):
+        command = {'cmd': "setpendingserial",
+                   "msgid": self.msgid, "p1": f"{serial_number}"}
         response = self._send(command)
         return self._handle_commserver_response(response)
-    
-    #TODO:Test
-    def set_comment_pending_process(self, comment:str):
-        command = {'cmd': "setpendingcomment", "msgid": self.msgid, "p1":comment}
+
+    # TODO:Test
+    def set_comment_pending_process(self, comment: str):
+        command = {'cmd': "setpendingcomment",
+                   "msgid": self.msgid, "p1": comment}
         response = self._send(command)
         return self._handle_commserver_response(response)
-    
-    #TODO:Test
-    def set_comment_current_process(self, comment:str):
+
+    # TODO:Test
+    def set_comment_current_process(self, comment: str):
         """ Sets comment for current activatet process.
 
         Similair to set_proces_comment but as JSON communication Server command.
@@ -464,28 +487,30 @@ class AnalyzerCmd():
         :param comment: Process comment to set
         :type comment: str
         """
-        command = {'cmd': "setcomment", "msgid": self.msgid, "p1":comment, "quiet":f"{False}"}
+        command = {'cmd': "setcomment", "msgid": self.msgid,
+                   "p1": comment, "quiet": f"{False}"}
         response = self._send(command)
         return self._handle_commserver_response(response)
 
-    #TODO:Test
-    def start_operator(self, operator_name:str, operator_command:str):
-        command = {'cmd': "startoperator", "msgid": self.msgid, "p1":operator_name, "p2": operator_command}
+    # TODO:Test
+    def start_operator(self, operator_name: str, operator_command: str):
+        command = {'cmd': "startoperator", "msgid": self.msgid,
+                   "p1": operator_name, "p2": operator_command}
         response = self._send(command)
         return self._handle_commserver_response(response)
-    
 
     def _handle_appcmd_response(self, response):
         # change appearance
-        response = response.decode("utf-8") #utf-8 decode type
+        response = response.decode("utf-8")  # utf-8 decode type
         response = json.loads(response[2:])
         self.logger.debug(response)
         # rais exception if not performed right
         if response.get("ok") == False:
             self.logger.debug(f"Optimizer response:{response}")
-            self.logger.error("Analyzer could not perform action. Check your command details.")
-            raise Exception("Analyzer could not perform action. Check your command details.") 
-            
+            self.logger.error(
+                "Analyzer could not perform action. Check your command details.")
+            raise Exception(
+                "Analyzer could not perform action. Check your command details.")
 
     def _handle_commserver_response(self, response) -> Dict:
         response = response[2:].decode()
@@ -493,23 +518,24 @@ class AnalyzerCmd():
         self.logger.debug(obj)
         return obj
 
-    def _send(self, command: Dict)  -> Dict:
+    def _send(self, command: Dict) -> Dict:
         # print every sended command
         self.logger.info(f"Sended command:{command}")
         # prepare command
         cmd_str = json.dumps(command).encode()
         cmd_str = (len(cmd_str)).to_bytes(2, 'big') + cmd_str
-        # adding msgid 
+        # adding msgid
         self.msgid += 1
         # actual sending command
-   
+
         self.s.sendall(cmd_str)
 
         # handle special cases
         # setpreamp doesn't send a response at all
         if not "setpreamp" in command['cmd']:
-            response = self.s.recv(4096) # readed byte count
+            response = self.s.recv(4096)  # readed byte count
             return response
 
+
 with AnalyzerCmd("192.168.2.67") as opti:
-    opti.start_monitoring()
+    opti.set_preamp()
