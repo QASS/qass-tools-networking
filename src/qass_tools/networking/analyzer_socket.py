@@ -547,6 +547,22 @@ class AnalyzerCmd():
         response = self._send(command)
         return self._handle_commserver_response(response)
 
+    # TODO:Test
+    def start_script_function(self, function_name: str, function_param: any):
+        """ Start script function and return result.
+
+        :param function_name: Name of script function
+        :type function_name: str
+        :param function_param: Passed param to script function (will always be passed as str.)
+        :type function_param: any
+        :return: Result of addressed function.
+        :rtype: str
+        """
+        command = {'cmd': "appfunc",
+                   "msgid": self.msgid, "p1": function_name, "p2": f"{function_param}"}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
     def _handle_appcmd_response(self, response):
         # change appearance
         response = response.decode("utf-8")  # utf-8 decode type
