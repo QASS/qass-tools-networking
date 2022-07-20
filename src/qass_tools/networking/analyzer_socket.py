@@ -555,6 +555,26 @@ class AnalyzerCmd():
         return self._handle_commserver_response(response)
 
     # TODO:Test
+    # def set_simualted_io_output(self):
+    #    command = {'cmd': "readioout",
+    #               "msgid": self.msgid}
+    #    response = self._send(command)
+    #    return self._handle_commserver_response(response)
+
+    # TODO:Test
+    def set_io_report(self, enable: bool):
+        if enable:
+            param = "true"
+        else:
+            param = "false"
+
+        command = {'cmd': "reportio",
+                   "msgid": self.msgid,
+                   "p1": param}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
+    # TODO:Test
     def get_io_output(self):
         command = {'cmd': "readioout",
                    "msgid": self.msgid}
