@@ -555,7 +555,13 @@ class AnalyzerCmd():
         return self._handle_commserver_response(response)
 
     # TODO:Test
+    def get_io_output(self):
+        command = {'cmd': "readioout",
+                   "msgid": self.msgid}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
 
+    # TODO:Test
     def start_script_function(self, function_name: str, function_param: any):
         """ Start script function and return result.
 
