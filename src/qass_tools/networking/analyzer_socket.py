@@ -322,9 +322,91 @@ class AnalyzerCmd():
         :return: Informations out of info window in analyzer.
         :rtype: Dict
         """
+        command = {'cmd': "getversions", "msgid": self.msgid}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+    
+    #TODO:Test
+    def get_project_info(self) -> Dict:
+        """Method to read out anlyzer informations as current used project ID/name or analyer version.
+
+        :return: Informations about current project.
+        :rtype: Dict
+        """
         command = {'cmd': "getinfo", "msgid": self.msgid}
         response = self._send(command)
         return self._handle_commserver_response(response)
+    
+    #TODO:Test
+    def get_heartbeat(self):
+        """Method to read out anlyzer informations as current used project ID/name or analyer version.
+
+        :return: Informations about current project.
+        :rtype: Dict
+        """
+        command = {'cmd': "heartbeat", "msgid": self.msgid}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+    
+    #TODO:Test
+    def start_measuring_2(self, state="io"):
+        command = {'cmd': "startmeasuring", "msgid": self.msgid, "p1":state}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
+    #TODO:Test
+    def start_monitoring(self, state="io"):
+        command = {'cmd': "startmonitoring", "msgid": self.msgid, "p1":state}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
+    #TODO:Test
+    def calc_max_amp_per_band(self, user_dict=None, **kwargs):
+        """Method to calculate maximum amplitude per band. There are the opportunities to plot and save the result.
+
+        By entering a new value as **kwargs, you are able to change specific values in the default dict, which will be sended. The use of whole new dict is possible to replace all settings with user-defined values. Have in mind that your new dictionary must have identical keys like the default one.
+        
+        Default settings:
+        | Type | Key             | Default value |
+        | ---- | --------------- | ------------- |
+        | int  | channel         | 0             |
+        | bool | plot            | true          |
+        | bool | save            | false         |
+        | int  | amplitudetype   | 0             |
+
+        .. warning:: Check supported datatypes and range manually, as a automatic overproof is not provided yet.
+        :param user_dict: Possibility to parse your own dictionary instead of editing the default one, defaults to None
+        :type user_dict: Dict, optional
+        """
+        # helper dict with default values
+        default_dict = {'channel': "0",
+                        'plot': "0",
+                        'save': "0", 
+                        'amplitudetype': "true"
+                        }
+    
+        # command to build for analyzer
+        command = {'cmd': "calcmaxamplitude", 'msgid': self.msgid}
+        
+        # handle kwarg cases and update the default dict
+        if kwargs:
+            for kwarg in kwargs:
+                if kwarg in default_dict.keys():
+                    default_dict.update({kwarg: kwargs[kwarg]})
+                    self.logger.info(f"Updated {kwarg} to {kwargs[kwarg]}")
+        
+        # handle case that user input complete new dict 
+        if user_dict and user_dict.keys() == default_dict.keys():
+            self.logger.info("Use of user defined settings.")
+            # fill command with user defined settings values
+            command.update(user_dict)
+        else:
+            # fill command with updated default dict values
+            command.update(default_dict)
+        
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+    
 
     def _handle_appcmd_response(self, response):
         # change appearance
@@ -341,7 +423,7 @@ class AnalyzerCmd():
     def _handle_commserver_response(self, response) -> Dict:
         response = response[2:].decode()
         obj = json.loads(response)
-        #self.logger.info(obj)
+        self.logger.debug(obj)
         return obj
 
     def _send(self, command: Dict)  -> Dict:
@@ -361,3 +443,6 @@ class AnalyzerCmd():
         if not "setpreamp" in command['cmd']:
             response = self.s.recv(4096) # readed byte count
             return response
+
+with AnalyzerCmd("192.168.2.67") as opti:
+    opti.start_monitoring()
