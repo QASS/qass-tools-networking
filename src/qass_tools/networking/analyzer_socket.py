@@ -433,13 +433,19 @@ class AnalyzerCmd():
     
     #TODO:Test
     def start_operator_function_values(self, start=True):
-        command = {'cmd': "getpreampinfo", "msgid": self.msgid, "p1":f"{start}"}
+        command = {'cmd': "startoperatorfunctionvalues", "msgid": self.msgid, "p1":f"{start}"}
         response = self._send(command)
         return self._handle_commserver_response(response)
 
     #TODO:Test
     def stopp_operator_function_values(self):
-        command = {'cmd': "getpreampinfo", "msgid": self.msgid}
+        command = {'cmd': "stoppoperatorfunctionvalues", "msgid": self.msgid}
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
+    #TODO:Test
+    def set_serial_number_pending_process(self, serial_number:int):
+        command = {'cmd': "setpendingserial", "msgid": self.msgid, "p1":f"{serial_number}"}
         response = self._send(command)
         return self._handle_commserver_response(response)
 
