@@ -216,6 +216,13 @@ class AnalyzerCmd():
         response = self._send(command)
         return self._handle_commserver_response(response)
 
+    def remove_app_var(self, app_var_name: str):
+        command = {'cmd': "clearappvar",
+                   "msgid": self.msgid, "p1": app_var_name}
+
+        response = self._send(command)
+        return self._handle_commserver_response(response)
+
     def get_process_number(self) -> int:
         """Send command to give out process number as return.
 
