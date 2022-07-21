@@ -692,9 +692,9 @@ class AnalyzerCmd():
         if response.get("ok") == False:
             self.logger.debug(f"Optimizer response:{response}")
             self.logger.error(
-                "Parsed cmd command is unknown to analyzer, check log and documentation.")
+                "Parsed cmd command is unknown to analyzer: check log and documentation.")
             raise Exception(
-                "Parsed cmd command is unknown to analyzer, check log and documentation.")
+                "Parsed cmd command is unknown to analyzer: check log and documentation.")
 
     def _handle_commserver_response(self, response) -> Dict:
         response = response[2:].decode()
@@ -719,11 +719,17 @@ class AnalyzerCmd():
         # setpreamp doesn't send a response at all
         if not "setpreamp" in command['cmd']:
             # response = self.s.recv(4096)  # readed byte count
-            response = self.s.recv(8192)
-            return response
+            analyzer_response = self.s.recv(8192)  # readed byte count
+            if command['cmd'] == "appcmd":
+                self._handle_appcmd_response(analyzer_response)
+            else:
+                return self._handle_commserver_response(analyzer_response)
 
-    def _command_builder(self, **kwargs):
-        command =
+    def _value_parser(self, **kwargs):
+        command = {'cmd': "",
+                   "msgid": self.msgid}
+        command.update(kwargs)
+        return self._send(command)
 
 
 with AnalyzerCmd("192.168.2.67") as opti:
