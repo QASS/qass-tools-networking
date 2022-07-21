@@ -212,12 +212,9 @@ class AnalyzerCmd():
     def start_measuring(self) -> None:
         """Method sends a command to the connected analyzer to start a maesuring process.
         """
-        command = {'cmd': "AppCmd",
-                   "msgid": self.msgid, "p1": "startMeasuring"}
-        response = self._send(command)
-        self._handle_appcmd_response(response)
+        self._value_parser(cmd="AppCmd", p1="startMeasuring")
 
-    def start_sineGenerator(self, frequency: int, amplitude: int) -> None:
+    def start_sineGenerator(self, frequency: int, amplitude: Amplitudes) -> None:
         """Method sends command that sine generator generates a sine wave with custom frequency and amplitude settings.
 
         Note that you should consider that the sine generator needs a couple µs to start.
@@ -231,10 +228,8 @@ class AnalyzerCmd():
         a = list(Amplitudes)
         try:
             if amplitude in Amplitudes:
-                command = {'cmd': "AppCmd", "msgid": self.msgid,
-                           "p1": "StartSineGen", "p2": f"{frequency} {amplitude}"}
-                response = self._send(command)
-                self._handle_appcmd_response(response)
+                self._value_parser(
+                    cmd="AppCmd", p1="StartSineGen", p2=f"{frequency} {amplitude}")
             else:
                 raise ValueError
         except ValueError:
@@ -246,16 +241,12 @@ class AnalyzerCmd():
     def stop_sineGenerator(self) -> None:
         """Command to stop generating sine waves.
         """
-        command = {'cmd': "AppCmd", "msgid": self.msgid, "p1": "StopSineGen"}
-        response = self._send(command)
-        self._handle_appcmd_response(response)
+        self._value_parser(cmd="AppCmd", p1="StopSineGen")
 
     def stop_measuring(self) -> None:
         """Command to stop current measuring process.
         """
-        command = {'cmd': "AppCmd", "msgid": self.msgid, "p1": "stopMeasuring"}
-        response = self._send(command)
-        self._handle_appcmd_response(response)
+        self._value_parser(cmd="AppCmd", p1="stopMeasuring")
 
     def set_process_comment(self, proc_comm: str) -> None:
         """Set a process comment for current selected process.
@@ -265,10 +256,7 @@ class AnalyzerCmd():
         :param proc_comm: Text which should be seen and saved as process comment
         :type proc_comm: str
         """
-        command = {'cmd': "AppCmd", "msgid": self.msgid,
-                   "p1": "setprocesscomment", "p2": f"{proc_comm}"}
-        response = self._send(command)
-        self._handle_appcmd_response(response)
+        self._value_parser(cmd="AppCmd", p1="setprocesscomment", p2=proc_comm)
 
     def set_app_var(self, app_var_name: str, app_var_value: any) -> None:
         """Parse value to specific AppVar operator in operator network of analyzer.
@@ -280,10 +268,8 @@ class AnalyzerCmd():
         :param app_var_value: Value which should be assigned to operator. As value can be choosed any datatyp supported by python (e.g. float, int, str, json, ...).
         :type app_var_value: any
         """
-        command = {'cmd': "SetAppVar", "msgid": self.msgid,
-                   "p1": f"{app_var_name:}", "p2": f"{app_var_value}"}
-        response = self._send(command)
-        self._handle_commserver_response(response)
+
+        self._value_parser(cmd="setappvar", p1=app_var_name, p2=app_var_value)
 
     def set_app_var_appcmd(self, app_var_name: str, value: any) -> None:
         """Parse value to specific AppVar operator in operator network of analyzer.
@@ -297,10 +283,9 @@ class AnalyzerCmd():
         :param app_var_value: Value which should be assigned to operator. As value can be choosed any datatyp supported by python (e.g. float, int, str, json, ...).
         :type app_var_value: any
         """
-        command = {'cmd': "AppCmd", "msgid": self.msgid,
-                   "p1": "SetAppVar", "p2": f"{app_var_name} {value}"}
-        response = self._send(command)
-        self._handle_appcmd_response(response)
+
+        self._value_parser(cmd="AppCmd", p1="SetAppVar",
+                           p2=f"{app_var_name} {value}")
 
     def get_app_var(self, app_var_name: str) -> None:
         """Get value of AppVar by name.
@@ -310,10 +295,8 @@ class AnalyzerCmd():
         :return: AppVar value
         :rtype: any
         """
-        command = {'cmd': "getappvar", "msgid": self.msgid, "p1": app_var_name}
+        val = self._value_parser(cmd="getappvar", p1=app_var_name)
 
-        response = self._send(command)
-        val = self._handle_commserver_response(response)
         return val.get('result')
 
     def remove_app_var(self, app_var_name: str) -> None:
@@ -322,27 +305,21 @@ class AnalyzerCmd():
         :param app_var_name: Naem of AppVar to remove.
         :type app_var_name: str
         """
-        command = {'cmd': "clearappvar",
-                   "msgid": self.msgid, "p1": app_var_name}
+        self._value_parser(cmd="clearappvar", p1=app_var_name)
 
-        response = self._send(command)
-        self._handle_commserver_response(response)
-
-    def get_app_vars_report(self, enable=True) -> Dict:
+    def get_app_vars_report(self, mode: Union[bool, str] = "enabled") -> Dict:
         """ Get report about existing AppVars and their changes.
 
         Return dict contains list of AppVars with name and value, as access time and unixtime.
 
-        :param enable: Can be set to, defaults to True
-        :type enable: bool, optional
+        :param mode: Can be set to enabled or disabled, defaults to enbaled
+        :type mode: bool, str, optional
         :return: AppVar report
         :rtype: Dict
         """
-        command = {'cmd': "reportappvars",
-                   "msgid": self.msgid, "p1": f"{enable}"}
 
-        response = self._send(command)
-        val = self._handle_commserver_response(response)
+        val = self._value_parser(cmd="reportappvars", p1=self.translator[mode])
+        # process response
         val_dict = {"appvar_list": val.get("appvar_list"), "access_time": val.get(
             "appvar_readdate"), "unix_time": val.get("unixtime")}
 
@@ -351,15 +328,10 @@ class AnalyzerCmd():
     def get_process_number(self) -> int:
         """Send command to give out process number as return.
 
-        .. note:: Analyzer response contains more information than only the process number. Private method will extract claimed information.
-        :raise: Check for status of response. If status (key: "ok") is False, exception is risen.
         :return: Process number of current selected process
         :rtype: int
         """
-        command = {'cmd': "getprocessnumber", "msgid": self.msgid}
-
-        response = self._send(command)
-        obj = self._handle_commserver_response(response)
+        obj = self._value_parser(cmd="getprocessnumber")
 
         return obj.get("processnumber")
 
@@ -371,11 +343,7 @@ class AnalyzerCmd():
         :param project_name: Name of new project
         :type project_name: str
         """
-        command = {'cmd': "createloadproject",
-                   'msgid': self.msgid, 'p1': project_name}
-
-        response = self._send(command)
-        self._handle_commserver_response(response)
+        self._value_parser(cmd="createloadproject", p1=project_name)
 
     def send_AppCmd(self, param_one: str, param_two=None) -> None:
         """General method to send arbitrary AppCmd to analyzer.
@@ -388,14 +356,13 @@ class AnalyzerCmd():
         """
         command = {'cmd': "AppCmd", 'msgid': self.msgid, 'p1': param_one}
 
-        if param_two and param_two == str:
-            command = {'cmd': "AppCmd", 'msgid': self.msgid,
-                       'p1': param_one, 'p2': param_two}
+        if param_two:
+            if param_two == str:
+                self._value_parser(cmd="AppCmd", p1=param_one, p2=param_two)
+            else:
+                raise TypeError("Second parameter has to be a string.")
         else:
-            raise TypeError("Second parameter has to be a string.")
-
-        response = self._send(command)
-        self._handle_appcmd_response(response)
+            self._value_parser(cmd="AppCmd", p1=param_one)
 
     def set_preamp(self, **kwargs) -> None:
         """Method to set preamplifier and multiplexer settings.
@@ -445,7 +412,7 @@ class AnalyzerCmd():
         :rtype: str
         """
         val = self._value_parser(cmd="getversions")
-
+        # process response
         infos = val.get("v")
         while "\\n" in infos:
             analyzer_info = analyzer_info.replace("\\n", "\n")
@@ -458,9 +425,8 @@ class AnalyzerCmd():
         :return: Informations about current project.
         :rtype: Dict
         """
-        command = {'cmd': "getinfo", "msgid": self.msgid}
-        response = self._send(command)
-        project_info = self._handle_commserver_response(response)
+        project_info = self._value_parser(cmd="getinfo")
+        # process response
         project_info.pop("v")
         project_info.pop("cmd")
 
@@ -472,29 +438,26 @@ class AnalyzerCmd():
         :return: True if message comes back.
         :rtype: bool
         """
-        command = {'cmd': "heartbeat", "msgid": self.msgid}
-        response = self._send(command)
-        val = self._handle_commserver_response(response)
+        val = self._value_parser(cmd="heartbeat")
+        # process response
         if val:
             self.logger.info("No worries. I'm still alive.")
             return True
 
     def run_measuring_mode(self, mode: Union[bool, str]) -> None:
-        """Start or stop a measurement
+        """Start or stop a measurement.
 
+        Short settings:
         | Measuring mode    | Key       |
         | ----------------- | --------- |
         | start monitoring  | "monitor" |
         | start measurement | "true"    |
         | stop measurement  | "false"   |
 
-        :param mode: Choosen measuring mode, defaults to "true"
-        :type mode: str, optional
-        :raises ValueError: Raises if keyword argument "mode" is parsed with invalid values.
+        :param mode: Choosen measuring mode out of table above.
+        :type mode: str, bool
+        :raises KeyError: Raises if keyword argument "mode" is parsed with invalid values.
         """
-
-        # settings = {'cmd': "startmeasuring",
-        #            "p1": self.translator[mode]}
         self._value_parser(cmd="startmeasuring", p1=self.translator[mode])
 
     def run_monitoring_mode(self, mode: Union[bool, str]) -> None:
@@ -508,9 +471,8 @@ class AnalyzerCmd():
 
         :param mode: Switch between start monitoring ("true") or stop monitoring  ("false"). For supported keys see translator.
         :type mode: str, bool
+        :raises KeyError: Raises if keyword argument "mode" is parsed with invalid values.
         """
-        # command = {'cmd': "startmonitoring",
-        #           "msgid": self.msgid, "p1": self.translator[mode]}
         self._value_parser(cmd="startmonitoring", p1=self.translator[mode])
 
     def calc_max_amp_per_band(self, **kwargs):
@@ -579,9 +541,7 @@ class AnalyzerCmd():
         :return: Measurepositions and calculated energy value.
         :rtype: Dict
         """
-        command = {'cmd': "getmaxmeasurepositions", "msgid": self.msgid}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
+        return self._value_parser(cmd="getmaxmeasurepositions")
 
     # TODO:Test
     def get_preamp_settings(self, port: int):
@@ -785,7 +745,7 @@ class AnalyzerCmd():
         if expect_response:
             analyzer_response = self._receive()
 
-            if command['cmd'] == "appcmd":
+            if command['cmd'] == "AppCmd":
                 self._handle_appcmd_response(analyzer_response)
             else:
                 return self._handle_commserver_response(analyzer_response)
