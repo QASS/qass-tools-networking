@@ -37,6 +37,82 @@ class Amplitudes(Enum):
         return list(Amplitudes)
 
 
+class Channels(IntEnum):
+    CHANNEL_1 = 0
+    CHANNEL_2 = 1
+    CHANNEL_3 = 2
+    CHANNEL_4 = 3
+
+
+class ChannelPorts(IntEnum):
+    CHANNEL_PORT_1 = 0
+    CHANNEL_PORT_2 = 1
+    CHANNEL_PORT_3 = 2
+    CHANNEL_PORT_4 = 3
+    CHANNEL_PORT_5 = 4
+    CHANNEL_PORT_6 = 5
+    CHANNEL_PORT_7 = 6
+    CHANNEL_PORT_8 = 7
+    CHANNEL_VIRT_PORT_9 = 8
+    CHANNEL_VIRT_PORT_10 = 9
+    CHANNEL_VIRT_PORT_11 = 10
+    CHANNEL_VIRT_PORT_12 = 11
+    CHANNEL_VIRT_PORT_13 = 12
+    CHANNEL_VIRT_PORT_14 = 13
+    CHANNEL_VIRT_PORT_15 = 14
+    CHANNEL_VIRT_PORT_16 = 15
+    CHANNEL_NOT_USED = 17
+
+
+class Samplerates(IntEnum):
+    SAMPLERATE_100_MHz = 0
+    SAMPLERATE_50_MHz = 1
+    SAMPLERATE_25_MHz = 2
+    SAMPLERATE_12_MHz = 3
+    SAMPLERATE_6_MHz = 4
+    SAMPLERATE_3_MHz = 5
+    SAMPLERATE_1600_kHz = 6
+    SAMPLERATE_800_kHz = 7
+    SAMPLERATE_400_kHz = 8
+    SAMPLERATE_200_kHz = 9
+    SAMPLERATE_100_kHz = 10
+
+
+class FFTOversampling(IntEnum):
+    FFT_OVERSAMPLING_2_TIMES = 1
+    FFT_OVERSAMPLING_4_TIMES = 2
+    FFT_OVERSAMPLING_8_TIMES = 3
+    FFT_OVERSAMPLING_16_TIMES = 4
+    FFT_OVERSAMPLING_32_TIMES = 5
+    FFT_OVERSAMPLING_64_TIMES = 6
+    NONE_FFT_OVERSAMPLING = 0
+
+
+class FFTWindowing(IntEnum):
+    FFT_WINDOWING_HANNING = 0
+    NONE_FFT_WINDOWING = 1
+
+
+class FFTLogarithmic(IntEnum):
+    FFT_LOGARITHMIC_BASE_1 = 1
+    FFT_LOGARITHMIC_BASE_2 = 2
+    FFT_LOGARITHMIC_BASE_3 = 3
+    FFT_LOGARITHMIC_BASE_4 = 4
+    FFT_LOGARITHMIC_BASE_5 = 5
+    FFT_LOGARITHMIC_BASE_6 = 6
+    FFT_LOGARITHMIC_BASE_7 = 7
+    FFT_LOGARITHMIC_BASE_8 = 8
+    FFT_LOGARITHMIC_BASE_9 = 9
+    FFT_LOGARITHMIC_BASE_10 = 10
+    FFT_LOGARITHMIC_BASE_11 = 11
+    FFT_LOGARITHMIC_BASE_12 = 12
+    FFT_LOGARITHMIC_BASE_13 = 13
+    FFT_LOGARITHMIC_BASE_14 = 14
+    FFT_LOGARITHMIC_BASE_15 = 15
+    FFT_LOGARITHMIC_BASE_16 = 16
+    NONE_FFT_OVERSAMPLING = 0
+
+
 class SysAmplitudesType(IntEnum):
     """System amplitud types avaible in analyzer software. Helps to represent calced
     maximum amplitudes in different styles.
@@ -331,7 +407,6 @@ class AnalyzerCmd():
         | int  | gain                            | 800   |
         | int  | subport                         | 0     |
 
-        .. warning:: Check supported datatypes and range manually, as a automatic overproof is not provided yet.
         :param user_dict: Possibility to parse your own dictionary instead of editing the default one, defaults to None
         :type user_dict: Dict, optional
         """
