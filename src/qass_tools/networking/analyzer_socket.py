@@ -64,6 +64,17 @@ class ChannelPorts(IntEnum):
     CHANNEL_NOT_USED = 17
 
 
+class PreampPorts(IntEnum):
+    PREAMP_PORT_1 = 0
+    PREAMP_PORT_2 = 1
+    PREAMP_PORT_3 = 2
+    PREAMP_PORT_4 = 3
+    PREAMP_PORT_5 = 4
+    PREAMP_PORT_6 = 5
+    PREAMP_PORT_7 = 6
+    PREAMP_PORT_8 = 7
+
+
 class Samplerates(IntEnum):
     SAMPLERATE_100_MHz = 0
     SAMPLERATE_50_MHz = 1
@@ -386,65 +397,46 @@ class AnalyzerCmd():
         response = self._send(command)
         self._handle_appcmd_response(response)
 
-    def set_preamp(self, user_dict=None, **kwargs) -> None:
+    def set_preamp(self, **kwargs) -> None:
         """Method to set preamplifier and multiplexer settings.
 
-        By entering a new value as **kwargs, you are able to change specific values in the default dict, which will be sended. The use of whole new dict is possible to replace all settings with user-defined values. Have in mind that your new dictionary must have identical keys like the default one.
+        By entering a new value as **kwargs, you are able to change default values, which will be sended.
 
         Default settings:
-        | Type | Multiplexer                     | Value |
-        | ---- | ------------------------------- | ----- |
-        | int  | channel (dropdown item)         | 0     |
-        | int  | chp (dropdown item)             | 0     |
-        | int  | preampport (dropdown item)      | 0     |
-        | bool | fft                             | true  |
-        | bool | signal                          | false |
-        | int  | samplerate (dropdown item)      | 6     |
-        | int  | fftoversampling (dropdown item) | 3     |
-        | int  | fftwindowing (dropdown item)    | 0     |
-        | int  | fftlogarithmic (dropdown item)  | 14    |
-        | bool | filter                          | false |
-        | int  | gain                            | 800   |
-        | int  | subport                         | 0     |
+        | Type             | Multiplexer     | Value        |
+        | ---------------- | ----------------| ------------ |
+        | Channels         | channel         | Channel #1   |
+        | ChannelPorts     | chp             | Port 1       |
+        | PreampPorts      | preampport      | Preampport 1 |
+        | Samplerates      | fft             | enabled      |
+        | Boolean          | signal          | disabled     |
+        | FFTOversampling  | samplerate      | 1600 kHz     |
+        | FFTOversampling  | fftoversampling | 8 times      |
+        | FFTWindowing     | fftwindowing    | Hanning      |
+        | FFTLogarithmic   | fftlogarithmic  | Base 14      |
+        | Boolean          | filter          | disabled     |
+        | Integer          | gain            | 800          |
+        | Integer          | subport         | not used     |
 
-        :param user_dict: Possibility to parse your own dictionary instead of editing the default one, defaults to None
-        :type user_dict: Dict, optional
         """
         # helper dict with default values
-        default_dict = {'channel': "0",
-                        'chp': "0",
-                        'preampport': "0",
-                        'fft': "true",
-                        'signal': "false",
-                        'samplerate': "6",
-                        'fftoversampling': "3",
-                        'fftwindowing': "0",
-                        'fftlogarithmic': "14",
-                        'filter': "false",
-                        'gain': "800",
-                        'subport': "0"
-                        }
+        settings = {'cmd': "setpreamp",
+                    'channel': Channels.CHANNEL_1,
+                    'chp': ChannelPorts.CHANNEL_PORT_1,
+                    'preampport': PreampPorts.PREAMP_PORT_1,
+                    'fft': True,
+                    'signal': False,
+                    'samplerate': Samplerates.SAMPLERATE_1600_kHz,
+                    'fftoversampling': FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
+                    'fftwindowing': FFTWindowing.FFT_WINDOWING_HANNING,
+                    'fftlogarithmic': FFTLogarithmic.FFT_LOGARITHMIC_BASE_14,
+                    'filter': True,
+                    'gain': "800",
+                    'subport': "0"
+                    }
 
-        # command to build for analyzer
-        command = {'cmd': "setpreamp", 'msgid': self.msgid}
-
-        # handle kwarg cases and update the default dict
-        if kwargs:
-            for kwarg in kwargs:
-                if kwarg in default_dict.keys():
-                    default_dict.update({kwarg: kwargs[kwarg]})
-                    self.logger.info(f"Updated {kwarg} to {kwargs[kwarg]}")
-
-        # handle case that user input complete new dict
-        if user_dict and user_dict.keys() == default_dict.keys():
-            self.logger.info("Use of user defined settings for preamp.")
-            # fill command with user defined settings values
-            command.update(user_dict)
-        else:
-            # fill command with updated default dict values
-            command.update(default_dict)
-
-        self._send(command)
+        settings.update(kwargs)
+        self._value_parser(settings)
 
     def get_analyzer_versions(self) -> str:
         """Method to read out anlyzer version informations.
@@ -452,9 +444,8 @@ class AnalyzerCmd():
         :return: Informations out of info window in analyzer.
         :rtype: str
         """
-        command = {'cmd': "getversions", "msgid": self.msgid}
-        response = self._send(command)
-        val = self._handle_commserver_response(response)
+        val = self._value_parser(cmd="getversions")
+
         infos = val.get("v")
         while "\\n" in infos:
             analyzer_info = analyzer_info.replace("\\n", "\n")
