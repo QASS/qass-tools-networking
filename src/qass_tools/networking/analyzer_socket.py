@@ -12,21 +12,21 @@ import sys
 class Amplitudes(Enum):
     """ Enum class to list and check avaible amplitudes in mV to generate sine wave. 
     """
-    AMP_1 = 64
-    AMP_2 = 128
-    AMP_3 = 191
-    AMP_4 = 255
-    AMP_5 = 318
-    AMP_6 = 382
-    AMP_7 = 446
-    AMP_8 = 509
-    AMP_9 = 573
-    AMP_10 = 637
-    AMP_11 = 700
-    AMP_12 = 764
-    AMP_13 = 828
-    AMP_14 = 891
-    AMP_15 = 955
+    AMP_64_mV = 64
+    AMP_128_mV = 128
+    AMP_191_mV = 191
+    AMP_255_mV = 255
+    AMP_318_mV = 318
+    AMP_382_mV = 382
+    AMP_446_mV = 446
+    AMP_509_mV = 509
+    AMP_573_mV = 573
+    AMP_637_mV = 637
+    AMP_700_mV = 700
+    AMP_764_mV = 764
+    AMP_828_mV = 828
+    AMP_891_mV = 891
+    AMP_955_mV = 955
 
     @property
     def get_list(self):
@@ -76,10 +76,10 @@ class AnalyzerCmd():
         self.port = port
         # message ID to assign command to analyzer and specific response
         self.msgid = 0
-        self.translator = {True: "true", "start": "true",
+        self.translator = {True: "true", "start": "true", "true": "true",
                            "beginn": "true", "enabled": "true", "on": "true",
                            False: "false", "stop": "false", "end": "false", "disabled": "false",
-                           "monitor": "monitor"}
+                           "false": "false", "monitor": "monitor"}
         # short solution logger to sys.stdout
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
                             format='[%(asctime)s] - %(levelname)s - %(message)s')
@@ -413,7 +413,7 @@ class AnalyzerCmd():
             self.logger.info("No worries. I'm still alive.")
             return True
 
-    def run_measuring_mode(self, mode: str = "true") -> None:
+    def run_measuring_mode(self, mode: Union[bool, str]) -> None:
         """Start or stop a measurement
 
         | Measuring mode    | Key       |
@@ -427,10 +427,9 @@ class AnalyzerCmd():
         :raises ValueError: Raises if keyword argument "mode" is parsed with invalid values.
         """
 
-        command = {'cmd': "startmeasuring",
-                   "msgid": self.msgid, "p1": self.translator[mode]}
-        response = self._send(command)
-        self._handle_commserver_response(response)
+        # settings = {'cmd': "startmeasuring",
+        #            "p1": self.translator[mode]}
+        self._value_parser(cmd="startmeasuring", p1=self.translator[mode])
 
     def run_monitoring_mode(self, mode: Union[bool, str]) -> None:
         """Start or stop monitoring modus.
@@ -444,10 +443,9 @@ class AnalyzerCmd():
         :param mode: Switch between start monitoring ("true") or stop monitoring  ("false"). For supported keys see translator.
         :type mode: str, bool
         """
-        command = {'cmd': "startmonitoring",
-                   "msgid": self.msgid, "p1": self.translator[mode]}
-        response = self._send(command)
-        self._handle_commserver_response(response)
+        # command = {'cmd': "startmonitoring",
+        #           "msgid": self.msgid, "p1": self.translator[mode]}
+        self._value_parser(cmd="startmonitoring", p1=self.translator[mode])
 
     def calc_max_amp_per_band(self, **kwargs):
         """Method to calculate maximum amplitude per band. 
@@ -467,15 +465,15 @@ class AnalyzerCmd():
         :type user_dict: Dict, optional
         :raises ValueError: Parsed key or related value is not supported.
         """
-        # helper dict with default values
-        default_dict = {'channel': 0,
-                        'plot': True,
-                        'save': False,
-                        'amplitudetype': SysAmplitudesType.AMPLITUDE_DEFAULT
-                        }
+        # command to build for analyzer
+        settings = {'cmd': "calcmaxamplitude", 'channel': 0,
+                    'plot': True,
+                    'save': False,
+                    'amplitudetype': SysAmplitudesType.AMPLITUDE_DEFAULT
+                    }
         # Check for right kwargs keys
         for kwarg in kwargs.keys():
-            if kwarg not in default_dict.keys():
+            if kwarg not in settings.keys():
                 self.logger.error(
                     "Choosen settings key is not supported in this method.")
                 raise ValueError(
@@ -486,21 +484,13 @@ class AnalyzerCmd():
                 raise ValueError(
                     "Choosen amplitudetype is not a analyzer system aplitude type.")
 
-        # command to build for analyzer
-        command = {'cmd': "calcmaxamplitude", 'msgid': self.msgid, 'channel': 0,
-                   'plot': True,
-                   'save': False,
-                   'amplitudetype': SysAmplitudesType.AMPLITUDE_DEFAULT
-                   }
-
+        settings.update(kwargs)
         self.logger.info(
             f"Updated settings to {kwargs.items()}")
 
-        command.update(kwargs)
-        response = self._send(command)
-
+        response_dict = self._value_parser(**settings)
         # extract important information
-        response_dict = self._handle_commserver_response(response)
+
         max_amp = response_dict.get("p1")
 
         return np.fromstring(max_amp, sep=',')
@@ -725,16 +715,15 @@ class AnalyzerCmd():
                    "msgid": self.msgid}
         command.update(kwargs)
         self._send(command)
-        if not expect_response:
-            return
+        print(command)
+        if expect_response:
+            analyzer_response = self._receive()
 
-        analyzer_response = self._receive()
-
-        if command['cmd'] == "appcmd":
-            self._handle_appcmd_response(analyzer_response)
-        else:
-            return self._handle_commserver_response(analyzer_response)
+            if command['cmd'] == "appcmd":
+                self._handle_appcmd_response(analyzer_response)
+            else:
+                return self._handle_commserver_response(analyzer_response)
 
 
 with AnalyzerCmd("192.168.2.67") as opti:
-    val = opti.run_monitoring_mode("mystart")
+    val = opti.run_measuring_mode("true")
