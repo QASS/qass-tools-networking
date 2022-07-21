@@ -3,21 +3,10 @@ import json
 from turtle import clear
 import numpy as np
 import time
-from enum import Enum, auto
-from typing import Any, Dict
+from enum import Enum, auto, IntEnum
+from typing import Any, Dict, Union
 import logging
 import sys
-
-
-class SysAmplitudesType(Enum):
-
-    AMPLITUDE_DEFAULT = 0
-    AMPLITUDE_ADC_OUT = 1			# Amplitude is original ADC output value from hardware
-    # Amplitude is normalized energy value. (timedif x frqdif x normalized amplitude)
-    AMPLITUDE_NORM_ENERGY = 2
-    AMPLITUDE_NORM_ONE = 3			# Amplitude normalized to 1 as full ADC value.
-    AMPLITUDE_MILLI_VOLT = 4
-    AMPLITUDE_MICRO_VOLT = 5
 
 
 class Amplitudes(Enum):
@@ -48,6 +37,21 @@ class Amplitudes(Enum):
         return list(Amplitudes)
 
 
+class SysAmplitudesType(IntEnum):
+    """System amplitud types avaible in analyzer software. Helps to represent calced
+    maximum amplitudes in different styles.
+    """
+    AMPLITUDE_DEFAULT = 0
+    # Amplitude is original ADC output value from hardware
+    AMPLITUDE_ADC_OUT = 1
+    # Amplitude is normalized energy value. (timedif x frqdif x normalized amplitude)
+    AMPLITUDE_NORM_ENERGY = 2
+    # Amplitude normalized to 1 as full ADC value:
+    AMPLITUDE_NORM_ONE = 3
+    AMPLITUDE_MILLI_VOLT = 4
+    AMPLITUDE_MICRO_VOLT = 5
+
+
 class AnalyzerCmd():
     """ Class to communicate with Analyzer over network socket. Implied Methods: start/ end measuring, set process comment, set appVars and start/stop sine generator with spefici parameters. Functions that communicate
     with an analyzer build a dictionary to store user-given settings. With the help of the "send" function each dictionary will be converted to a JSON File and send to the connected analyzer. Each response from analyzer 
@@ -72,7 +76,10 @@ class AnalyzerCmd():
         self.port = port
         # message ID to assign command to analyzer and specific response
         self.msgid = 0
-
+        self.translator = {True: "true", "start": "true",
+                           "beginn": "true", "enabled": "true", "on": "true",
+                           False: "false", "stop": "false", "end": "false", "disabled": "false",
+                           "monitor": "monitor"}
         # short solution logger to sys.stdout
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
                             format='[%(asctime)s] - %(levelname)s - %(message)s')
@@ -419,84 +426,83 @@ class AnalyzerCmd():
         :type mode: str, optional
         :raises ValueError: Raises if keyword argument "mode" is parsed with invalid values.
         """
-        if mode not in ["true", "monitor", "false"]:
-            self.logger.error("Choosen mode is not supported.")
-            raise ValueError("Choosen mode is not supported.")
 
-        command = {'cmd': "startmeasuring", "msgid": self.msgid, "p1": mode}
+        command = {'cmd': "startmeasuring",
+                   "msgid": self.msgid, "p1": self.translator[mode]}
         response = self._send(command)
         self._handle_commserver_response(response)
 
-    def run_monitoring_mode(self, mode="start") -> None:
+    def run_monitoring_mode(self, mode: Union[bool, str]) -> None:
         """Start or stop monitoring modus.
 
+        Short settings:
         | Measuring mode    | Key       |
         | ----------------- | --------- |
-        | start monitoring  | "start"   |
-        | stop monitoring   | "stop"    |
+        | start monitoring  | "true"    |
+        | stop monitoring   | "false"   |
 
-        :param mode: Mode if monitoring get started or not, defaults to "start"
-        :type mode: str, optional
-        :raises ValueError: Raises if keyword argument "mode" is parsed with invalid values
+        :param mode: Switch between start monitoring ("true") or stop monitoring  ("false"). For supported keys see translator.
+        :type mode: str, bool
         """
-        if mode == "start":
-            state = "true"
-        elif mode == "stop":
-            state == "false"
-        else:
-            self.logger.error("Choosen mode is not supported.")
-            raise ValueError("Choosen mode is not supported.")
-
-        command = {'cmd': "startmonitoring", "msgid": self.msgid, "p1": state}
+        command = {'cmd': "startmonitoring",
+                   "msgid": self.msgid, "p1": self.translator[mode]}
         response = self._send(command)
         self._handle_commserver_response(response)
 
-    def calc_max_amp_per_band(self, user_dict=None, **kwargs):
-        """Method to calculate maximum amplitude per band. There are the opportunities to plot and save the result.
+    def calc_max_amp_per_band(self, **kwargs):
+        """Method to calculate maximum amplitude per band. 
 
-        By entering a new value as **kwargs, you are able to change specific values in the default dict, which will be sended. The use of whole new dict is possible to replace all settings with user-defined values. Have in mind that your new dictionary must have identical keys like the default one.
+        By entering a new value as **kwargs, you are able to change default values, which will be sended.
 
         Default settings:
-        | Type | Key             | Default value | Action                   |
+        | Type | Key | kwargs    | Default value | Action                   |
         | ---- | --------------- | ------------- | ------------------------ |
         | int  | channel         | 0             | Choose channel buffer    |
         | bool | plot            | true          | Creates plot buffer      |
         | bool | save            | false         | Creates buffer with data |
-        | int  | amplitudetype   | 0             | ?????
+        | int  | amplitudetype   | 0             | Type calced of amplitude |
 
         .. warning:: Check supported datatypes and range manually, as a automatic overproof is not provided yet.
         :param user_dict: Possibility to parse your own dictionary instead of editing the default one, defaults to None
         :type user_dict: Dict, optional
+        :raises ValueError: Parsed key or related value is not supported.
         """
         # helper dict with default values
         default_dict = {'channel': 0,
                         'plot': True,
                         'save': False,
-                        'amplitudetype': Am
+                        'amplitudetype': SysAmplitudesType.AMPLITUDE_DEFAULT
                         }
+        # Check for right kwargs keys
+        for kwarg in kwargs.keys():
+            if kwarg not in default_dict.keys():
+                self.logger.error(
+                    "Choosen settings key is not supported in this method.")
+                raise ValueError(
+                    "Choosen settings key is not supported in this method.")
+            if kwarg == "amplitudetype" and kwargs[kwarg] not in SysAmplitudesType:
+                self.logger.error(
+                    "Choosen amplitudetype is not a analyzer system aplitude type.")
+                raise ValueError(
+                    "Choosen amplitudetype is not a analyzer system aplitude type.")
 
         # command to build for analyzer
-        command = {'cmd': "calcmaxamplitude", 'msgid': self.msgid}
+        command = {'cmd': "calcmaxamplitude", 'msgid': self.msgid, 'channel': 0,
+                   'plot': True,
+                   'save': False,
+                   'amplitudetype': SysAmplitudesType.AMPLITUDE_DEFAULT
+                   }
 
-        # handle kwarg cases and update the default dict
-        if kwargs:
-            for kwarg in kwargs:
-                if kwarg in default_dict.keys():
-                    default_dict.update({kwarg: kwargs[kwarg]})
-                    self.logger.info(f"Updated {kwarg} to {kwargs[kwarg]}")
+        self.logger.info(
+            f"Updated settings to {kwargs.items()}")
 
-        # handle case that user input complete new dict
-        if user_dict and user_dict.keys() == default_dict.keys():
-            self.logger.info("Use of user defined settings.")
-            # fill command with user defined settings values
-            command.update(user_dict)
-        else:
-            # fill command with updated default dict values
-            command.update(default_dict)
-
+        command.update(kwargs)
         response = self._send(command)
+
+        # extract important information
         response_dict = self._handle_commserver_response(response)
         max_amp = response_dict.get("p1")
+
         return np.fromstring(max_amp, sep=',')
 
     # TODO:Test
@@ -511,9 +517,13 @@ class AnalyzerCmd():
         response = self._send(command)
         return self._handle_commserver_response(response)
 
-    # TODO:Test
-    def get_max_measure_positions(self):
-        command = {'cmd': "get_max_measure_positions", "msgid": self.msgid}
+    def get_max_measure_positions(self) -> Dict:
+        """_summary_
+
+        :return: Measurepositions and calculated energy value.
+        :rtype: Dict
+        """
+        command = {'cmd': "getmaxmeasurepositions", "msgid": self.msgid}
         response = self._send(command)
         return self._handle_commserver_response(response)
 
@@ -616,42 +626,34 @@ class AnalyzerCmd():
     #    return self._handle_commserver_response(response)
 
     # TODO:Test
-    def set_io_report(self, enable: bool):
+    def set_io_report(self, mode: Union[str, bool]):
         """Switches I/O register report on or off.
 
-        :param enable: Switch report to on (True) or off (False)
-        :type enable: bool
+        :param mode: Switch report to on (True) or off (False)
+        :type mode: bool, str
         :return: standardized analyzer respond
         :rtype: dict
         """
-        if enable:
-            param = "true"
-        else:
-            param = "false"
 
         command = {'cmd': "reportio",
                    "msgid": self.msgid,
-                   "p1": param}
+                   "p1": self.translator[mode]}
         response = self._send(command)
         self._handle_commserver_response(response)
 
     # TODO:Test
-    def set_process_number_report(self, enable: bool):
+    def set_process_number_report(self, mode: Union[str, bool]):
         """Switches process number report on or off.
 
-        :param enable: Switch report to on (True) or off (False)
-        :type enable: bool
-        :return: standardized analyzer respond
+        :param mode: Switch report to on ("true") or off ("false"). For supported keys see translator.
+        :type mode: bool, str
+        :return: standardized analyzer response
         :rtype: dict
         """
-        if enable:
-            param = "true"
-        else:
-            param = "false"
 
         command = {'cmd': "reportprocessnumber",
                    "msgid": self.msgid,
-                   "p1": param}
+                   "p1": self.translator[mode]}
         response = self._send(command)
         self._handle_commserver_response(response)
 
@@ -690,9 +692,9 @@ class AnalyzerCmd():
         if response.get("ok") == False:
             self.logger.debug(f"Optimizer response:{response}")
             self.logger.error(
-                "Analyzer could not perform action. Check your command details and Analyzer LOG")
+                "Parsed cmd command is unknown to analyzer, check log and documentation.")
             raise Exception(
-                "Analyzer could not perform action. Check your command details and Analyzer LOG.")
+                "Parsed cmd command is unknown to analyzer, check log and documentation.")
 
     def _handle_commserver_response(self, response) -> Dict:
         response = response[2:].decode()
@@ -716,9 +718,13 @@ class AnalyzerCmd():
         # handle special cases
         # setpreamp doesn't send a response at all
         if not "setpreamp" in command['cmd']:
-            response = self.s.recv(4096)  # readed byte count
+            # response = self.s.recv(4096)  # readed byte count
+            response = self.s.recv(8192)
             return response
+
+    def _command_builder(self, **kwargs):
+        command =
 
 
 with AnalyzerCmd("192.168.2.67") as opti:
-    proc = opti.calc_max_amp_per_band(save=True)
+    val = opti.run_monitoring_mode("mystart")
