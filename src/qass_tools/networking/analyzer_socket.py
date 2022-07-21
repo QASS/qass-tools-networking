@@ -715,21 +715,25 @@ class AnalyzerCmd():
 
         self.s.sendall(cmd_str)
 
-        # handle special cases
-        # setpreamp doesn't send a response at all
-        if not "setpreamp" in command['cmd']:
-            # response = self.s.recv(4096)  # readed byte count
-            analyzer_response = self.s.recv(8192)  # readed byte count
-            if command['cmd'] == "appcmd":
-                self._handle_appcmd_response(analyzer_response)
-            else:
-                return self._handle_commserver_response(analyzer_response)
+    def _receive(self):
+        # response = self.s.recv(4096)  # readed byte count
+        analyzer_response = self.s.recv(8192)  # readed byte count
+        return analyzer_response
 
-    def _value_parser(self, **kwargs):
+    def _value_parser(self, expect_response=True, **kwargs):
         command = {'cmd': "",
                    "msgid": self.msgid}
         command.update(kwargs)
-        return self._send(command)
+        self._send(command)
+        if not expect_response:
+            return
+
+        analyzer_response = self._receive()
+
+        if command['cmd'] == "appcmd":
+            self._handle_appcmd_response(analyzer_response)
+        else:
+            return self._handle_commserver_response(analyzer_response)
 
 
 with AnalyzerCmd("192.168.2.67") as opti:
