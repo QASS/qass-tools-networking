@@ -543,41 +543,58 @@ class AnalyzerCmd():
         """
         return self._value_parser(cmd="getmaxmeasurepositions")
 
-    # TODO:Test
-    def get_preamp_settings(self, port: int):
-        command = {'cmd': "getpreampinfo",
-                   "msgid": self.msgid, "p1": f"{port}"}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
+    # TODO: Source code or peter ---'t:2023;sn:980;s:1;'
+    def get_preamp_settings(self, preampport: PreampPorts):
+        """_summary_
 
-    # TODO:Test
-    def start_operator_function_values(self, start=True):
-        command = {'cmd': "startoperatorfunctionvalues",
-                   "msgid": self.msgid, "p1": f"{start}"}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
+        _extended_summary_
 
-    # TODO:Test
-    def stopp_operator_function_values(self):
-        command = {'cmd': "stoppoperatorfunctionvalues", "msgid": self.msgid}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
+        :param preampport: _description_
+        :type preampport: PreampPorts
+        :raises KeyError: Raises if parsed variable is no PreampPorts enum
+        :return: _description_
+        :rtype: _type_
+        """
+        if preampport in PreampPorts:
+            return self._value_parser(cmd="getpreampinfo", p1=preampport)
+        else:
+            self.logger.error(
+                "Choosen preampport is not a analyzer system preampport.")
+            raise KeyError(
+                "Choosen preampport is not a analyzer system preampport.")
 
-    # TODO:Test
-    def set_serial_number_pending_process(self, serial_number: int):
-        command = {'cmd': "setpendingserial",
-                   "msgid": self.msgid, "p1": f"{serial_number}"}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
+    def start_operator_function(self, mode: Union[str, bool] = "enabled") -> None:
+        """_summary_
 
-    # TODO:Test
-    def set_comment_pending_process(self, comment: str):
-        command = {'cmd': "setpendingcomment",
-                   "msgid": self.msgid, "p1": comment}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
+        _extended_summary_
 
-    # TODO:Test
+        :param mode: Mode if start is enabled., defaults to "enabled"
+        :type mode: Union[str, bool], optional
+        """
+        self._value_parser(cmd="startoperatorfunctionvalues",
+                           p1=self.translator[mode])
+
+    def stopp_operator_function(self) -> None:
+        """Stop of running operator function
+        """
+        self._value_parser(cmd="stoppoperatorfunctionvalues")
+
+    def set_serial_number_pending_process(self, serial_number: int) -> None:
+        """Setting serial number for next process.
+
+        :param serial_number: Serial number for next process
+        :type serial_number: int
+        """
+        self._value_parser(cmd="setpendingserial", p1=serial_number)
+
+    def set_comment_pending_process(self, comment: str) -> None:
+        """Set process comment for pending process.
+
+        :param comment: Comment for next process.
+        :type comment: str
+        """
+        self._value_parser(cmd="setpendingcomment", p1=comment)
+
     def set_comment_current_process(self, comment: str):
         """ Sets comment for current activatet process.
 
@@ -586,11 +603,7 @@ class AnalyzerCmd():
         :param comment: Process comment to set
         :type comment: str
         """
-        command = {'cmd': "setcomment", "msgid": self.msgid,
-                   "p1": comment, "quiet": f"{False}"}
-        response = self._send(command)
-        val_dict = self._handle_commserver_response(response)
-        self._check_response(val_dict)
+        self._value_parser(cmd="setcomment", p1=comment, quiet=False)
 
     # TODO:Test
     def start_operator(self, operator_name: str, operator_command: str):
@@ -598,6 +611,7 @@ class AnalyzerCmd():
                    "p1": operator_name, "p2": operator_command}
         response = self._send(command)
         return self._handle_commserver_response(response)
+        self._value_parser(cmd="setcomment", p1=comment, quiet=False)
 
     # TODO:Test
     def import_operators(self, operator_fielpath: str, force_load: str):
@@ -752,4 +766,4 @@ class AnalyzerCmd():
 
 
 with AnalyzerCmd("192.168.2.67") as opti:
-    val = opti.run_measuring_mode("true")
+    val = opti.set_comment_current_process("testneue500")
