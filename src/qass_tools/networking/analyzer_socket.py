@@ -164,9 +164,9 @@ class AnalyzerCmd():
         # message ID to assign command to analyzer and specific response
         self.msgid = 0
         self.translator = {True: "true", "start": "true", "true": "true",
-                           "beginn": "true", "enabled": "true", "on": "true",
+                           "beginn": "true", "enabled": "true", "enable": "true", "on": "true",
                            False: "false", "stop": "false", "end": "false", "disabled": "false",
-                           "false": "false", "monitor": "monitor"}
+                           "false": "false", "disable": "false", "monitor": "monitor"}
         # short solution logger to sys.stdout
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
                             format='[%(asctime)s] - %(levelname)s - %(message)s')
@@ -605,57 +605,164 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="setcomment", p1=comment, quiet=False)
 
-    # TODO:Test
-    def start_operator(self, operator_name: str, operator_command: str):
-        command = {'cmd': "startoperator", "msgid": self.msgid,
-                   "p1": operator_name, "p2": operator_command}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
-        self._value_parser(cmd="setcomment", p1=comment, quiet=False)
+    # TODO:understand command
+    def start_operator(self, operator_name: str, operator_command: str) -> None:
+        """External start of existing operator by name.
 
-    # TODO:Test
-    def import_operators(self, operator_fielpath: str, force_load: str):
-        command = {'cmd': "importoperators", "msgid": self.msgid,
-                   "p1": operator_fielpath, "p2": force_load}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
+        :param operator_name: Name of network operator that should start
+        :type operator_name: str
+        :param operator_command: _description_
+        :type operator_command: str
+        """
+        self._value_parser(cmd="startoperator",
+                           p1=operator_name, p2=operator_command)
 
-    # TODO:Test
-    def import_patterns(self, directory_path: str):
-        command = {'cmd': "importpatterns",
-                   "msgid": self.msgid, "p1": directory_path}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
+    def import_operators(self, operator_fielpath: str, force_load: str) -> None:
+        """Import a local file on optimizer.
 
-    # TODO:Test
-    def start_operator_results(self, start=True):
-        command = {'cmd': "startoperatorresults",
-                   "msgid": self.msgid, "p1": f"{start}"}
-        response = self._send(command)
-        self._handle_commserver_response(response)
+        :param operator_fielpath: Path to operator file that will be imported.
+        :type operator_fielpath: str
+        :param force_load: _description_
+        :type force_load: str
+        """
+        self._value_parser(cmd="importoperators",
+                           p1=operator_fielpath, p2=force_load)
 
-    # TODO:Test
-    def stop_operator_results(self):
-        command = {'cmd': "stopoperatorresults",
-                   "msgid": self.msgid}
-        response = self._send(command)
-        self._handle_commserver_response(response)
+    def import_patterns(self, directory_path: str) -> None:
+        """Import all pattern files from a optimizer local directory.
 
-    # TODO:Test
-    def get_io_input(self):
-        command = {'cmd': "readioin",
-                   "msgid": self.msgid}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
+        :param directory_path: Directory path to patterns that will be imported.
+        :type directory_path: str
+        """
+        self._value_parser(cmd="importpatterns",
+                           p1=directory_path)
 
-    # TODO:Test
-    # def set_simualted_io_output(self):
-    #    command = {'cmd': "readioout",
-    #               "msgid": self.msgid}
-    #    response = self._send(command)
-    #    return self._handle_commserver_response(response)
+    def start_operator_results(self, mode: Union[str, bool] = "enable") -> None:
+        """Sets enable flag to send ot operator results if avaible. Results will be sended separately
 
-    # TODO:Test
+        :param mode: Enables start or stops by "disable", defaults to "enable"
+        :type mode: str, optional
+        """
+        self._value_parser(cmd="startoperatorresults",
+                           p1=self.translator[mode])
+
+    def stop_operator_results(self) -> None:
+        """Sets disable flag to send ot operator results if avaible.
+        """
+        self._value_parser(cmd="stopoperatorresults")
+
+    def get_io_input(self) -> int:
+        """Current set I/O input as integer.
+
+        :return: I/O input register as integer appearance
+        :rtype: int
+        """
+        val = self._value_parser(cmd="readioin")
+        return val.get("result")
+
+    def get_io_output(self) -> int:
+        """Returns set I/O output as integer appearance of hexa state. 
+
+        :return: Set I/O output
+        :rtype: int
+        """
+        val = self._value_parser(cmd="readioout")
+        return val.get("result")
+
+    def shift_binary(self, binary_part: str, shift=3) -> str:
+        """Helper to shift binary strings (partwise).
+
+        :param binary_part: binary string
+        :type binary_part: str
+        :param shift: Shifted chars in string as a loop of string size, defaults to 3
+        :type shift: int, optional
+        :return: Shifted binary string
+        :rtype: str
+        """
+        # generic solution
+        shifted_idx_list = []
+        dig_list = list(binary_part)
+
+        # find shifting idx
+        for idx in range(0, len(binary_part)):
+            shift_idx = idx + shift
+            if shift_idx > len(binary_part)-1:
+                shift_idx = shift_idx - len(binary_part)
+            shifted_idx_list.append(shift_idx)
+
+        # zip and sort
+        zipped = zip(dig_list, shifted_idx_list)
+        sorted_list = sorted(zipped, key=lambda x: x[1])
+        shifted_list, _ = zip(*sorted_list)
+
+        # join shifted digs
+        shifted_part = "".join(shifted_list)
+
+        # hardcoded solution
+        # shifted_part = binary_part[3] + \
+        #    binary_part[0] + binary_part[1] + binary_part[2]
+
+        return shifted_part
+
+    def binary_to_hexa(self, binary_str: str):
+        if "_" in binary_str:
+            shifted_binary = ""
+            binary_list = binary_str.split("_")
+            for (idx, binary_group) in enumerate(binary_list):
+                shifted_binary_group = self.shift_binary(binary_group)
+                binary_list[idx] = shifted_binary_group
+            new_bin = "".join(binary_list)
+        else:
+            pass
+        # "0000_0000_0000_0000"
+        # "0000000000000000"
+
+        deci_num = int(new_bin, 2)
+        print(binary_str)
+        print(new_bin)
+        print(hex(deci_num))
+
+        return self.invert_hexa(hex(deci_num))
+
+    def invert_hexa(self, hex_num):
+        hex_num = hex_num[2:]
+        inverted = hex_num[::-1]
+        return "0x" + inverted
+        # sorting = [0,1,6,5,4,3]
+
+    def deci_to_binary():
+        pass
+
+    def set_simualted_io_input(self, io: str):
+        """Set simulated I/O input register. Seting rule based on hexa.
+
+        IO_0000_0000_0000_0000 = "0xf0000"
+        IO_1000_0000_0000_0000 = "0xf0001"
+        IO_0100_0000_0000_0000 = "0xf0002"
+        IO_1100_0000_0000_0000 = "0xf0003"
+        IO_0010_0000_0000_0000 = "0xf0004"
+        IO_1010_0000_0000_0000 = "0xf0005"
+        IO_0110_0000_0000_0000 = "0xf0006"
+        IO_1110_0000_0000_0000 = "0xf0007"
+        IO_0001_0000_0000_0000 = "0xf0008"
+        IO_1001_0000_0000_0000 = "0xf0009"
+        IO_0101_0000_0000_0000 = "0xf000A"
+        IO_1101_0000_0000_0000 = "0xf000B"
+        IO_0011_0000_0000_0000 = "0xf000C"
+        IO_1011_0000_0000_0000 = "0xf000D"
+        IO_0111_0000_0000_0000 = "0xf000E"
+        IO_1111_0000_0000_0000 = "0xf000F"
+
+        IO_1000_1000_0000_0000 = "0xf0011"
+        ...
+
+        :param io: Combination on set I/Os register, defaults to "0xf0000"
+        :type io: str
+        """
+        hexa = self.binary_to_hexa(io)
+        self._value_parser(cmd="setsimioin",
+                           p1=hexa)
+
     def set_io_report(self, mode: Union[str, bool]):
         """Switches I/O register report on or off.
 
@@ -664,51 +771,32 @@ class AnalyzerCmd():
         :return: standardized analyzer respond
         :rtype: dict
         """
+        self._value_parser(cmd="reportio",
+                           p1=self.translator[mode])
 
-        command = {'cmd': "reportio",
-                   "msgid": self.msgid,
-                   "p1": self.translator[mode]}
-        response = self._send(command)
-        self._handle_commserver_response(response)
-
-    # TODO:Test
     def set_process_number_report(self, mode: Union[str, bool]):
         """Switches process number report on or off.
 
-        :param mode: Switch report to on ("true") or off ("false"). For supported keys see translator.
+        :param mode: Switch report to on ("enable") or off ("disable"). For supported keys see translator.
         :type mode: bool, str
         :return: standardized analyzer response
         :rtype: dict
         """
+        self._value_parser(cmd="reportprocessnumber",
+                           p1=self.translator[mode])
 
-        command = {'cmd': "reportprocessnumber",
-                   "msgid": self.msgid,
-                   "p1": self.translator[mode]}
-        response = self._send(command)
-        self._handle_commserver_response(response)
-
-    # TODO:Test
-    def get_io_output(self):
-        command = {'cmd': "readioout",
-                   "msgid": self.msgid}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
-
-    # TODO:Test
     def start_script_function(self, function_name: str, function_param: any):
         """ Start script function and return result.
 
         :param function_name: Name of script function
         :type function_name: str
-        :param function_param: Passed param to script function (will always be passed as str.)
+        :param function_param: Passed param to script function
         :type function_param: any
         :return: Result of addressed function.
         :rtype: str
         """
-        command = {'cmd': "appfunc",
-                   "msgid": self.msgid, "p1": function_name, "p2": f"{function_param}"}
-        response = self._send(command)
-        self._handle_commserver_response(response)
+        self._value_parser(cmd="appfunc",
+                           p1=function_name, p2=function_param)
 
     def _handle_appcmd_response(self, response):
         # change appearance
@@ -742,12 +830,12 @@ class AnalyzerCmd():
         # adding msgid
         self.msgid += 1
         # actual sending command
-
         self.s.sendall(cmd_str)
 
     def _receive(self):
         # response = self.s.recv(4096)  # readed byte count
         analyzer_response = self.s.recv(8192)  # readed byte count
+        #self.logger.debug("Undecoded Analyzer response:\n", analyzer_response)
         return analyzer_response
 
     def _value_parser(self, expect_response=True, **kwargs):
@@ -755,7 +843,6 @@ class AnalyzerCmd():
                    "msgid": self.msgid}
         command.update(kwargs)
         self._send(command)
-        print(command)
         if expect_response:
             analyzer_response = self._receive()
 
@@ -766,4 +853,4 @@ class AnalyzerCmd():
 
 
 with AnalyzerCmd("192.168.2.67") as opti:
-    val = opti.set_comment_current_process("testneue500")
+    val = opti.set_process_number_report("enable")

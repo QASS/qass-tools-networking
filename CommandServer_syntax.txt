@@ -1,0 +1,377 @@
+all params has to be sended as strings: "<Variable_content>[unit]"
+sometimes one param contains to informations: "<Variable_content>[unit] <Variable2_content>[unit]"
+
+
+********************************************
+JSON Communication Server Commands
+*********************************************
+---------------Get Analyzer "About" infos
+cmd: 	"getversions"
+
+Response: alles
+Analyzer_socket wrapper: get_analyzer_version()
+
+---------------Get current project infos
+cmd: 	"getinfo"
+
+Response: project_name, project_info, analyzer_version
+Analyzer_socket wrapper: get_project_info()
+
+---------------External set of Mux and preamp settings
+--> Log entry
+cmd: 			"setpreamp"
+channel(=ChannelList):	"<window choice[int]>", default 0	
+chp(=channelPortList):	"<window choice[int]>", default 0
+preampport: 		"<window choice[int]>"
+fft:			"<if_fft_buffer[boolean]>"
+signal:			"<if_signal_buffer[boolean]>"
+samplerate: 		"<window choice[int]>"
+fftoversampling:	"<window choice[int]>"
+fftwindwowing: 		"<window choice[int]>"
+fftlogarithmic:		"<window choice[int]>"
+filter:			"<if_filter[boolean]>"		
+gain:			"<gain[int]>"
+subport:		"<subport[int]>"
+
+Response: None
+Analyzer_socket wrapper: set_preamp()
+
+---------------Create new project by name
+--> name size has to be at least 4
+cmd: 	"createloadproject"
+p1:	"<project_name>[str]"
+
+Response: None
+Analyzer_socket wrapper: create_project()
+
+---------------Get current Process number
+cmd: 	"getprocessnumber"
+
+Response: response["processnumber"]
+Analyzer_socket wrapper: get_process_number()
+
+---------------Set AppVar in network operator
+cmd: 	"setappvar"
+p1:	"<app_var_name>[str]"
+p2:	"<app_var_value>[str]"
+
+Response:None
+Analyzer_socket wrapper: set_app_var()
+
+
+--------------- Get AppVar by name
+cmd: 	"getappvar"
+p1:	"<app_var_name>[str]"
+
+Response: standardized analyzer response + 'result':<app_var_val>
+Analyzer_socket wrapper: get_app_var()
+
+--------------- Clear and remove global AppVar by name
+cmd: 	"clearappvar"
+p1:	"<app_var_name>[str]"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: remove_app_var()
+
+--------------- Clear and remove global AppVar by name
+cmd: 	"clrappvar"
+p1:	"<app_var_name>[str]"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: remove_app_var()
+
+--------------- Report any AppVar changes
+cmd: 	"reportappvars"
+p1:	"<enable>[boolean]"
+
+Response: app_var_report
+Analyzer_socket wrapper: get_app_vars_report()
+
+---------------Get Heartbeat
+cmd: 	"heartbeat"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: get_heartbeat()
+
+---------------Start Measuring
+cmd: 	"startmeasuring"
+p1:	"<mode>" --> "true" 	start measuring
+		     "false"	stop measuring
+		     "monitor"	start monitoring
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: run_measuring_mode()
+
+---------------Start Monitoring
+cmd: 	"startmonitoring"
+p1:	"<mode>" --> "true" 	start monitoring
+		     "false"	stop monitoring
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: run_monitoring_mode()
+
+---------------Calculate maximum Aplitude per Band
+cmd: 		"calcmaxamplitude"
+show:		"<(show-)Channel>[int]" (optional) by default 0
+p1:		"<Channel>[int]" (optional) by default 0
+--> one of them is necessary
+plot:		"<boolean_if_plot>[boolean]", by default true
+save:		"<boolean_if_save>[boolean]", by default false
+amplitudetype:	"<sys_amplitude_type>[int]", by default 0
+
+Response: calced values as string
+Analyzer_socket wrapper: calc_max_amp_per_band()
+
+---------------Load predefined test project
+cmd: 	"loadtestproject"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: load_test_project()
+
+---------------Load last loaded user project
+cmd: 	"loaduserproject"
+
+Response: Yes
+Analyzer_socket wrapper: load_last_user_project()
+
+---------------Read settings from Preamp
+cmd: 	"getpreampinfo"
+p1:	"<Port>[int]"
+
+Response: Yes
+Analyzer_socket wrapper: get_preamp_settings()
+
+
+---------------Read maximum measure positions
+cmd: 	"getmaxmeasurepositions"
+
+Response: all measurepositions
+Analyzer_socket wrapper: get_max__measure_positions()
+
+---------------External start of operator function values
+cmd: 	"startoperatorfunctionvalues"
+p1:	<enable>[boolean]", default by true
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: start_operator_function()
+
+
+---------------External stopp of operator function values
+cmd: 	"stoppoperatorfunctionvalues"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: stopp_operator_function()
+
+---------------Set pending serial number (for next process)
+cmd: 	"setpendingserial"
+p1:	"<serial_number>[int]"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: set_serial_number_pending_process()
+
+---------------Set pending process comment (for next process)
+cmd: 	"setpendingcomment"
+p1:	"<comment>[str]"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: set_comment_pending_process()
+
+---------------Set process comment for current process
+cmd: 	"setcomment"
+p1:	"<comment>[str]"
+quiet:	"<enable_quiet>[boolean]" --> if quiet is not set or true, there is no response
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: set_comment_pending_process()
+
+---------------Start defined operator
+--> is marked as service request
+cmd: 	"startoperator"
+p1:	"<operator_name>[str]"
+p2:	"<operator_command>[str]"       -> whats that??
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: start_operator()
+
+--------------- Import local operator
+cmd: 	"importoperators"
+p1:	"<operator_filepath>[str]"
+p2:	"<force_load>[str]"
+
+Response: None
+Analyzer_socket wrapper: import_operators()
+
+--------------- Import pattern out of diretory
+cmd: 	"importpatterns"
+p1:	"<directory_path>[str]"
+
+Response: None
+Analyzer_socket wrapper: import_patterns()
+
+--------------- Start Operator Result
+cmd: 	"startoperatorresults"
+p1:	"<enable>[boolean]", default by true
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: start_operator_results()
+
+--------------- Stopp Operator Result
+cmd: 	"stopoperatorresults"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: stop_operator_results()
+
+--------------- Write result to database
+--> database entry with: project_id, process, process_id, result, comment
+cmd: 	"humanconfirmationresult"
+p1:	"<result>[any]"
+p2:	"<comment>[str]"
+
+Response: None
+Analyzer_socket wrapper: write_result_to_database()
+
+--------------- Execute script function and return result as string
+cmd: 	"appfunc"
+p1:	"<function_name>[str]"
+p2:	"<function_param[any]"
+
+Response: script function result
+Analyzer_socket wrapper: start_script_function()
+
+--------------- Set measure simluation buffer
+cmd: 	"simulationbuffer"
+p1:	"<function_name>[str]"
+p2:	"<function_param[any]"
+
+Response: yes
+Analyzer_socket wrapper: set_simulation_buffer()---------------------------------------------------not implemented
+
+
+--------------- Read I/O input register and return as string
+cmd: 	"readioin"
+
+Response: I/O input register
+Analyzer_socket wrapper: get_io_input()
+
+--------------- Read I/O output register and return as string
+cmd: 	"readioout"
+
+Response: I/O ouput register
+Analyzer_socket wrapper: get_io_output()
+
+--------------- Set simulated I/O input register----------------------------------------------------not implemented
+cmd: 	"setsimioin"
+"p1":	"<io_to_set>[hexa]"
+        IO_0000_0000_0000_0000 = "0xf0000"
+        IO_1000_0000_0000_0000 = "0xf0001"
+        IO_0100_0000_0000_0000 = "0xf0002"
+        IO_1100_0000_0000_0000 = "0xf0003"
+        IO_0010_0000_0000_0000 = "0xf0004"
+        IO_1010_0000_0000_0000 = "0xf0005"
+        IO_0110_0000_0000_0000 = "0xf0006"
+        IO_1110_0000_0000_0000 = "0xf0007"
+        IO_0001_0000_0000_0000 = "0xf0008"
+        IO_1001_0000_0000_0000 = "0xf0009"
+        IO_0101_0000_0000_0000 = "0xf000A"
+        IO_1101_0000_0000_0000 = "0xf000B"
+        IO_0011_0000_0000_0000 = "0xf000C"
+        IO_1011_0000_0000_0000 = "0xf000D"
+        IO_0111_0000_0000_0000 = "0xf000E"
+        IO_1111_0000_0000_0000 = "0xf000F"
+
+        IO_1000_1000_0000_0000 = "0xf0011"
+        ...
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: set_simulated_io_output()
+
+--------------- Switch I/O regster report on/off
+cmd: 	"reportio"
+"p1":	"<enabel[str]>" 	--> to enable p1 = "true", else is disable
+
+Response: standardized analyzer response and reports events
+Analyzer_socket wrapper: set_io_report()
+
+--------------- Switch process number report on/Off
+cmd: 	"reportprocessnumber"
+"p1":	"<enabel[str]>" 	--> to enable p1 = "true", else is disable
+
+Response: standardized analyzer response and reports events
+Analyzer_socket wrapper: set_process_number_report()
+
+--------------- Captured received picture-
+cmd: 	"capturedpic"
+"p1":	"<pictre[any]>"             -->will be transformed to byte array
+"p2":	"<full_resolution[str]>"    --> to enable p2 = "full", else is disable
+"v":	"<remote_path[str]>"
+
+
+Response: biggest analyzer response
+Analyzer_socket wrapper: set_process_number_report()
+
+
+--------------- Set profibus message via communication server
+cmd: 	"capturedpic"
+"p1":	"<profibus_msg>"
+
+Response: yes
+Analyzer_socket wrapper: set_profibus_msg()
+
+--------------- Switch profibus report on/Off
+cmd: 	"reportprofibus"
+"p1":	"<enabel[boolean]>"
+
+Response: standardized analyzer response and reports events
+Analyzer_socket wrapper: set_process_number_report()
+
+
+
+*********************************************
+AppCommands Commands
+*********************************************
+
+
+---------------Set AppVar in network operator
+cmd: 	"AppcCmd"
+p1:	"SetAppVar"
+p2:	"<app_var_name>[str] <value_app_var>[any]"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: set_app_var_appcmd()
+
+---------------Set comment for current process
+cmd: 	"AppcCmd"
+p1:	"setprocesscomment"
+p2:	"<comment>[str]"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: set_process_comment()
+
+---------------Start a measuring
+cmd: 	"AppcCmd"
+p1:	"startMeasuring"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: start_measuring()
+
+---------------Stop measuring
+cmd: 	"AppcCmd"
+p1:	"stopMeasuring"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: stop_measuring()
+
+---------------Start Sine Generator
+cmd: 	"AppcCmd"
+p1:	"StartSineGen"
+p2:	"<frequency>[int] <amplitude>[int]"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: start_sineGenerator()
+
+---------------Stop Sine Generator
+cmd: 	"AppcCmd"
+p1:	"StopSineGen"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: stop_sineGenerator()
