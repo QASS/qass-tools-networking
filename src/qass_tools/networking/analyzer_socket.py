@@ -7,6 +7,7 @@ from enum import Enum, auto, IntEnum
 from typing import Any, Dict, Union
 import logging
 import sys
+import threading
 
 
 class Amplitudes(Enum):
@@ -139,6 +140,13 @@ class SysAmplitudesType(IntEnum):
     AMPLITUDE_MICRO_VOLT = 5
 
 
+class SysAreaViews(IntEnum):
+    View_1 = 0
+    View_2 = 1
+    View_3 = 2
+    View_4 = 3
+
+
 class AnalyzerCmd():
     """ Class to communicate with Analyzer over network socket. Implied Methods: start/ end measuring, set process comment, set appVars and start/stop sine generator with spefici parameters. Functions that communicate
     with an analyzer build a dictionary to store user-given settings. With the help of the "send" function each dictionary will be converted to a JSON File and send to the connected analyzer. Each response from analyzer 
@@ -159,6 +167,7 @@ class AnalyzerCmd():
             analyzer = AnalyzerCmd(ip="192.168.2.67")
             analyzer = AnalyzerCmd("192.168.2.67")
         """
+        # helper
         self.ip = ip
         self.port = port
         # message ID to assign command to analyzer and specific response
@@ -167,10 +176,14 @@ class AnalyzerCmd():
                            "beginn": "true", "enabled": "true", "enable": "true", "on": "true",
                            False: "false", "stop": "false", "end": "false", "disabled": "false",
                            "false": "false", "disable": "false", "monitor": "monitor"}
+
         # short solution logger to sys.stdout
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
                             format='[%(asctime)s] - %(levelname)s - %(message)s')
         self.logger = logging.getLogger()
+
+        # create thread instance
+        th = threading.Thread(target=self.thread_listening)
 
     def __enter__(self):
         """ Connects the machine to an analyzer reachable over user-given Input of IP (self.ip) and Port (self.port) 
@@ -192,6 +205,9 @@ class AnalyzerCmd():
         if exc_type != None:
             self.logger.error(
                 f"\nExecution type: {exc_type}\nTraceback: {traceback}")
+
+    def thread_listening(self):
+        pass
 
     @property
     def socket_ip(self):
@@ -257,6 +273,145 @@ class AnalyzerCmd():
         :type proc_comm: str
         """
         self._value_parser(cmd="AppCmd", p1="setprocesscomment", p2=proc_comm)
+
+    def set_area_view(self, area_type) -> None:
+        self._value_parser(
+            cmd="AppCmd", p1="setprocesscomment", p2=SysAreaViews.View_1)
+
+    def save_area_view(self, tempalte_num: int) -> None:
+        self._value_parser(
+            cmd="AppCmd", p1="SaveAreaView", p2=tempalte_num)
+
+    def load_area_view(self, tempalte_num: int) -> None:
+        self._value_parser(
+            cmd="AppCmd", p1="LoadAreaView", p2=tempalte_num)
+
+    def load_simualtion_buffer(self, file_path: str, channel=Channels.CHANNEL_1) -> None:
+        self._value_parser(cmd="AppCmd",
+                           p1="SimulationBuffer", p2=f"{channel} {file_path}")
+
+    def set_simualtion_buffer(self, channel=Channels.CHANNEL_1, mode="enable") -> None:
+        keys = ["all", *Channels]
+        if channel in keys:
+            if channel == "all":
+                self._value_parser(cmd="AppCmd",
+                                   p1="SimulationBuffer", p2=self.translator[mode])
+            else:
+                self._value_parser(cmd="AppCmd",
+                                   p1="SimulationBuffer", p2=f"{channel} {self.translator[mode]}")
+        else:
+            self.logger.error("Choosed channel is not supported")
+            raise KeyError("Choosed channel is not supported")
+
+    def frequency_test(self, kind, input="channel"):
+        """External 50 kHz sine signal frequency test. Only avaible for exisiting ports and sensors.
+
+        setting keys:
+        | Type   | Keys                | Meaning                          |
+        |--------|---------------------|----------------------------------|
+        | kind   | "number of channel" | Channel is choosen for pulsetest |
+        | kind   | "number of port"    | Port is choosen for pulsetest    |
+        | input  | "channel"           | Channel is choosen for pulsetest |
+        | input  | "port"              | Port is choosen for pulsetest    |
+
+        :param kind: Used port/channel number to test.
+        :type kind: Port/Channel number
+        :param input: What to test. Either channel or port, defaults to "channel"
+        :type input: str, optional
+        :raises KeyError: If input for frequency test is not choosen to be "channel" or "port".
+        """
+        if input == "channel":
+            kind += kind
+            self._value_parser(cmd="AppCmd",
+                               p1="Preamp", p2=f"channel {kind} frqtest")
+        elif input == "port":
+            kind += kind
+            self._value_parser(cmd="AppCmd",
+                               p1="Preamp", p2=f"port {kind} frqtest")
+        else:
+            self.logger.error(
+                "Only a choosen channel or a port can be tested. Check your key.")
+            raise KeyError(
+                "Only a choosen channel or a port can be tested. Check your key.")
+
+    def pulse_test(self, kind, input="channel", **kwargs) -> None:
+        """External set of pulse test. Only avaible for exisiting ports and sensors.
+
+        setting keys:
+        | Type   | Keys                | Meaning                          |
+        |--------|---------------------|----------------------------------|
+        | kind   | "number of channel" | Channel is choosen for pulsetest |
+        | kind   | "number of port"    | Port is choosen for pulsetest    |
+        | input  | "channel"           | Channel is choosen for pulsetest |
+        | input  | "port"              | Port is choosen for pulsetest    |
+        | ------------------------- kwargs ------------------------------ |
+        | kwargs | gain                | Pulsetest gain in range(0,4096)  |
+        | kwargs | count               | Pulsetest count in range(0,200)  |
+        | kwargs | delay               | Pulsetest delay (geater null)    |
+
+        :param kind: Used port/channel number to test.
+        :type kind: Port/Channel number
+        :param input: What to test. Either channel or port, defaults to "channel"
+        :type input: str, optional
+        :raises ValueError: If gain is out of bound: range(0,4096)
+        :raises ValueError: If count is out of bound: range(0,200)
+        :raises ValueError: If delay is out of bound: smaller zero
+        :raises KeyError: If input for pulsetest is not choosen to be "channel" or "port".
+        """
+        if "gain" in kwargs:
+            if kwargs["gain"] > 4095 or kwargs["gain"] < 0:
+                self.logger.error(
+                    "Choosen pulsetest gain is not avaible. The gain should be in range of 0 to 4095.")
+                raise ValueError(
+                    "Choosen pulsetest gain is not avaible. The gain should be in range of 0 to 4095.")
+            else:
+                gain = kwargs["gain"]
+        else:
+            gain = 800
+        if "count" in kwargs:
+            if kwargs["count"] > 200 or kwargs["count"] < 0:
+                self.logger.error(
+                    "Choosen pulsetest count is not avaible. The gain should be in range of 0 to 200.")
+                raise ValueError(
+                    "Choosen pulsetest count is not avaible. The gain should be in range of 0 to 200.")
+            else:
+                count = kwargs["count"]
+        else:
+            count = 1
+        if "delay" in kwargs:
+            if kwargs["delay"] < 0:
+                self.logger.error(
+                    "Choosen pulsetest delay is not avaible. The delay should be equal or greater null.")
+                raise ValueError(
+                    "Choosen pulsetest delay is not avaible. The delay should be equal or greater null.")
+            else:
+                delay = kwargs["delay"]
+        else:
+            delay = 0
+
+        if input == "channel":
+            kind += kind
+            self._value_parser(cmd="AppCmd",
+                               p1="Preamp", p2=f"channel {kind} pulse {gain} {count} {delay}")
+        elif input == "port":
+            kind += kind
+            self._value_parser(cmd="AppCmd",
+                               p1="Preamp", p2=f"port {kind} pulse {gain} {count} {delay}")
+        else:
+            self.logger.error(
+                "Only a choosen channel or a port can be tested. Check your key.")
+            raise KeyError(
+                "Only a choosen channel or a port can be tested. Check your key.")
+
+    def set_area_scale(self, area_number, scale=500) -> None:
+        if scale in range(10, 1001):
+            self._value_parser(cmd="AppCmd",
+                               p1="SetAreaScale", p2=f"{area_number} {scale}")
+        else:
+            self.logger.error(
+                "Choosen scale is out of bounds. Should be in range(10,1001).")
+            raise ValueError(
+                "Choosen scale is out of bounds. Should be in range(10,1001).")
 
     def set_app_var(self, app_var_name: str, app_var_value: any) -> None:
         """Parse value to specific AppVar operator in operator network of analyzer.
@@ -401,7 +556,13 @@ class AnalyzerCmd():
                     'gain': "800",
                     'subport': "0"
                     }
-
+        # gain limit 5000
+        # if kwargs:
+        #    if kwargs.keys() in [*settings.keys()]:
+        #        pass
+        #    else:
+        #        self.logger.error("Choosen seeting is not avaible in multiplexer")
+        #        raise KeyError("Choosen seeting is not avaible in multiplexer")
         settings.update(kwargs)
         self._value_parser(settings)
 
@@ -483,18 +644,19 @@ class AnalyzerCmd():
         Default settings:
         | Type | Key | kwargs    | Default value | Action                   |
         | ---- | --------------- | ------------- | ------------------------ |
-        | int  | channel         | 0             | Choose channel buffer    |
+        | int  | channel         | Channel #1    | Choose channel buffer    |
         | bool | plot            | true          | Creates plot buffer      |
         | bool | save            | false         | Creates buffer with data |
-        | int  | amplitudetype   | 0             | Type calced of amplitude |
+        | int  | amplitudetype   | Default       | Type calced of amplitude |
 
         .. warning:: Check supported datatypes and range manually, as a automatic overproof is not provided yet.
         :param user_dict: Possibility to parse your own dictionary instead of editing the default one, defaults to None
         :type user_dict: Dict, optional
         :raises ValueError: Parsed key or related value is not supported.
         """
+
         # command to build for analyzer
-        settings = {'cmd': "calcmaxamplitude", 'channel': 0,
+        settings = {'cmd': "calcmaxamplitude", 'channel': Channels.CHANNEL_1,
                     'plot': True,
                     'save': False,
                     'amplitudetype': SysAmplitudesType.AMPLITUDE_DEFAULT
@@ -515,21 +677,17 @@ class AnalyzerCmd():
         settings.update(kwargs)
         self.logger.info(
             f"Updated settings to {kwargs.items()}")
-
         response_dict = self._value_parser(**settings)
         # extract important information
-
         max_amp = response_dict.get("p1")
 
         return np.fromstring(max_amp, sep=',')
 
-    # TODO:Test
     def load_test_project(self):
         command = {'cmd': "loadtestproject", "msgid": self.msgid}
         response = self._send(command)
         return self._handle_commserver_response(response)
 
-    # TODO:Test
     def load_last_user_project(self):
         command = {'cmd': "loaduserproject", "msgid": self.msgid}
         response = self._send(command)
@@ -565,8 +723,6 @@ class AnalyzerCmd():
 
     def start_operator_function(self, mode: Union[str, bool] = "enabled") -> None:
         """_summary_
-
-        _extended_summary_
 
         :param mode: Mode if start is enabled., defaults to "enabled"
         :type mode: Union[str, bool], optional
@@ -853,4 +1009,5 @@ class AnalyzerCmd():
 
 
 with AnalyzerCmd("192.168.2.67") as opti:
-    val = opti.set_process_number_report("enable")
+    proc_val = opti.get_process_number()
+    print(proc_val)
