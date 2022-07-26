@@ -147,20 +147,33 @@ class SysAreaViews(IntEnum):
     View_4 = 3
 
 
+class ReceiveAndReturnThread(threading.Thread):
+    def __init__(self, group=None, target=None, args=()):
+        super().__init__(self, group, target, args)
+        self.return_value = ""
+
+    def run(self):
+        if self._target is not None:
+            self.return_value = self._target(*self._args, **self._kwargs)
+
+    def thread_return(self):
+        self.join()
+        return self.return_value
+
+
 class AnalyzerCmd():
-    """ Class to communicate with Analyzer over network socket. Implied Methods: start/ end measuring, set process comment, set appVars and start/stop sine generator with spefici parameters. Functions that communicate
-    with an analyzer build a dictionary to store user-given settings. With the help of the "send" function each dictionary will be converted to a JSON File and send to the connected analyzer. Each response from analyzer 
-    will be read out and can be saved in a dictionary.
+    """ Class for external analyzer control (system operator independant) over a TCP socket.
     """
 
-    def __init__(self, ip: str, port=17000):
+    def __init__(self, ip: str, port=17000, debug_mode=False):
         """Constructor of the class defines details for logger object.
 
-        .. note:: The message ID provides a possibility to assign commands and there corresponding response from analyzer. And can be used for debugging.
         :param ip: Analyzer IP in network.
         :type ip: str
         :param port: Required Analyzer port, by the default always 17000.
         :type port: int
+        :param debug_mode: Logs debug messages into sys.stdout
+        :type debug_mode: bool
 
         ::Example::
             analyzer = AnalyzerCmd(ip="192.168.2.67", port=17000)
@@ -178,12 +191,14 @@ class AnalyzerCmd():
                            "false": "false", "disable": "false", "monitor": "monitor"}
 
         # short solution logger to sys.stdout
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
+        msg_mode = logging.DEBUG if debug_mode else logging.INFO
+        logging.basicConfig(stream=sys.stdout, level=msg_mode,
                             format='[%(asctime)s] - %(levelname)s - %(message)s')
         self.logger = logging.getLogger()
 
         # create thread instance
-        th = threading.Thread(target=self.thread_listening)
+        #self.receive_th = threading.Thread(target=self.thread_listening)
+        self.rarth = ReceiveAndReturnThread(target=self._thread_listening)
 
     def __enter__(self):
         """ Connects the machine to an analyzer reachable over user-given Input of IP (self.ip) and Port (self.port) 
@@ -205,9 +220,6 @@ class AnalyzerCmd():
         if exc_type != None:
             self.logger.error(
                 f"\nExecution type: {exc_type}\nTraceback: {traceback}")
-
-    def thread_listening(self):
-        pass
 
     @property
     def socket_ip(self):
@@ -954,28 +966,40 @@ class AnalyzerCmd():
         self._value_parser(cmd="appfunc",
                            p1=function_name, p2=function_param)
 
-    def _handle_appcmd_response(self, response):
+    """def _handle_appcmd_response(self, response):
+        self.logger.debug(response)
         # change appearance
         response = response.decode("utf-8")  # utf-8 decode type
         response = json.loads(response[2:])
+
+        self._check_response(response)"""
+
+    def _handle_response(self, response, encoding_style="utf-8"):
         self.logger.debug(response)
+        # change appearance
+        response = response[2:].decode(encoding_style)  # utf-8 decode type
+        response = json.loads(response)
         self._check_response(response)
+        # if expect_return:
+        #    return response
+        return response
 
     def _check_response(self, response):
         # rais exception if not performed right
         if response.get("ok") == False:
-            self.logger.debug(f"Optimizer response:{response}")
             self.logger.error(
-                "Parsed cmd command is unknown to analyzer: check log and documentation.")
+                "Analyzer could not perform action: check log and documentation.")
             raise Exception(
-                "Parsed cmd command is unknown to analyzer: check log and documentation.")
+                "Analyzer could not perform action:: check log and documentation.")
 
-    def _handle_commserver_response(self, response) -> Dict:
+    """def _handle_commserver_response(self, response) -> Dict:
+        self.logger.debug(response)
         response = response[2:].decode()
         response = json.loads(response)
-        self.logger.debug(response)
+        print("response length:", len(str(response)))
+
         self._check_response(response)
-        return response
+        return response"""
 
     def _send(self, command: Dict) -> Dict:
         # print every sended command
@@ -988,26 +1012,38 @@ class AnalyzerCmd():
         # actual sending command
         self.s.sendall(cmd_str)
 
-    def _receive(self):
-        # response = self.s.recv(4096)  # readed byte count
-        analyzer_response = self.s.recv(8192)  # readed byte count
-        #self.logger.debug("Undecoded Analyzer response:\n", analyzer_response)
+    def _thread_listening(self):
+        analyzer_response = self.s.recv(8192)  # readed byte counts
         return analyzer_response
 
+    def _receive(self):
+        self.rarth.start
+        print("JAAAAAA")
+        return self.rarth.thread_return()
+
+    def _receiveOLD(self):
+        resp = self.s.recv(4096)
+        print(resp)
+        length = resp[:2]
+        length = int.from_bytes(length, byteorder="big")
+        print(length)
+        return resp
+
     def _value_parser(self, expect_response=True, **kwargs):
+        # command ground structure
         command = {'cmd': "",
                    "msgid": self.msgid}
+        # specify final command
         command.update(kwargs)
+        # send command
         self._send(command)
+
         if expect_response:
             analyzer_response = self._receive()
-
-            if command['cmd'] == "AppCmd":
-                self._handle_appcmd_response(analyzer_response)
-            else:
-                return self._handle_commserver_response(analyzer_response)
+            # handle response
+            return self._handle_response(analyzer_response)
 
 
-with AnalyzerCmd("192.168.2.67") as opti:
+with AnalyzerCmd("192.168.2.67", debug_mode=True) as opti:
     proc_val = opti.get_process_number()
     print(proc_val)
