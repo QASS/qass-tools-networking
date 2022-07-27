@@ -1021,7 +1021,7 @@ class AnalyzerCmd():
     def _recognition_translator(self, cmd_recognition: str):
         return "response" + cmd_recognition
 
-    def _check_response(self, response):
+    def check_response(self, response):
         # rais exception if not performed right
         if response.get("ok") == False:
             self.logger.error(
@@ -1083,7 +1083,7 @@ class AnalyzerCmd():
                 # deregister callback
                 self.__recv_thread.deregister_callbacks(recognition)
                 # check response for failure
-                self._check_response(analyzer_response)
+                self.check_response(analyzer_response)
                 return analyzer_response
 
 
