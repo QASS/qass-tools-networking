@@ -9,6 +9,7 @@ from typing import Any, Dict, Union
 import logging
 import sys
 import threading
+import queue
 
 
 class Amplitudes(Enum):
@@ -149,35 +150,70 @@ class SysAreaViews(IntEnum):
 
 
 class ReceiveThread(threading.Thread):
-    def __init__(self, socket, group=None, target=None, name=None, args=()):
+    def __init__(self, socket_obj, logger_obj, group=None, target=None, name=None, args=()):
         threading.Thread.__init__(self, group, target, name, args)
         self.return_value = "Receiver thread is now killed."
         self.lock = threading.RLock()
         self.__callbacks = {}
-        self.s = socket
+        self.s = socket_obj
+        self.logger = logger_obj
 
-    def register_callback(self, msg_id, callback):
+    def register_callbacks(self, recognition: Union[str, int], callback) -> None:
+        """ Function to register incomming analyzer response by msg_id or cmd name.
+        Parsed callback will be regsitered to handle response.
+
+        :param recognition: Recognition to identify message.
+        :type recognition: str, int
+        :param callback: Callback to handle response value
+        :type callback: function
+        """
         with self.lock:
-            self.__callbacks[msg_id] = callback
+            self.__callbacks[recognition] = callback
 
-    def deregister_callbacks(self, msg_id):
-        pass
+    def deregister_callbacks(self, recognition: Union[str, int]) -> None:
+        """ Remove callback registration.
 
-    def handle_response(self, response):
-        if 'msgid' in response:
-            with self.lock:
-                if response['msgid'] in self.__callbacks:
+        :param recognition: Recognition to identify message.
+        :type recognition: str, int
+        """
+        with self.lock:
+            self.__callbacks.pop(recognition)
+
+    def handle_response(self, response, encoding_style="utf-8") -> None:
+        self.logger.debug(response)
+        # change appearance
+        response = response.decode(encoding_style)
+        response = json.loads(response)
+
+        with self.lock:
+            if response['cmd'] in self.__callbacks:
+                self.__callbacks[response['cmd']](response)
+            elif 'resid' in response:
+                if response['resid'] in self.__callbacks:
+                    self.__callbacks[response['resid']](response)
+            elif 'msgid' in response:
+                if response['resid'] in self.__callbacks:
                     self.__callbacks[response['msgid']](response)
+            else:
+                raise Exception("No registered command found")
 
-    def run(self):
-        current_len = None
-        buffer = ""
-        READ_SIZE = 5
+    def run(self) -> None:
+        current_len = 0
+        buffer = bytearray()
+        READ_SIZE = 4
         self.kill = False
         while not self.kill:
-            buffer += self.s.recv(READ_SIZE)
-            while len(buffer) > current_len or (current_len is None and len(buffer) >= 2):
-                if current_len is None:
+            try:
+                buffer.extend(self.s.recv(READ_SIZE))
+            except socket.timeout as e:
+                continue
+            except socket.error as e:
+                self.logger.error(e)
+                if int.from_bytes(buffer, byteorder='big') > 0:
+                    self.logger.warning("Unfinished message received")
+                    self.logger.warning(buffer)
+            while (len(buffer) >= current_len and len(buffer) != 0) or (current_len is 0 and len(buffer) >= 2):
+                if current_len is 0:
                     current_len = int.from_bytes(buffer[:2], byteorder='big')
                     buffer = buffer[2:]
 
@@ -185,13 +221,12 @@ class ReceiveThread(threading.Thread):
                     response = buffer[:current_len]
                     self.handle_response(response)
                     buffer = buffer[current_len:]
-                    current_len = None
+                    current_len = 0
 
-    def kill_thread(self):
-        self.daemon = True
+    def kill_thread(self) -> None:
+        #self.daemon = True
         self.kill = True
         self.join()
-        # return self.return_value
 
 
 class AnalyzerCmd():
@@ -242,17 +277,18 @@ class AnalyzerCmd():
         self.s.connect((self.ip, self.port))
 
         # create thread instance
-        self.__recv_thread = ReceiveThread(self.s,
+        self.__recv_thread = ReceiveThread(self.s, self.logger,
                                            group=None, target=None, name="receive thread")
         self.__recv_thread.start()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         time.sleep(2.0)
-        self.__recv_thread.kill_thread
+        self.__recv_thread.kill_thread()
         self.s.close()
         self.logger.info("Socket connection closed")
         if exc_type != None:
+
             self.logger.error(
                 f"\nExecution type: {exc_type}\nTraceback: {traceback}")
 
@@ -509,18 +545,20 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="clearappvar", p1=app_var_name)
 
-    def get_app_vars_report(self, mode: Union[bool, str] = "enabled") -> Dict:
-        """ Get report about existing AppVars and their changes.
+    def get_app_vars_report(self, callback, mode: Union[bool, str] = "enabled"):
+        """ Turn AppVar report on and off. Callback function process information. See networking_example.py for an example.
 
-        Return dict contains list of AppVars with name and value, as access time and unixtime.
+        Internal return dict contains list of AppVars with name and value, as access time and unixtime.
+        Supported keywords for mode can be checked by translator in Class documentation.
 
-        :param mode: Can be set to enabled or disabled, defaults to enbaled
-        :type mode: bool, str, optional
-        :return: AppVar report
-        :rtype: Dict
+        :param callback: Callback function to process information that report happend.
+        :type callback: function
+        :param mode: Switch report to on ("enable") or off ("disable"), defaults to "enabled"
+        :type mode: Union[str, bool]
         """
 
-        val = self._value_parser(cmd="reportappvars", p1=self.translator[mode])
+        val = self._value_parser(
+            user_callback=callback, cmd="reportappvars", p1=self.translator[mode])
         # process response
         val_dict = {"appvar_list": val.get("appvar_list"), "access_time": val.get(
             "appvar_readdate"), "unix_time": val.get("unixtime")}
@@ -709,21 +747,16 @@ class AnalyzerCmd():
                     'amplitudetype': SysAmplitudesType.AMPLITUDE_DEFAULT
                     }
         # Check for right kwargs keys
-        for kwarg in kwargs.keys():
-            if kwarg not in settings.keys():
-                self.logger.error(
-                    "Choosen settings key is not supported in this method.")
-                raise ValueError(
-                    "Choosen settings key is not supported in this method.")
-            if kwarg == "amplitudetype" and kwargs[kwarg] not in SysAmplitudesType:
-                self.logger.error(
-                    "Choosen amplitudetype is not a analyzer system aplitude type.")
-                raise ValueError(
-                    "Choosen amplitudetype is not a analyzer system aplitude type.")
-
-        settings.update(kwargs)
-        self.logger.info(
-            f"Updated settings to {kwargs.items()}")
+        if kwargs:
+            for kwarg in kwargs.keys():
+                if kwarg not in settings.keys():
+                    self.logger.error(
+                        "Choosen settings key is not supported in this method.")
+                    raise ValueError(
+                        "Choosen settings key is not supported in this method.")
+            settings.update(kwargs)
+            self.logger.info(
+                f"Updated settings to {kwargs.items()}")
         response_dict = self._value_parser(**settings)
         # extract important information
         max_amp = response_dict.get("p1")
@@ -808,7 +841,6 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="setcomment", p1=comment, quiet=False)
 
-    # TODO:understand command
     def start_operator(self, operator_name: str, operator_command: str) -> None:
         """External start of existing operator by name.
 
@@ -818,7 +850,7 @@ class AnalyzerCmd():
         :type operator_command: str
         """
         self._value_parser(cmd="startoperator",
-                           p1=operator_name, p2=operator_command)
+                           p1=operator_name, p2=operator_command, expect_response=False)
 
     def import_operators(self, operator_fielpath: str, force_load: str) -> None:
         """Import a local file on optimizer.
@@ -829,7 +861,7 @@ class AnalyzerCmd():
         :type force_load: str
         """
         self._value_parser(cmd="importoperators",
-                           p1=operator_fielpath, p2=force_load)
+                           p1=operator_fielpath, p2=force_load, expect_response=False)
 
     def import_patterns(self, directory_path: str) -> None:
         """Import all pattern files from a optimizer local directory.
@@ -838,7 +870,7 @@ class AnalyzerCmd():
         :type directory_path: str
         """
         self._value_parser(cmd="importpatterns",
-                           p1=directory_path)
+                           p1=directory_path, expect_response=False)
 
     def start_operator_results(self, mode: Union[str, bool] = "enable") -> None:
         """Sets enable flag to send ot operator results if avaible. Results will be sended separately
@@ -872,48 +904,20 @@ class AnalyzerCmd():
         val = self._value_parser(cmd="readioout")
         return val.get("result")
 
-    def shift_binary(self, original_bin: str) -> str:
-        """Helper to shift binary strings (partwise).
+    def shift_binary(self, original_bin: int) -> int:
+        """Helper to invert incomming binaries.
 
-        :param binary_part: binary string
-        :type binary_part: str
-        :param shift: Shifted chars in string as a loop of string size, defaults to 3
-        :type shift: int, optional
-        :return: Shifted binary string
-        :rtype: str
+        :param original_bin: Incomming binary
+        :type original_bin: int
+        :return: Inversed binary
+        :rtype: int
         """
-        old_val = original_bin
-
         new_val = 0
-
         for i in range(24):
-            bit_state = (old_val & (1 << i) >> i)
+            bit_state = (original_bin & (1 << i) >> i)
             new_val = new_val | (bit_state << (24-i))
 
-        # generic solution
-        shifted_idx_list = []
-        dig_list = list(binary_part)
-
-        # find shifting idx
-        for idx in range(0, len(binary_part)):
-            shift_idx = idx + shift
-            if shift_idx > len(binary_part)-1:
-                shift_idx = shift_idx - len(binary_part)
-            shifted_idx_list.append(shift_idx)
-
-        # zip and sort
-        zipped = zip(dig_list, shifted_idx_list)
-        sorted_list = sorted(zipped, key=lambda x: x[1])
-        shifted_list, _ = zip(*sorted_list)
-
-        # join shifted digs
-        shifted_part = "".join(shifted_list)
-
-        # hardcoded solution
-        # shifted_part = binary_part[3] + \
-        #    binary_part[0] + binary_part[1] + binary_part[2]
-
-        return shifted_part
+        return new_val
 
     def binary_to_hexa(self, binary_str: str):
         if "_" in binary_str:
@@ -974,26 +978,30 @@ class AnalyzerCmd():
         self._value_parser(cmd="setsimioin",
                            p1=hexa)
 
-    def set_io_report(self, mode: Union[str, bool]):
-        """Switches I/O register report on or off.
+    def set_io_report(self, callback, mode: Union[str, bool]):
+        """Turn I/O report on and off. Callback function process information. See networking_example.py for an example.
 
-        :param mode: Switch report to on (True) or off (False)
-        :type mode: bool, str
-        :return: standardized analyzer respond
-        :rtype: dict
+        Supported keywords for mode can be checked by translator in Class documentation.
+
+        :param callback: Callback function to process information that report happend.
+        :type callback: function
+        :param mode: Switch report to on ("enable") or off ("disable")
+        :type mode: Union[str, bool]
         """
-        self._value_parser(cmd="reportio",
+        self._value_parser(user_callback=callback, cmd="reportio",
                            p1=self.translator[mode])
 
-    def set_process_number_report(self, mode: Union[str, bool]):
-        """Switches process number report on or off.
+    def set_process_number_report(self, callback, mode: Union[str, bool]):
+        """Switches process number report on or off. Callback function process information. See networking_example.py for an example.
 
-        :param mode: Switch report to on ("enable") or off ("disable"). For supported keys see translator.
-        :type mode: bool, str
-        :return: standardized analyzer response
-        :rtype: dict
+        Supported keywords for mode can be checked by translator in Class documentation.
+
+        :param callback: Callback function to process information that report happend.
+        :type callback: function
+        :param mode: Switch report to on ("enable") or off ("disable")
+        :type mode: Union[str, bool]
         """
-        self._value_parser(cmd="reportprocessnumber",
+        self._value_parser(user_callback=callback, cmd="reportprocessnumber",
                            p1=self.translator[mode])
 
     def start_script_function(self, function_name: str, function_param: any):
@@ -1008,24 +1016,10 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="appfunc",
                            p1=function_name, p2=function_param)
+    # def human_cofirmation --> expect_response=False
 
-    """def _handle_appcmd_response(self, response):
-        self.logger.debug(response)
-        # change appearance
-        response = response.decode("utf-8")  # utf-8 decode type
-        response = json.loads(response[2:])
-
-        self._check_response(response)"""
-
-    def _handle_response(self, response, encoding_style="utf-8"):
-        self.logger.debug(response)
-        # change appearance
-        response = response[2:].decode(encoding_style)  # utf-8 decode type
-        response = json.loads(response)
-        self._check_response(response)
-        # if expect_return:
-        #    return response
-        return response
+    def _recognition_translator(self, cmd_recognition: str):
+        return "response" + cmd_recognition
 
     def _check_response(self, response):
         # rais exception if not performed right
@@ -1035,79 +1029,68 @@ class AnalyzerCmd():
             raise Exception(
                 "Analyzer could not perform action:: check log and documentation.")
 
-    """def _handle_commserver_response(self, response) -> Dict:
-        self.logger.debug(response)
-        response = response[2:].decode()
-        response = json.loads(response)
-        print("response length:", len(str(response)))
-
-        self._check_response(response)
-        return response"""
-
     def _send(self, command: Dict) -> Dict:
         # print every sended command
         self.logger.info(f"Sended command:{command}")
         # prepare command
         cmd_str = json.dumps(command).encode()
         cmd_str = (len(cmd_str)).to_bytes(2, 'big') + cmd_str
-        # adding msgid
-        self.msgid += 1
         # actual sending command
         self.s.sendall(cmd_str)
 
-    def _thread_listening(self):
-        timeout = False
-        storage_buffer = ctypes.create_unicode_buffer(1)
-        while not timeout:
-            self.s.recv_into(storage_buffer)
-            buff = storage_buffer.value
-            print(buff)
-            analyzer_response = buff
+    def _value_parser(self, expect_response=True, user_callback=None, **kwargs) -> Dict:
+        """Function to coordinate sending parsed command settings and take back answer from receiver thread.
 
-            # stop conditions
-            if analyzer_response:
-                return analyzer_response
-            # if first message is received listen one round more if analayzer sends more
-            if int.from_bytes(buff, byteorder="big") == 1:
-                timeout = True
-            else:
-                timeout = False
-        return analyzer_response
+        By kwargs specification of each command will be set.
 
-    def _receive(self):
-        self.rarth.start()
-        return self.rarth.thread_return()
-
-    """def _receive(self):
-        resp = self.s.recv(4096)
-        print(resp)
-        length = resp[:2]
-        length = int.from_bytes(length, byteorder="big")
-        print(length)
-        return resp
-    """
-
-    def _value_parser(self, expect_response=True, **kwargs):
-        if expect_response:
-            queue = Queue()
-            def callback(result, queue=queue): return queue.put(result)
-            self._receiver_thread.registerCallback(self.msgid, callback)
+        :param expect_response: Flag to not wait for analyzer response, defaults to True
+        :type expect_response: bool, optional
+        :return: Analyzer response
+        :rtype: dict
+        """
+        # adding msgid
+        self.msgid += 1
 
         # command ground structure
         command = {'cmd': "",
                    "msgid": self.msgid}
         # specify final command
         command.update(kwargs)
-        # send command
+        # decide which recognition should be used, if possible use msgid
+        if command['cmd'] == "AppCmd":
+            recognition = self.msgid
+        else:
+            recognition = self._recognition_translator(command['cmd'])
+        # register callback before sending
+        if expect_response:
+            q = queue.Queue()
+            def callback(result, queue_var=q): return queue_var.put(result)
+            if user_callback:
+                self.__recv_thread.register_callbacks(
+                    recognition, user_callback)
+            else:
+                self.__recv_thread.register_callbacks(recognition, callback)
+                # send command
         self._send(command)
 
+        # receive response
         if expect_response:
-            result = queue.get()
-            analyzer_response = self._receive()
-            # handle response
-            return self._handle_response(analyzer_response)
+            if user_callback:
+                self.__recv_thread.deregister_callbacks(recognition)
+            else:
+                # get resonse out of queue
+                analyzer_response = q.get()
+                # deregister callback
+                self.__recv_thread.deregister_callbacks(recognition)
+                # check response for failure
+                self._check_response(analyzer_response)
+                return analyzer_response
 
 
-with AnalyzerCmd("192.168.2.67", debug_mode=True) as opti:
+with AnalyzerCmd("192.168.2.67", debug_mode=False) as opti:
     proc_val = opti.get_process_number()
     print(proc_val)
+    opti.get_heartbeat()
+    vals = opti.calc_max_amp_per_band()
+    if len(vals) > 0:
+        print("I'm working")
