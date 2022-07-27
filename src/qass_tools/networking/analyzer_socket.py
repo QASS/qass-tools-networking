@@ -1,3 +1,4 @@
+import ctypes
 import socket
 import json
 from turtle import clear
@@ -147,18 +148,50 @@ class SysAreaViews(IntEnum):
     View_4 = 3
 
 
-class ReceiveAndReturnThread(threading.Thread):
-    def __init__(self, group=None, target=None, args=()):
-        super().__init__(self, group, target, args)
-        self.return_value = ""
+class ReceiveThread(threading.Thread):
+    def __init__(self, socket, group=None, target=None, name=None, args=()):
+        threading.Thread.__init__(self, group, target, name, args)
+        self.return_value = "Receiver thread is now killed."
+        self.lock = threading.RLock()
+        self.__callbacks = {}
+        self.s = socket
+
+    def register_callback(self, msg_id, callback):
+        with self.lock:
+            self.__callbacks[msg_id] = callback
+
+    def deregister_callbacks(self, msg_id):
+        pass
+
+    def handle_response(self, response):
+        if 'msgid' in response:
+            with self.lock:
+                if response['msgid'] in self.__callbacks:
+                    self.__callbacks[response['msgid']](response)
 
     def run(self):
-        if self._target is not None:
-            self.return_value = self._target(*self._args, **self._kwargs)
+        current_len = None
+        buffer = ""
+        READ_SIZE = 5
+        self.kill = False
+        while not self.kill:
+            buffer += self.s.recv(READ_SIZE)
+            while len(buffer) > current_len or (current_len is None and len(buffer) >= 2):
+                if current_len is None:
+                    current_len = int.from_bytes(buffer[:2], byteorder='big')
+                    buffer = buffer[2:]
 
-    def thread_return(self):
+                if len(buffer) >= current_len:
+                    response = buffer[:current_len]
+                    self.handle_response(response)
+                    buffer = buffer[current_len:]
+                    current_len = None
+
+    def kill_thread(self):
+        self.daemon = True
+        self.kill = True
         self.join()
-        return self.return_value
+        # return self.return_value
 
 
 class AnalyzerCmd():
@@ -196,10 +229,6 @@ class AnalyzerCmd():
                             format='[%(asctime)s] - %(levelname)s - %(message)s')
         self.logger = logging.getLogger()
 
-        # create thread instance
-        #self.receive_th = threading.Thread(target=self.thread_listening)
-        self.rarth = ReceiveAndReturnThread(target=self._thread_listening)
-
     def __enter__(self):
         """ Connects the machine to an analyzer reachable over user-given Input of IP (self.ip) and Port (self.port) 
         via TCP and returns an isntance of the class
@@ -211,10 +240,16 @@ class AnalyzerCmd():
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.settimeout(1)
         self.s.connect((self.ip, self.port))
+
+        # create thread instance
+        self.__recv_thread = ReceiveThread(self.s,
+                                           group=None, target=None, name="receive thread")
+        self.__recv_thread.start()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         time.sleep(2.0)
+        self.__recv_thread.kill_thread
         self.s.close()
         self.logger.info("Socket connection closed")
         if exc_type != None:
@@ -333,11 +368,11 @@ class AnalyzerCmd():
         :raises KeyError: If input for frequency test is not choosen to be "channel" or "port".
         """
         if input == "channel":
-            kind += kind
+            kind += 1
             self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=f"channel {kind} frqtest")
         elif input == "port":
-            kind += kind
+            kind += 1
             self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=f"port {kind} frqtest")
         else:
@@ -371,7 +406,7 @@ class AnalyzerCmd():
         :raises KeyError: If input for pulsetest is not choosen to be "channel" or "port".
         """
         if "gain" in kwargs:
-            if kwargs["gain"] > 4095 or kwargs["gain"] < 0:
+            if not (0 < kwargs["gain"] < 4095):
                 self.logger.error(
                     "Choosen pulsetest gain is not avaible. The gain should be in range of 0 to 4095.")
                 raise ValueError(
@@ -402,11 +437,11 @@ class AnalyzerCmd():
             delay = 0
 
         if input == "channel":
-            kind += kind
+            kind += 1
             self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=f"channel {kind} pulse {gain} {count} {delay}")
         elif input == "port":
-            kind += kind
+            kind += 1
             self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=f"port {kind} pulse {gain} {count} {delay}")
         else:
@@ -837,7 +872,7 @@ class AnalyzerCmd():
         val = self._value_parser(cmd="readioout")
         return val.get("result")
 
-    def shift_binary(self, binary_part: str, shift=3) -> str:
+    def shift_binary(self, original_bin: str) -> str:
         """Helper to shift binary strings (partwise).
 
         :param binary_part: binary string
@@ -847,6 +882,14 @@ class AnalyzerCmd():
         :return: Shifted binary string
         :rtype: str
         """
+        old_val = original_bin
+
+        new_val = 0
+
+        for i in range(24):
+            bit_state = (old_val & (1 << i) >> i)
+            new_val = new_val | (bit_state << (24-i))
+
         # generic solution
         shifted_idx_list = []
         dig_list = list(binary_part)
@@ -1013,23 +1056,43 @@ class AnalyzerCmd():
         self.s.sendall(cmd_str)
 
     def _thread_listening(self):
-        analyzer_response = self.s.recv(8192)  # readed byte counts
+        timeout = False
+        storage_buffer = ctypes.create_unicode_buffer(1)
+        while not timeout:
+            self.s.recv_into(storage_buffer)
+            buff = storage_buffer.value
+            print(buff)
+            analyzer_response = buff
+
+            # stop conditions
+            if analyzer_response:
+                return analyzer_response
+            # if first message is received listen one round more if analayzer sends more
+            if int.from_bytes(buff, byteorder="big") == 1:
+                timeout = True
+            else:
+                timeout = False
         return analyzer_response
 
     def _receive(self):
-        self.rarth.start
-        print("JAAAAAA")
+        self.rarth.start()
         return self.rarth.thread_return()
 
-    def _receiveOLD(self):
+    """def _receive(self):
         resp = self.s.recv(4096)
         print(resp)
         length = resp[:2]
         length = int.from_bytes(length, byteorder="big")
         print(length)
         return resp
+    """
 
     def _value_parser(self, expect_response=True, **kwargs):
+        if expect_response:
+            queue = Queue()
+            def callback(result, queue=queue): return queue.put(result)
+            self._receiver_thread.registerCallback(self.msgid, callback)
+
         # command ground structure
         command = {'cmd': "",
                    "msgid": self.msgid}
@@ -1039,6 +1102,7 @@ class AnalyzerCmd():
         self._send(command)
 
         if expect_response:
+            result = queue.get()
             analyzer_response = self._receive()
             # handle response
             return self._handle_response(analyzer_response)
