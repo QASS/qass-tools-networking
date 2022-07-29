@@ -192,10 +192,10 @@ class ReceiveThread(threading.Thread):
                 if response['resid'] in self.__callbacks:
                     self.__callbacks[response['resid']](response)
             elif 'msgid' in response:
-                if response['resid'] in self.__callbacks:
+                if response['msgid'] in self.__callbacks:
                     self.__callbacks[response['msgid']](response)
             else:
-                raise Exception("No registered command found")
+                self.logger.error("No registered command found")
 
     def run(self) -> None:
         current_len = 0
@@ -257,7 +257,8 @@ class AnalyzerCmd():
                            "beginn": "true", "enabled": "true", "enable": "true", "on": "true",
                            False: "false", "stop": "false", "end": "false", "disabled": "false",
                            "false": "false", "disable": "false", "monitor": "monitor"}
-
+        self._io_report_count = 0
+        self._proc_report_count = 0
         # short solution logger to sys.stdout
         msg_mode = logging.DEBUG if debug_mode else logging.INFO
         logging.basicConfig(stream=sys.stdout, level=msg_mode,
@@ -974,22 +975,31 @@ class AnalyzerCmd():
         :param io: Combination on set I/Os register, defaults to "0xf0000"
         :type io: str
         """
-        hexa = self.binary_to_hexa(io)
+        #hexa = self.binary_to_hexa(io)
         self._value_parser(cmd="setsimioin",
-                           p1=hexa)
+                           p1=io)
 
-    def set_io_report(self, callback, mode: Union[str, bool]):
+    def register_io_report_callback(self, callback):
         """Turn I/O report on and off. Callback function process information. See networking_example.py for an example.
 
         Supported keywords for mode can be checked by translator in Class documentation.
 
         :param callback: Callback function to process information that report happend.
         :type callback: function
-        :param mode: Switch report to on ("enable") or off ("disable")
-        :type mode: Union[str, bool]
         """
-        self._value_parser(user_callback=callback, cmd="reportio",
-                           p1=self.translator[mode])
+        if self._io_report_count == 0:
+            self._value_parser(user_callback=callback, cmd="reportio",
+                               p1="true")
+        else:
+            self.__recv_thread.register_callbacks()
+        self._io_report_count += 1
+
+    def deregister_io_report_callback(self, callback):
+        self.__recv_thread.deregister_callbacks()
+        self._io_report_count -= 1
+        if self._io_report_count == 0:
+            self._value_parser(cmd="reportio",
+                               p1="false")
 
     def set_process_number_report(self, callback, mode: Union[str, bool]):
         """Switches process number report on or off. Callback function process information. See networking_example.py for an example.
@@ -1076,7 +1086,8 @@ class AnalyzerCmd():
         # receive response
         if expect_response:
             if user_callback:
-                self.__recv_thread.deregister_callbacks(recognition)
+                if "mode" in command and command['mode'] == "false":
+                    self.__recv_thread.deregister_callbacks(recognition)
             else:
                 # get resonse out of queue
                 analyzer_response = q.get()
@@ -1087,10 +1098,22 @@ class AnalyzerCmd():
                 return analyzer_response
 
 
-with AnalyzerCmd("192.168.2.67", debug_mode=False) as opti:
-    proc_val = opti.get_process_number()
-    print(proc_val)
-    opti.get_heartbeat()
-    vals = opti.calc_max_amp_per_band()
-    if len(vals) > 0:
-        print("I'm working")
+def own_callback_example_return(result, queue_var=q):
+    """Function that prints a state change everytime it does and returns analyzer repsonse.
+
+    Callback function always becomes response as arg. To parse inforamtion betweenthe threads,
+    use a queue object.
+    """
+    print("I/O changend")
+    # do something more
+
+
+with AnalyzerCmd(ip="192.168.2.67") as opti:
+    opti.set_io_report(
+        own_callback_example_return, mode="enable")
+    result = getter(q)
+    # If you want to check your command for failure, use the check_response function.
+    opti.check_response(result)
+    opti.set_simualted_io_input("0x1003")
+    val = opti.get_process_number()
+    print(val)

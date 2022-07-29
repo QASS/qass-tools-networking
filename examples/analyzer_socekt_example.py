@@ -45,34 +45,3 @@ def own_callback_example(result):
 
 with AnalyzerCmd(ip="192.168.2.67") as opti:
     opti.set_io_report(own_callback_example, mode="enable")
-
-######## Example 4 ############
-""" Example to show how to use report function with an easy callback
-"""
-q = queue.Queue()
-
-
-def getter(queue_obj):
-    """ Helper tp get queur content. If you want to check your command for failure, use the check_response function.
-    """
-    resp = q.get()
-    AnalyzerCmd.check_response(resp)
-    return resp
-
-
-def own_callback_example_return(result, queue_var=q):
-    """Function that prints a state change everytime it does and returns analyzer repsonse.
-
-    Callback function always becomes response as arg. To parse inforamtion betweenthe threads,
-    use a queue object.
-    """
-    print("Proces number changend")
-    # do something more
-
-    return queue_var.put(result)
-
-
-with AnalyzerCmd(ip="192.168.2.67") as opti:
-    opti.set_process_number_report(
-        own_callback_example_return, mode="enable")
-    result = getter(q)
