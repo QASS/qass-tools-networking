@@ -10,6 +10,7 @@ import logging
 import sys
 import threading
 import queue
+from collections import defaultdict
 
 
 class Amplitudes(Enum):
@@ -154,7 +155,7 @@ class ReceiveThread(threading.Thread):
         threading.Thread.__init__(self, group, target, name, args)
         self.return_value = "Receiver thread is now killed."
         self.lock = threading.RLock()
-        self.__callbacks = {}
+        self.__callbacks = defaultdict(list)
         self.s = socket_obj
         self.logger = logger_obj
 
@@ -168,16 +169,19 @@ class ReceiveThread(threading.Thread):
         :type callback: function
         """
         with self.lock:
-            self.__callbacks[recognition] = callback
+            self.__callbacks[recognition].append(callback)
 
-    def deregister_callbacks(self, recognition: Union[str, int]) -> None:
+    def deregister_callbacks(self, recognition: Union[str, int], user_callback=None) -> None:
         """ Remove callback registration.
 
         :param recognition: Recognition to identify message.
         :type recognition: str, int
         """
         with self.lock:
-            self.__callbacks.pop(recognition)
+            if user_callback:
+                self.__callbacks[recognition].remove(user_callback)
+            else:
+                self.__callbacks[recognition].pop(0)
 
     def handle_response(self, response, encoding_style="utf-8") -> None:
         self.logger.debug(response)
@@ -187,15 +191,18 @@ class ReceiveThread(threading.Thread):
 
         with self.lock:
             if response['cmd'] in self.__callbacks:
-                self.__callbacks[response['cmd']](response)
+                length = len(self.__callbacks[response['cmd']])
+                if length > 1:
+                    for idx in range(0, length):
+                        self.__callbacks[response['cmd']][idx](response)
+                else:
+                    self.__callbacks[response['cmd']][0](response)
             elif 'resid' in response:
                 if response['resid'] in self.__callbacks:
-                    self.__callbacks[response['resid']](response)
+                    self.__callbacks[response['resid']][0](response)
             elif 'msgid' in response:
                 if response['msgid'] in self.__callbacks:
-                    self.__callbacks[response['msgid']](response)
-            else:
-                self.logger.error("No registered command found")
+                    self.__callbacks[response['msgid']][0](response)
 
     def run(self) -> None:
         current_len = 0
@@ -991,17 +998,17 @@ class AnalyzerCmd():
             self._value_parser(user_callback=callback, cmd="reportio",
                                p1="true")
         else:
-            self.__recv_thread.register_callbacks()
+            self.__recv_thread.register_callbacks("reponsereportio", callback)
         self._io_report_count += 1
 
     def deregister_io_report_callback(self, callback):
-        self.__recv_thread.deregister_callbacks()
+        self.__recv_thread.deregister_callbacks("responsereportio", callback)
         self._io_report_count -= 1
         if self._io_report_count == 0:
             self._value_parser(cmd="reportio",
                                p1="false")
 
-    def set_process_number_report(self, callback, mode: Union[str, bool]):
+    def register_process_number_report_callback(self, callback):
         """Switches process number report on or off. Callback function process information. See networking_example.py for an example.
 
         Supported keywords for mode can be checked by translator in Class documentation.
@@ -1011,8 +1018,21 @@ class AnalyzerCmd():
         :param mode: Switch report to on ("enable") or off ("disable")
         :type mode: Union[str, bool]
         """
-        self._value_parser(user_callback=callback, cmd="reportprocessnumber",
-                           p1=self.translator[mode])
+        if self._proc_report_count == 0:
+            self._value_parser(user_callback=callback, cmd="reportprocessnumber",
+                               p1="true")
+        else:
+            self.__recv_thread.register_callbacks(
+                "reponsereportprocessnumber", callback)
+        self._proc_report_count += 1
+
+    def deregister_io_report_callback(self, callback):
+        self.__recv_thread.deregister_callbacks(
+            "reponsereportprocessnumber", callback)
+        self._proc_report_count -= 1
+        if self._proc_report_count == 0:
+            self._value_parser(cmd="reportprocessnumber",
+                               p1="false")
 
     def start_script_function(self, function_name: str, function_param: any):
         """ Start script function and return result.
@@ -1072,30 +1092,25 @@ class AnalyzerCmd():
         else:
             recognition = self._recognition_translator(command['cmd'])
         # register callback before sending
-        if expect_response:
+        if expect_response and user_callback == None:
             q = queue.Queue()
             def callback(result, queue_var=q): return queue_var.put(result)
-            if user_callback:
-                self.__recv_thread.register_callbacks(
-                    recognition, user_callback)
-            else:
-                self.__recv_thread.register_callbacks(recognition, callback)
-                # send command
+            self.__recv_thread.register_callbacks(recognition, callback)
+        elif expect_response:
+            self.__recv_thread.register_callbacks(
+                "reponsereportio", user_callback)
+        # send command
         self._send(command)
 
         # receive response
-        if expect_response:
-            if user_callback:
-                if "mode" in command and command['mode'] == "false":
-                    self.__recv_thread.deregister_callbacks(recognition)
-            else:
-                # get resonse out of queue
-                analyzer_response = q.get()
-                # deregister callback
-                self.__recv_thread.deregister_callbacks(recognition)
-                # check response for failure
-                self.check_response(analyzer_response)
-                return analyzer_response
+        if expect_response and user_callback == None:
+            # get resonse out of queue
+            analyzer_response = q.get()
+            # deregister callback
+            self.__recv_thread.deregister_callbacks(recognition)
+            # check response for failure
+            self.check_response(analyzer_response)
+            return analyzer_response
 
 
 def own_callback_example_return(result, queue_var=q):

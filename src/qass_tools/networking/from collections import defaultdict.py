@@ -22,9 +22,11 @@ append(recognition, print_two)
 
 print(len(callbacks[recognition]))
 print(callbacks[recognition].index(print))
+
 callbacks[recognition][1]("bam")
-for c in range(0, len(callbacks[recognition])):
-    print(c)
+
 # for x in callbacks[recognition]:
 #    callbacks[recognition][x]("bam")
 #
+if "cmd" in callbacks:
+    print("So beginnt")
