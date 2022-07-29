@@ -45,3 +45,25 @@ def own_callback_example(result):
 
 with AnalyzerCmd(ip="192.168.2.67") as opti:
     opti.set_io_report(own_callback_example, mode="enable")
+
+######## Example 4 ############
+
+
+def callback_1(result):
+    """ All callbacks need result as param, if its used or not"""
+    print("callback 1")
+    # do something more
+
+
+def callback_2(result):
+    print("callback 2")
+
+
+with AnalyzerCmd(ip="192.168.2.67") as opti:
+    opti.add_io_report_callback(callback_1)
+    opti.add_io_report_callback(callback_2)
+    opti.set_simualted_io_input("0x1005")
+    val = opti.get_process_number()
+    print("proc:", val)
+    opti.remove_io_report_callback(callback_1)
+    opti.set_simualted_io_input("0x1009")

@@ -180,8 +180,10 @@ class ReceiveThread(threading.Thread):
         with self.lock:
             if user_callback:
                 self.__callbacks[recognition].remove(user_callback)
+                if len(self.__callbacks[recognition]) == 0:
+                    self.__callbacks.pop(recognition)
             else:
-                self.__callbacks[recognition].pop(0)
+                self.__callbacks.pop(recognition)
 
     def handle_response(self, response, encoding_style="utf-8") -> None:
         self.logger.debug(response)
@@ -790,18 +792,18 @@ class AnalyzerCmd():
         return self._value_parser(cmd="getmaxmeasurepositions")
 
     # TODO: Source code or peter ---'t:2023;sn:980;s:1;'
-    def get_preamp_settings(self, preampport: PreampPorts):
+    def get_preamp_settings(self, preampport):
         """_summary_
 
         _extended_summary_
 
         :param preampport: _description_
-        :type preampport: PreampPorts
-        :raises KeyError: Raises if parsed variable is no PreampPorts enum
+        :type preampport: PreampPort or corresponding int value
+        :raises KeyError: Raises if parsed variable is no supported PreampPort
         :return: _description_
-        :rtype: _type_
+        :rtype: dict
         """
-        if preampport in PreampPorts:
+        if preampport in PreampPorts or preampport in range(0, 8):
             return self._value_parser(cmd="getpreampinfo", p1=preampport)
         else:
             self.logger.error(
@@ -809,10 +811,10 @@ class AnalyzerCmd():
             raise KeyError(
                 "Choosen preampport is not a analyzer system preampport.")
 
-    def start_operator_function(self, mode: Union[str, bool] = "enabled") -> None:
+    def start_operator_function(self, mode: Union[str, bool] = "start") -> None:
         """_summary_
 
-        :param mode: Mode if start is enabled., defaults to "enabled"
+        :param mode: Function can start or end operator function by changing mode to a stopping key, defaults to "start". For more allowed keys look up translator dict
         :type mode: Union[str, bool], optional
         """
         self._value_parser(cmd="startoperatorfunctionvalues",
@@ -912,7 +914,7 @@ class AnalyzerCmd():
         val = self._value_parser(cmd="readioout")
         return val.get("result")
 
-    def shift_binary(self, original_bin: int) -> int:
+    def _shift_binary(self, original_bin: int) -> str:
         """Helper to invert incomming binaries.
 
         :param original_bin: Incomming binary
@@ -921,76 +923,74 @@ class AnalyzerCmd():
         :rtype: int
         """
         new_val = 0
-        for i in range(24):
+        new_binary = ""
+        for i in range(16):
             bit_state = (original_bin & (1 << i) >> i)
             new_val = new_val | (bit_state << (24-i))
 
         return new_val
 
-    def binary_to_hexa(self, binary_str: str):
-        if "_" in binary_str:
-            shifted_binary = ""
-            binary_list = binary_str.split("_")
-            for (idx, binary_group) in enumerate(binary_list):
-                shifted_binary_group = self.shift_binary(binary_group)
-                binary_list[idx] = shifted_binary_group
-            new_bin = "".join(binary_list)
-        else:
-            pass
-        # "0000_0000_0000_0000"
-        # "0000000000000000"
-
-        deci_num = int(new_bin, 2)
+    def _binary_to_hexa(self, binary_str: str):
+        deci_num = int(binary_str, 2)
         print(binary_str)
-        print(new_bin)
         print(hex(deci_num))
 
-        return self.invert_hexa(hex(deci_num))
+        return hex(deci_num)
 
-    def invert_hexa(self, hex_num):
+    """def invert_hexa(self, hex_num):
         hex_num = hex_num[2:]
         inverted = hex_num[::-1]
-        return "0x" + inverted
-        # sorting = [0,1,6,5,4,3]
+        return int("0x" + inverted)
+        # sorting = [0,1,6,5,4,3]"""
 
-    def deci_to_binary():
-        pass
+    def set_simualted_io_input(self, io: str = "0xf0000"):
+        """Set simulated I/O input register. I/0 input register can be set by inverted hexa (smallest significant left)
+        or by giving in binary representation of set bits in I/O register. I/O register in binary should be parsed like real analyzer setting.
 
-    def set_simualted_io_input(self, io: str):
-        """Set simulated I/O input register. Seting rule based on hexa.
+        First 8 digits are first I/O input register
+        Second 8 digits are second I/O input register
+        Give in all inputs as strings only!
+        "00000000 00000000" = "0xf0000"
+        "10000000 00000000" = "0xf0001"
+        "01000000 00000000" = "0xf0002"
+        "11000000 00000000" = "0xf0003"
+        "00100000 00000000" = "0xf0004"
+        "10100000 00000000" = "0xf0005"
+        "01100000 00000000" = "0xf0006"
+        "11100000 00000000" = "0xf0007"
+        "00010000 00000000" = "0xf0008"
+        "10010000 00000000" = "0xf0009"
+        "01010000 00000000" = "0xf000A"
+        "11010000 00000000" = "0xf000B"
+        "00110000 00000000" = "0xf000C"
+        "10110000 00000000" = "0xf000D"
+        "01110000 00000000" = "0xf000E"
+        "11110000 00000000" = "0xf000F"
 
-        IO_0000_0000_0000_0000 = "0xf0000"
-        IO_1000_0000_0000_0000 = "0xf0001"
-        IO_0100_0000_0000_0000 = "0xf0002"
-        IO_1100_0000_0000_0000 = "0xf0003"
-        IO_0010_0000_0000_0000 = "0xf0004"
-        IO_1010_0000_0000_0000 = "0xf0005"
-        IO_0110_0000_0000_0000 = "0xf0006"
-        IO_1110_0000_0000_0000 = "0xf0007"
-        IO_0001_0000_0000_0000 = "0xf0008"
-        IO_1001_0000_0000_0000 = "0xf0009"
-        IO_0101_0000_0000_0000 = "0xf000A"
-        IO_1101_0000_0000_0000 = "0xf000B"
-        IO_0011_0000_0000_0000 = "0xf000C"
-        IO_1011_0000_0000_0000 = "0xf000D"
-        IO_0111_0000_0000_0000 = "0xf000E"
-        IO_1111_0000_0000_0000 = "0xf000F"
-
-        IO_1000_1000_0000_0000 = "0xf0011"
+        "10001000 00000000" = "0xf0011"
         ...
 
-        :param io: Combination on set I/Os register, defaults to "0xf0000"
-        :type io: str
+        :param io: Combination on bits set to I/O input register (one and two), defaults to "0xf0000". For further informations see extended summary.
+        :type io: int
         """
-        #hexa = self.binary_to_hexa(io)
+        if len(io) == 17:  # binary case
+            self.logger.error("Binary appearance is not supported yet")
+            raise Exception("Developer Error")
+            # io = io.replace(" ", "")  # delete space
+            # shift binary from smallest significant left (analyzer) to right
+            #io = self.shift_binary(int(io))
+            # formate binary to hexa
+            #io = self.binary_to_hexa(io)
+
         self._value_parser(cmd="setsimioin",
                            p1=io)
 
-    def register_io_report_callback(self, callback):
-        """Turn I/O report on and off. Callback function process information. See networking_example.py for an example.
+    def add_io_report_callback(self, callback) -> None:
+        """Add callback function to report fucntion of I/O register. Everytime I/O register changes added callback functions will be executed.
+        All callbacks need as first param "result" to catch analyzer response, if used or not. See networking_example.py for an example.
+        By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
 
-        Supported keywords for mode can be checked by translator in Class documentation.
-
+        ..see also:: remove_io_report_callback
         :param callback: Callback function to process information that report happend.
         :type callback: function
         """
@@ -998,17 +998,22 @@ class AnalyzerCmd():
             self._value_parser(user_callback=callback, cmd="reportio",
                                p1="true")
         else:
-            self.__recv_thread.register_callbacks("reponsereportio", callback)
+            self.__recv_thread.register_callbacks("responsereportio", callback)
         self._io_report_count += 1
+        self.logger.info(f"Callback {callback} for I/O report added")
 
-    def deregister_io_report_callback(self, callback):
-        self.__recv_thread.deregister_callbacks("responsereportio", callback)
+    def remove_io_report_callback(self, callback) -> None:
+
+        self.__recv_thread.deregister_callbacks(
+            self._recognition_translator("reportio"), callback)
         self._io_report_count -= 1
+        self.logger.info(f"Callback {callback} for I/O report removed")
         if self._io_report_count == 0:
             self._value_parser(cmd="reportio",
                                p1="false")
+            self.logger.info("I/O report stopped")
 
-    def register_process_number_report_callback(self, callback):
+    def add_process_number_report_callback(self, callback):
         """Switches process number report on or off. Callback function process information. See networking_example.py for an example.
 
         Supported keywords for mode can be checked by translator in Class documentation.
@@ -1023,16 +1028,21 @@ class AnalyzerCmd():
                                p1="true")
         else:
             self.__recv_thread.register_callbacks(
-                "reponsereportprocessnumber", callback)
+                "responsereportprocessnumber", callback)
         self._proc_report_count += 1
+        self.logger.info(
+            f"Callback {callback} for process number report added")
 
-    def deregister_io_report_callback(self, callback):
+    def remove_process_number_io_report_callback(self, callback):
         self.__recv_thread.deregister_callbacks(
-            "reponsereportprocessnumber", callback)
+            "responsereportprocessnumber", callback)
         self._proc_report_count -= 1
+        self.logger.info(
+            f"Callback {callback} for process number report removed")
         if self._proc_report_count == 0:
             self._value_parser(cmd="reportprocessnumber",
                                p1="false")
+            self.logger.info("Report of process number stopped.")
 
     def start_script_function(self, function_name: str, function_param: any):
         """ Start script function and return result.
@@ -1051,7 +1061,7 @@ class AnalyzerCmd():
     def _recognition_translator(self, cmd_recognition: str):
         return "response" + cmd_recognition
 
-    def check_response(self, response):
+    def _check_response(self, response):
         # rais exception if not performed right
         if response.get("ok") == False:
             self.logger.error(
@@ -1098,7 +1108,7 @@ class AnalyzerCmd():
             self.__recv_thread.register_callbacks(recognition, callback)
         elif expect_response:
             self.__recv_thread.register_callbacks(
-                "reponsereportio", user_callback)
+                recognition, user_callback)
         # send command
         self._send(command)
 
@@ -1109,26 +1119,26 @@ class AnalyzerCmd():
             # deregister callback
             self.__recv_thread.deregister_callbacks(recognition)
             # check response for failure
-            self.check_response(analyzer_response)
+            self._check_response(analyzer_response)
             return analyzer_response
 
 
-def own_callback_example_return(result, queue_var=q):
-    """Function that prints a state change everytime it does and returns analyzer repsonse.
-
-    Callback function always becomes response as arg. To parse inforamtion betweenthe threads,
-    use a queue object.
-    """
-    print("I/O changend")
+def callback_1(result):
+    print("callback 1")
     # do something more
 
 
+def callback_2(result):
+    print("callback 2")
+
+
 with AnalyzerCmd(ip="192.168.2.67") as opti:
-    opti.set_io_report(
-        own_callback_example_return, mode="enable")
-    result = getter(q)
-    # If you want to check your command for failure, use the check_response function.
-    opti.check_response(result)
-    opti.set_simualted_io_input("0x1003")
+    opti.add_io_report_callback(callback_1)
+    opti.add_io_report_callback(callback_2)
+    opti.set_simualted_io_input("0x1005")
     val = opti.get_process_number()
-    print(val)
+    print("proc:", val)
+    print("callback count:", opti._io_report_count)
+    opti.removeS_io_report_callback(callback_1)
+    opti.set_simualted_io_input("0x1009")
+    print("callback count:", opti._io_report_count)

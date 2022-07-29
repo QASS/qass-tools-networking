@@ -17,16 +17,37 @@ def kill_callback(callback):
     callbacks[recognition].remove(callback)
 
 
-append(recognition, print)
-append(recognition, print_two)
+callbacks["2"].append("nice")
+callbacks["3"].append("nein")
+callbacks["2"].append("nice")
+print(callbacks)
 
-print(len(callbacks[recognition]))
-print(callbacks[recognition].index(print))
 
-callbacks[recognition][1]("bam")
+def shift_binary(original_bin: int) -> int:
+    """Helper to invert incomming binaries.
+    :param original_bin: Incomming binary
+    :type original_bin: int
+    :return: Inversed binary
+    :rtype: int
+    """
+    new_val = 0
+    new_binary = ""
+    for i in range(16):
+        bit_state = (original_bin & (1 << i) >> i)
+        print(bit_state)
+        new_val = new_val | (bit_state << (16-i))
 
-# for x in callbacks[recognition]:
-#    callbacks[recognition][x]("bam")
-#
-if "cmd" in callbacks:
-    print("So beginnt")
+    return str(new_val)
+
+
+def binary_to_hexa(binary: str):
+    deci_num = int(binary, 2)
+    print(binary)
+    print(hex(deci_num))
+    return hex(deci_num)
+
+
+#b = "00100000 00000000"
+# b = b.replace(" ", "")  # delete space
+#b_shifted = shift_binary(int(b))
+# binary_to_hexa(b_shifted)
