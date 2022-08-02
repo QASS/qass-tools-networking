@@ -52,40 +52,40 @@ Analyzer_socket wrapper: get_process_number()
 
 ---------------Set AppVar in network operator
 cmd: 	"setappvar"
-p1:	<app_var_name>[str]
-p2:	<app_var_value>[str]
+p1:	<appvar_name>[str]
+p2:	<appvar_value>[str]
 
 Response: standardized analyzer response
-Analyzer_socket wrapper: set_app_var()
+Analyzer_socket wrapper: set_appvar()
 
 
 --------------- Get AppVar by name
 cmd: 	"getappvar"
-p1:	<app_var_name>[str]
+p1:	<appvar_name>[str]
 
-Response: standardized analyzer response + 'result':<app_var_val>
-Analyzer_socket wrapper: get_app_var()
+Response: standardized analyzer response + 'result':<appvar_val>
+Analyzer_socket wrapper: get_appvar()
 
 --------------- Clear and remove global AppVar by name
 cmd: 	"clearappvar"
-p1:	<app_var_name>[str]
+p1:	<appvar_name>[str]
 
 Response: standardized analyzer response
-Analyzer_socket wrapper: remove_app_var()
+Analyzer_socket wrapper: remove_appvar()
 
 --------------- Clear and remove global AppVar by name
 cmd: 	"clrappvar"
-p1:	<app_var_name>[str]
+p1:	<appvar_name>[str]
 
 Response: standardized analyzer response
-Analyzer_socket wrapper: remove_app_var()
+Analyzer_socket wrapper: remove_appvar()
 
 --------------- Report any AppVar changes
 cmd: 	"reportappvars"
 p1:	<enable>[boolean]
 
-Response: app_var_report
-Analyzer_socket wrapper: get_app_vars_report()
+Response: all AppVars name, value + access_time 
+Analyzer_socket wrapper: add_appvar_report_callback()/remove_appvar_report_callback()
 
 ---------------Get Heartbeat
 cmd: 	"heartbeat"
@@ -96,8 +96,8 @@ Analyzer_socket wrapper: get_heartbeat()
 ---------------Start Measuring
 cmd: 	"startmeasuring"
 p1:	<mode> --> true 	start measuring
-		     false	stop measuring
-		     monitor	start monitoring
+		       false	stop measuring
+		       monitor	start monitoring
 
 Response: standardized analyzer response
 Analyzer_socket wrapper: run_measuring_mode()
@@ -105,7 +105,7 @@ Analyzer_socket wrapper: run_measuring_mode()
 ---------------Start Monitoring
 cmd: 	"startmonitoring"
 p1:	<mode> --> true 	start monitoring
-		     false	stop monitoring
+		       false	stop monitoring
 
 Response: standardized analyzer response
 Analyzer_socket wrapper: run_monitoring_mode()
@@ -124,7 +124,13 @@ Analyzer_socket wrapper: calc_max_amp_per_band()
 
 ---------------Load predefined test project
 cmd: 	"loadtestproject"
+""" Load last user project before a test project was loaded.
 
+        .. warning:: To use this a test project must be laoded before!!!
+        .. note:: If no testproject was laoded beforehand, name_variable in analyzer software will be not addressed and 
+        a new project without name!(="") will be created. Once a project like this exist, analyzer cannot perform this action gainst 
+        and without laoding a test project beforehand, function will do nothing.
+"""
 Response: standardized analyzer response
 Analyzer_socket wrapper: load_test_project()
 
@@ -138,7 +144,7 @@ Analyzer_socket wrapper: load_last_user_project()
 cmd: 	"getpreampinfo"
 p1:	<Port>[int]
 
-Response:  standardized analyzer response + something
+Response:  standardized analyzer response + hardware info. "t:2023;sn:980;s:1;"
 Analyzer_socket wrapper: get_preamp_settings()
 
 
@@ -264,39 +270,42 @@ Analyzer_socket wrapper: get_io_output()
 --------------- Set simulated I/O input register----------------------------------------------------not implemented
 cmd: 	"setsimioin"
 p1:	<io_to_set>[hexa]
-    """ IO_0000_0000_0000_0000 = 0xf0000
-        IO_1000_0000_0000_0000 = 0xf0001
-        IO_0100_0000_0000_0000 = 0xf0002
-        IO_1100_0000_0000_0000 = 0xf0003
-        IO_0010_0000_0000_0000 = 0xf0004
-        IO_1010_0000_0000_0000 = 0xf0005
-        IO_0110_0000_0000_0000 = 0xf0006
-        IO_1110_0000_0000_0000 = 0xf0007
-        IO_0001_0000_0000_0000 = 0xf0008
-        IO_1001_0000_0000_0000 = 0xf0009
-        IO_0101_0000_0000_0000 = 0xf000A
-        IO_1101_0000_0000_0000 = 0xf000B
-        IO_0011_0000_0000_0000 = 0xf000C
-        IO_1011_0000_0000_0000 = 0xf000D
-        IO_0111_0000_0000_0000 = 0xf000E
-        IO_1111_0000_0000_0000 = 0xf000F
+    """ First 8 digits are first I/O input register
+        Second 8 digits are second I/O input register
+        Give in all inputs as strings only!
+        "00000000 00000000" = "0xf0000"
+        "10000000 00000000" = "0xf0001"
+        "01000000 00000000" = "0xf0002"
+        "11000000 00000000" = "0xf0003"
+        "00100000 00000000" = "0xf0004"
+        "10100000 00000000" = "0xf0005"
+        "01100000 00000000" = "0xf0006"
+        "11100000 00000000" = "0xf0007"
+        "00010000 00000000" = "0xf0008"
+        "10010000 00000000" = "0xf0009"
+        "01010000 00000000" = "0xf000A"
+        "11010000 00000000" = "0xf000B"
+        "00110000 00000000" = "0xf000C"
+        "10110000 00000000" = "0xf000D"
+        "01110000 00000000" = "0xf000E"
+        "11110000 00000000" = "0xf000F"
 
-        IO_1000_1000_0000_0000 = 0xf0011
+        "10001000 00000000" = "0xf0011"
         ...
     """
 Response: standardized analyzer response
 Analyzer_socket wrapper: set_simulated_io_output()
 
---------------- Switch I/O regster report on/off
+--------------- Switch I/O register report on/off
 cmd: 	"reportio"
-p1:	<enabel[str]> 	--> to enable p1 = true, else is disable
+p1:	<enabel[str]> 	--> to enable p1 = "true", else is disable
 
 Response: standardized analyzer response and reports events
 Analyzer_socket wrapper: set_io_report()
 
 --------------- Switch process number report on/Off
 cmd: 	"reportprocessnumber"
-p1:	<enabel[str]> 	--> to enable p1 = true, else is disable
+p1:	<enabel[str]> 	--> to enable p1 = "true", else is disable
 
 Response: standardized analyzer response and reports events
 Analyzer_socket wrapper: set_process_number_report()
@@ -320,20 +329,25 @@ Response: standardized analyzer response
 Analyzer_socket wrapper: set_profibus_msg()
 
 --------------- Switch profibus report on/Off
-cmd: 	reportprofibus
+cmd: 	"reportprofibus"
 p1:	<enabel[boolean]>
 
 Response: standardized analyzer response and reports events
 Analyzer_socket wrapper: set_process_number_report()
 
+--------------- Set Human confirmation
+cmd: 	"confirmation" or "humancofirmation"
+p1:	<enabel[boolean]>
 
+Response: standardized analyzer response and reports events
+Analyzer_socket wrapper: set_process_number_report()
 
 *********************************************
 AppCommands Commands
 *********************************************
 AppCmds syntax is similair to console commands
 cmd:    "AppCmd"
-p1: "command name"
+p1: <command_name[str]>
 p2: all params
 
 ---------------Set AppVar in network operator
@@ -437,3 +451,23 @@ p2: "simioin" <channel[int]>
 Response: standardized analyzer response
 Analyzer_socket wrapper: not implemented
 
+---------------Pulsetest channel
+cmd: 	"AppCmd"
+p1:	"Preamp channel"
+p2: <channel[int]> "pulsetest" <gain[int]> <count[int]> <delay[int]>
+"""
+    | gain   | Pulsetest gain in range(0,4096)  | Defaults to 800
+    | count  | Pulsetest count in range(0,200)  | Defaults to 1
+    | delay  | Pulsetest delay (geater null)    | Defaults to 0
+    ..warning:: Channel here doesn't count from 0! Why though?!
+"""
+Response: standardized analyzer response
+Analyzer_socket wrapper: pulsetest_channel()
+
+---------------Pulsetest channel
+cmd: 	"AppCmd"
+p1:	"Preamp port"
+p2: "simioin" <channel[int]>
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: not implemented

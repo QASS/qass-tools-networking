@@ -268,6 +268,7 @@ class AnalyzerCmd():
                            "false": "false", "disable": "false", "monitor": "monitor"}
         self._io_report_count = 0
         self._proc_report_count = 0
+        self._appvar_report_count = 0
         # short solution logger to sys.stdout
         msg_mode = logging.DEBUG if debug_mode else logging.INFO
         logging.basicConfig(stream=sys.stdout, level=msg_mode,
@@ -367,22 +368,39 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="AppCmd", p1="setprocesscomment", p2=proc_comm)
 
-    def set_area_view(self, area_type) -> None:
-        self._value_parser(
-            cmd="AppCmd", p1="setprocesscomment", p2=SysAreaViews.View_1)
+    # TODO:test not implemented in analyzer
+    def set_area_view(self, area_amount: int) -> None:
+        if 0 < area_amount <= 4:
+            self._value_parser(
+                cmd="AppCmd", p1="SetAreaView", p2=area_amount)
+        else:
+            self.logger.error("Area split is out of bounds")
+            raise ValueError("Area split is out of bounds")
 
     def save_area_view(self, tempalte_num: int) -> None:
+        """Saves current area view settings under template number. Each area can be se different.
+
+        :param tempalte_num: Storage number to save
+        :type tempalte_num: int
+        """
         self._value_parser(
             cmd="AppCmd", p1="SaveAreaView", p2=tempalte_num)
 
     def load_area_view(self, tempalte_num: int) -> None:
+        """Load presaved area view tempalte. 
+
+        :param tempalte_num: Storage number to load
+        :type tempalte_num: int
+        """
         self._value_parser(
             cmd="AppCmd", p1="LoadAreaView", p2=tempalte_num)
 
+    # TODO:test
     def load_simualtion_buffer(self, file_path: str, channel=Channels.CHANNEL_1) -> None:
         self._value_parser(cmd="AppCmd",
                            p1="SimulationBuffer", p2=f"{channel} {file_path}")
 
+    # TODO:test
     def set_simualtion_buffer(self, channel=Channels.CHANNEL_1, mode="enable") -> None:
         keys = ["all", *Channels]
         if channel in keys:
@@ -396,117 +414,113 @@ class AnalyzerCmd():
             self.logger.error("Choosed channel is not supported")
             raise KeyError("Choosed channel is not supported")
 
-    def frequency_test(self, kind, input="channel"):
-        """External 50 kHz sine signal frequency test. Only avaible for exisiting ports and sensors.
-
-        setting keys:
-        | Type   | Keys                | Meaning                          |
-        |--------|---------------------|----------------------------------|
-        | kind   | "number of channel" | Channel is choosen for pulsetest |
-        | kind   | "number of port"    | Port is choosen for pulsetest    |
-        | input  | "channel"           | Channel is choosen for pulsetest |
-        | input  | "port"              | Port is choosen for pulsetest    |
-
-        :param kind: Used port/channel number to test.
-        :type kind: Port/Channel number
-        :param input: What to test. Either channel or port, defaults to "channel"
-        :type input: str, optional
-        :raises KeyError: If input for frequency test is not choosen to be "channel" or "port".
-        """
-        if input == "channel":
-            kind += 1
-            self._value_parser(cmd="AppCmd",
-                               p1="Preamp", p2=f"channel {kind} frqtest")
-        elif input == "port":
-            kind += 1
-            self._value_parser(cmd="AppCmd",
-                               p1="Preamp", p2=f"port {kind} frqtest")
-        else:
-            self.logger.error(
-                "Only a choosen channel or a port can be tested. Check your key.")
-            raise KeyError(
-                "Only a choosen channel or a port can be tested. Check your key.")
-
-    def pulse_test(self, kind, input="channel", **kwargs) -> None:
+    # TODO:test
+    def pulsetest_channel(self, channel_number, gain: int, count: int, delay: int) -> None:
         """External set of pulse test. Only avaible for exisiting ports and sensors.
 
-        setting keys:
-        | Type   | Keys                | Meaning                          |
-        |--------|---------------------|----------------------------------|
-        | kind   | "number of channel" | Channel is choosen for pulsetest |
-        | kind   | "number of port"    | Port is choosen for pulsetest    |
-        | input  | "channel"           | Channel is choosen for pulsetest |
-        | input  | "port"              | Port is choosen for pulsetest    |
-        | ------------------------- kwargs ------------------------------ |
-        | kwargs | gain                | Pulsetest gain in range(0,4096)  |
-        | kwargs | count               | Pulsetest count in range(0,200)  |
-        | kwargs | delay               | Pulsetest delay (geater null)    |
-
-        :param kind: Used port/channel number to test.
-        :type kind: Port/Channel number
-        :param input: What to test. Either channel or port, defaults to "channel"
-        :type input: str, optional
-        :raises ValueError: If gain is out of bound: range(0,4096)
-        :raises ValueError: If count is out of bound: range(0,200)
-        :raises ValueError: If delay is out of bound: smaller zero
-        :raises KeyError: If input for pulsetest is not choosen to be "channel" or "port".
+        :param channel_number: Channel where pulsetest gets executed.
+        :type channel_number: int or Channels
+        :param gain: Pulsetest gain in range(0,4096)
+        :type gain: int
+        :param count: Pulsetest count in range(0,201)
+        :type count: int
+        :param delay: Pulsetest delay (geater null)
+        :type delay: int
+        :raises ValueError: If gain is out of bounds: range(0,4096) | If count is out of bounds: range(0,200) | If delay is out of bounds: smaller zero
         """
-        if "gain" in kwargs:
-            if not (0 < kwargs["gain"] < 4095):
-                self.logger.error(
-                    "Choosen pulsetest gain is not avaible. The gain should be in range of 0 to 4095.")
-                raise ValueError(
-                    "Choosen pulsetest gain is not avaible. The gain should be in range of 0 to 4095.")
-            else:
-                gain = kwargs["gain"]
-        else:
-            gain = 800
-        if "count" in kwargs:
-            if kwargs["count"] > 200 or kwargs["count"] < 0:
-                self.logger.error(
-                    "Choosen pulsetest count is not avaible. The gain should be in range of 0 to 200.")
-                raise ValueError(
-                    "Choosen pulsetest count is not avaible. The gain should be in range of 0 to 200.")
-            else:
-                count = kwargs["count"]
-        else:
-            count = 1
-        if "delay" in kwargs:
-            if kwargs["delay"] < 0:
-                self.logger.error(
-                    "Choosen pulsetest delay is not avaible. The delay should be equal or greater null.")
-                raise ValueError(
-                    "Choosen pulsetest delay is not avaible. The delay should be equal or greater null.")
-            else:
-                delay = kwargs["delay"]
-        else:
-            delay = 0
+        channel_number += channel_number
+        if not 0 <= gain < 4096 and not 0 <= count < 201 and not 0 <= delay:
+            self.logger.error("Params out of bounds")
+            raise ValueError("Params out of bounds")
 
-        if input == "channel":
-            kind += 1
-            self._value_parser(cmd="AppCmd",
-                               p1="Preamp", p2=f"channel {kind} pulse {gain} {count} {delay}")
-        elif input == "port":
-            kind += 1
-            self._value_parser(cmd="AppCmd",
-                               p1="Preamp", p2=f"port {kind} pulse {gain} {count} {delay}")
-        else:
-            self.logger.error(
-                "Only a choosen channel or a port can be tested. Check your key.")
-            raise KeyError(
-                "Only a choosen channel or a port can be tested. Check your key.")
+        settings = {"cmd": "AppCmd", "p1": "Preamp",
+                    "p2": f"channel {channel_number} pulsetest {gain} {count} {delay}"}
+        self._value_parser(**settings)
 
-    def set_area_scale(self, area_number, scale=500) -> None:
-        if scale in range(10, 1001):
+    # TODO:test
+    def pulsetest_port(self, port_number, gain: int, count: int, delay: int) -> None:
+        """External set of pulse test. Only avaible for exisiting ports and sensors.
+
+        :param port_number: Port where pulsetest gets executed.
+        :type port_number: int or Channels
+        :param gain: Pulsetest gain in range(0,4096)
+        :type gain: int
+        :param count: Pulsetest count in range(0,201)
+        :type count: int
+        :param delay: Pulsetest delay (geater null)
+        :type delay: int
+        :raises ValueError: If gain is out of bounds: range(0,4096) | If count is out of bounds: range(0,200) | If delay is out of bounds: smaller zero
+        """
+        port_number += port_number
+        if not 0 <= gain < 4096 and not 0 <= count < 201 and not 0 <= delay:
+            self.logger.error("Params out of bounds")
+            raise ValueError("Params out of bounds")
+
+        settings = {"cmd": "AppCmd", "p1": "Preamp",
+                    "p2": f"channel {port_number} pulsetest {gain} {count} {delay}"}
+        self._value_parser(**settings)
+
+    # TODO:test
+    def frequency_test_port(self, port_number):
+        self._value_parser(cmd="AppCmd", p1="Preamp",
+                           p2=f"port {port_number} frqtest")
+
+    def set_area_scale(self, area_number: int, scale=500) -> None:
+        """ Set scale of each area independant.
+
+        Scale should be in range(10,1001)
+        Area should be in range(1,5)
+
+        :param area_number: Which area should be addressed
+        :type area_number: int
+        :param scale: which scale should be used, defaults to 500
+        :type scale: int, optional
+        :raises ValueError: If parsed variables are out of bounds. See extended function summary.
+        """
+        if scale in range(10, 1001) and 0 < area_number <= 4:
             self._value_parser(cmd="AppCmd",
                                p1="SetAreaScale", p2=f"{area_number} {scale}")
         else:
             self.logger.error(
-                "Choosen scale is out of bounds. Should be in range(10,1001).")
+                "Choosen key is out of bounds. Scale should be in range(10,1001) and Area numbers betweeen 1 and (inclusive) 4.")
             raise ValueError(
-                "Choosen scale is out of bounds. Should be in range(10,1001).")
+                "Choosen sckeyale is out of bounds. Scale should be in range(10,1001) and Area numbers betweeen 1 and (inclusive) 4.")
 
-    def set_app_var(self, app_var_name: str, app_var_value: any) -> None:
+    def set_area_colour(self, area_number: int, colour_scale=200):
+        """Set colour scale of each area independant.
+
+        Colour scale should be in range(10,401)
+        Area should be in range(1,5)
+
+        :param area_number: Which area should be addressed
+        :type area_number: int
+        :param colour_scale: which scale should be used, defaults to 200
+        :type colour_scale: int, optional
+        :raises ValueError: If parsed variables are out of bounds. See extended function summary.
+        """
+        if colour_scale in range(10, 401) and 0 < area_number <= 4:
+            self._value_parser(cmd="AppCmd",
+                               p1="SetAreaColor", p2=f"{area_number} {colour_scale}")
+        else:
+            self.logger.error(
+                "Choosen key is out of bounds. Scale should be in range(10,401) and Area numbers betweeen 1 and (inclusive) 4.")
+            raise ValueError(
+                "Choosen key is out of bounds. Scale should be in range(10,401) and Area numbers betweeen 1 and (inclusive) 4.")
+
+    def set_area_time_range(self, area_number: int, start_time: int, time_range: int):
+        """ Set of shown time range for each area.
+
+        :param area_number: Area which shold be addressed
+        :type area_number: int
+        :param start_time: Start point of time range in ms.
+        :type start_time: int
+        :param time_range: Range that will be shown from start_time
+        :type time_range: int
+        """
+        self._value_parser(expect_response=False, cmd="Appcmd", p1="SetAreaPosition",
+                           p2=f"{area_number} {start_time} {time_range}")
+
+    def set_appvar(self, appvar_name: str, appvar_value: any) -> None:
         """Parse value to specific AppVar operator in operator network of analyzer.
 
         There has to be an already existing AppVar operator which can accessed by (matching) name.
@@ -516,15 +530,14 @@ class AnalyzerCmd():
         :param app_var_value: Value which should be assigned to operator. As value can be choosed any datatyp supported by python (e.g. float, int, str, json, ...).
         :type app_var_value: any
         """
+        self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value)
 
-        self._value_parser(cmd="setappvar", p1=app_var_name, p2=app_var_value)
-
-    def set_app_var_appcmd(self, app_var_name: str, value: any) -> None:
+    def set_appvar_appcmd(self, appvar_name: str, value: any) -> None:
         """Parse value to specific AppVar operator in operator network of analyzer.
 
         An extra method is provided because this method works with an general analyzer AppCommand.
 
-        .. seealso:: set_app_var()
+        .. seealso:: set_appvar()
 
         :param app_var_name: Name of existing AppVar operator.
         :type app_var_name: str
@@ -533,9 +546,9 @@ class AnalyzerCmd():
         """
 
         self._value_parser(cmd="AppCmd", p1="SetAppVar",
-                           p2=f"{app_var_name} {value}")
+                           p2=f"{appvar_name} {value}")
 
-    def get_app_var(self, app_var_name: str) -> None:
+    def get_app_var(self, appvar_name: str) -> None:
         """Get value of AppVar by name.
 
         :param app_var_name: Name of AppVar to adress.
@@ -543,37 +556,54 @@ class AnalyzerCmd():
         :return: AppVar value
         :rtype: any
         """
-        val = self._value_parser(cmd="getappvar", p1=app_var_name)
+        val = self._value_parser(cmd="getappvar", p1=appvar_name)
 
         return val.get('result')
 
-    def remove_app_var(self, app_var_name: str) -> None:
+    def remove_appvar(self, appvar_name: str) -> None:
         """ Clear and remove AppVar by name.
 
-        :param app_var_name: Naem of AppVar to remove.
-        :type app_var_name: str
+        :param appvar_name: Naem of AppVar to remove.
+        :type appvar_name: str
         """
-        self._value_parser(cmd="clearappvar", p1=app_var_name)
+        self._value_parser(cmd="clearappvar", p1=appvar_name)
 
-    def get_app_vars_report(self, callback, mode: Union[bool, str] = "enabled"):
-        """ Turn AppVar report on and off. Callback function process information. See networking_example.py for an example.
+    def remove_appvar_report_callback(self, callback):
+        """Removes specific callback function from AppVar report callback list. 
+        By removing all callbacks the report function will be automatically stopped.
 
-        Internal return dict contains list of AppVars with name and value, as access time and unixtime.
-        Supported keywords for mode can be checked by translator in Class documentation.
-
-        :param callback: Callback function to process information that report happend.
+        ..see also:: add_appvar_report_callback
+        :param callback: Callback function that should be removed from AppVar report functionallities.
         :type callback: function
-        :param mode: Switch report to on ("enable") or off ("disable"), defaults to "enabled"
-        :type mode: Union[str, bool]
         """
+        self.__recv_thread.deregister_callbacks(
+            "responsereportappvars", callback)
+        self._appvar_report_count -= 1
+        self.logger.info(
+            f"Callback {callback} for AppVar report removed")
+        if self._appvar_report_count == 0:
+            self._value_parser(cmd="reportappvars",
+                               p1="false")
+            self.logger.info("Report of AppVar stopped.")
 
-        val = self._value_parser(
-            user_callback=callback, cmd="reportappvars", p1=self.translator[mode])
-        # process response
-        val_dict = {"appvar_list": val.get("appvar_list"), "access_time": val.get(
-            "appvar_readdate"), "unix_time": val.get("unixtime")}
+    def add_appvar_report_callback(self, callback):
+        """Add callback function to report of AppVar. Everytime a AppVar changes, added callback functions will be executed. See networking_example.py for an example.
+        By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
 
-        return val_dict
+        .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
+        ..see also:: remove_appvar_report_callback
+        :param callback: Added callback function when report happens.
+        :type callback: function
+        """
+        if self._appvar_report_count == 0:
+            self._value_parser(user_callback=callback, cmd="reportappvars",
+                               p1="true")
+        else:
+            self.__recv_thread.register_callbacks(
+                "responsereportappvars", callback)
+        self._proc_report_count += 1
+        self.logger.info(
+            f"Callback {callback} for AppVar report added")
 
     def get_process_number(self) -> int:
         """Send command to give out process number as return.
@@ -618,22 +648,22 @@ class AnalyzerCmd():
         """Method to set preamplifier and multiplexer settings.
 
         By entering a new value as **kwargs, you are able to change default values, which will be sended.
-
+        .. warning:: Range of params will not be checked.
         Default settings:
-        | Type             | Multiplexer     | Value        |
-        | ---------------- | ----------------| ------------ |
-        | Channels         | channel         | Channel #1   |
-        | ChannelPorts     | chp             | Port 1       |
-        | PreampPorts      | preampport      | Preampport 1 |
-        | Samplerates      | fft             | enabled      |
-        | Boolean          | signal          | disabled     |
-        | FFTOversampling  | samplerate      | 1600 kHz     |
-        | FFTOversampling  | fftoversampling | 8 times      |
-        | FFTWindowing     | fftwindowing    | Hanning      |
-        | FFTLogarithmic   | fftlogarithmic  | Base 14      |
-        | Boolean          | filter          | disabled     |
-        | Integer          | gain            | 800          |
-        | Integer          | subport         | not used     |
+        | Type                  | Multiplexer     | Value        |
+        | --------------------- | ----------------| ------------ |
+        | Channels        | int | channel         | Channel #1   |
+        | ChannelPorts    | int | chp             | Port 1       |
+        | PreampPorts     | int | preampport      | Preampport 1 | 
+        | Boolean               | fft             | enabled      |
+        | Boolean               | signal          | disabled     |
+        | samplerate      | int | samplerate      | 1600 kHz     |
+        | FFTOversampling | int | fftoversampling | 8 times      |
+        | FFTWindowing    | int | fftwindowing    | Hanning      |
+        | FFTLogarithmic  | int | fftlogarithmic  | Base 14      |
+        | Boolean               | filter          | disabled     |
+        | Integer         | int | gain            | 800          |
+        | Integer         | int | subport         | 0            |
 
         """
         # helper dict with default values
@@ -648,18 +678,11 @@ class AnalyzerCmd():
                     'fftwindowing': FFTWindowing.FFT_WINDOWING_HANNING,
                     'fftlogarithmic': FFTLogarithmic.FFT_LOGARITHMIC_BASE_14,
                     'filter': True,
-                    'gain': "800",
-                    'subport': "0"
+                    'gain': 800,
+                    'subport': 0
                     }
-        # gain limit 5000
-        # if kwargs:
-        #    if kwargs.keys() in [*settings.keys()]:
-        #        pass
-        #    else:
-        #        self.logger.error("Choosen seeting is not avaible in multiplexer")
-        #        raise KeyError("Choosen seeting is not avaible in multiplexer")
         settings.update(kwargs)
-        self._value_parser(settings)
+        self._value_parser(**settings)
 
     def get_analyzer_versions(self) -> str:
         """Method to read out anlyzer version informations.
@@ -717,13 +740,13 @@ class AnalyzerCmd():
         self._value_parser(cmd="startmeasuring", p1=self.translator[mode])
 
     def run_monitoring_mode(self, mode: Union[bool, str]) -> None:
-        """Start or stop monitoring modus.
+        """Start or stop monitoring modus. See
 
         Short settings:
         | Measuring mode    | Key       |
         | ----------------- | --------- |
-        | start monitoring  | "true"    |
-        | stop monitoring   | "false"   |
+        | Start monitoring  | "true"    |
+        | Stop monitoring   | "false"   |
 
         :param mode: Switch between start monitoring ("true") or stop monitoring  ("false"). For supported keys see translator.
         :type mode: str, bool
@@ -732,17 +755,17 @@ class AnalyzerCmd():
         self._value_parser(cmd="startmonitoring", p1=self.translator[mode])
 
     def calc_max_amp_per_band(self, **kwargs):
-        """Method to calculate maximum amplitude per band. 
+        """Method to calculate maximum amplitude per band. For futher information see default settings below. 
 
         By entering a new value as **kwargs, you are able to change default values, which will be sended.
 
         Default settings:
-        | Type | Key | kwargs    | Default value | Action                   |
-        | ---- | --------------- | ------------- | ------------------------ |
-        | int  | channel         | Channel #1    | Choose channel buffer    |
-        | bool | plot            | true          | Creates plot buffer      |
-        | bool | save            | false         | Creates buffer with data |
-        | int  | amplitudetype   | Default       | Type calced of amplitude |
+        | Type                   | Key | kwargs    | Default value | Action                   |
+        | ---------------------- | --------------- | ------------- | ------------------------ |
+        | int|Channels           | channel         | Channel #1    | Choose channel buffer    |
+        | bool                   | plot            | true          | Creates plot buffer      |
+        | bool                   | save            | false         | Creates buffer with data |
+        | int|SysAmplitudeTypes  | amplitudetype   | Default       | Calced amplitude type    |
 
         .. warning:: Check supported datatypes and range manually, as a automatic overproof is not provided yet.
         :param user_dict: Possibility to parse your own dictionary instead of editing the default one, defaults to None
@@ -758,12 +781,11 @@ class AnalyzerCmd():
                     }
         # Check for right kwargs keys
         if kwargs:
-            for kwarg in kwargs.keys():
-                if kwarg not in settings.keys():
-                    self.logger.error(
-                        "Choosen settings key is not supported in this method.")
-                    raise ValueError(
-                        "Choosen settings key is not supported in this method.")
+            if kwargs.keys() not in settings.keys():
+                self.logger.error(
+                    "Choosen settings key is not supported in this method.")
+                raise ValueError(
+                    "Choosen settings key is not supported in this method.")
             settings.update(kwargs)
             self.logger.info(
                 f"Updated settings to {kwargs.items()}")
@@ -773,43 +795,47 @@ class AnalyzerCmd():
 
         return np.fromstring(max_amp, sep=',')
 
-    def load_test_project(self):
-        command = {'cmd': "loadtestproject", "msgid": self.msgid}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
+    def load_test_project(self) -> None:
+        """ Loads the set test project.
+        """
+        self._value_parser(cmd="loadtestproject")
 
-    def load_last_user_project(self):
-        command = {'cmd': "loaduserproject", "msgid": self.msgid}
-        response = self._send(command)
-        return self._handle_commserver_response(response)
+    def load_last_user_project(self) -> None:
+        """ Load last user project before a test project was loaded.
 
-    def get_max_measure_positions(self) -> Dict:
-        """_summary_
+        .. warning:: To use this a test project must be laoded before!!!
+        .. note:: If no testproject was laoded beforehand, name_variable in analyzer software will be not addressed and 
+        a new project without name!(="") will be created. Once a project like this exist, analyzer cannot perform this action gainst 
+        and without laoding a test project beforehand, function will do nothing.
+        """
+        self._value_parser(cmd="loaduserproject")
 
-        :return: Measurepositions and calculated energy value.
+    def get_measure_positions(self) -> Dict:
+        """ Gets a dictionary with all measure positions and if used a energy value.
+
+        :return: Measurepositions and their calculated energy value.
         :rtype: Dict
         """
         return self._value_parser(cmd="getmaxmeasurepositions")
 
-    # TODO: Source code or peter ---'t:2023;sn:980;s:1;'
-    def get_preamp_settings(self, preampport):
-        """_summary_
+    def get_preamp_hardware_info(self, preamp_port):
+        """ Returns a string with hadware infos to preamplifier connected to parsed port
 
-        _extended_summary_
-
-        :param preampport: _description_
-        :type preampport: PreampPort or corresponding int value
-        :raises KeyError: Raises if parsed variable is no supported PreampPort
-        :return: _description_
-        :rtype: dict
+        :param preamp_port: Preamp port with connected preampifier
+        :type preamp_port: preamp_port or corresponding int value
+        :raises KeyError: Raises if parsed variable is no supported preamp port
+        :return: Hardware infos about preamplifier
+        :rtype: str
         """
-        if preampport in PreampPorts or preampport in range(0, 8):
-            return self._value_parser(cmd="getpreampinfo", p1=preampport)
+        if preamp_port in PreampPorts or preamp_port in range(0, 8):
+            preamp_hardware_info = self._value_parser(
+                cmd="getpreampinfo", p1=preamp_port)
+            return preamp_hardware_info.get('p1')
         else:
             self.logger.error(
-                "Choosen preampport is not a analyzer system preampport.")
+                "Choosen preampport is not a analyzer system preamp port.")
             raise KeyError(
-                "Choosen preampport is not a analyzer system preampport.")
+                "Choosen preampport is not a analyzer system preamp port.")
 
     def start_operator_function(self, mode: Union[str, bool] = "start") -> None:
         """_summary_
@@ -986,12 +1012,12 @@ class AnalyzerCmd():
                            p1=io)
 
     def add_io_report_callback(self, callback) -> None:
-        """Add callback function to report fucntion of I/O register. Everytime I/O register changes added callback functions will be executed.
-        All callbacks need as first param "result" to catch analyzer response, if used or not. See networking_example.py for an example.
+        """Add callback function to report of I/O register. Everytime I/O register changes, added callback functions will be executed. See networking_example.py for an example.
         By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
 
+        .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
         ..see also:: remove_io_report_callback
-        :param callback: Callback function to process information that report happend.
+        :param callback: Added callback function when report happens.
         :type callback: function
         """
         if self._io_report_count == 0:
@@ -1003,7 +1029,13 @@ class AnalyzerCmd():
         self.logger.info(f"Callback {callback} for I/O report added")
 
     def remove_io_report_callback(self, callback) -> None:
+        """Removes specific callback function from I/O report callback list. 
+        By removing all callbacks the report function will be automatically stopped.
 
+        ..see also:: add_io_report_callback
+        :param callback: Callback function that should be removed from I/O report functionallities.
+        :type callback: function
+        """
         self.__recv_thread.deregister_callbacks(
             self._recognition_translator("reportio"), callback)
         self._io_report_count -= 1
@@ -1014,14 +1046,13 @@ class AnalyzerCmd():
             self.logger.info("I/O report stopped")
 
     def add_process_number_report_callback(self, callback):
-        """Switches process number report on or off. Callback function process information. See networking_example.py for an example.
+        """Add callback function to report of process number. Everytime the process number changes, added callback functions will be executed. See networking_example.py for an example.
+        By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
 
-        Supported keywords for mode can be checked by translator in Class documentation.
-
-        :param callback: Callback function to process information that report happend.
+        .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
+        ..see also:: remove_process_number_report_callback
+        :param callback: Added callback function when report happens.
         :type callback: function
-        :param mode: Switch report to on ("enable") or off ("disable")
-        :type mode: Union[str, bool]
         """
         if self._proc_report_count == 0:
             self._value_parser(user_callback=callback, cmd="reportprocessnumber",
@@ -1033,7 +1064,14 @@ class AnalyzerCmd():
         self.logger.info(
             f"Callback {callback} for process number report added")
 
-    def remove_process_number_io_report_callback(self, callback):
+    def remove_process_number_report_callback(self, callback):
+        """Removes specific callback function from process number report callback list. 
+        By removing all callbacks the report function will be automatically stopped.
+
+        ..see also:: add_io_report_callback
+        :param callback: Callback function that should be removed from process number report functionallities.
+        :type callback: function
+        """
         self.__recv_thread.deregister_callbacks(
             "responsereportprocessnumber", callback)
         self._proc_report_count -= 1
@@ -1057,6 +1095,10 @@ class AnalyzerCmd():
         self._value_parser(cmd="appfunc",
                            p1=function_name, p2=function_param)
     # def human_cofirmation --> expect_response=False
+
+    def write_to_database(self, result: any, comment: str):
+        self._value_parser(cmd="appfunc",
+                           p1=function_name, p2=function_param)
 
     def _recognition_translator(self, cmd_recognition: str):
         return "response" + cmd_recognition
@@ -1123,22 +1165,5 @@ class AnalyzerCmd():
             return analyzer_response
 
 
-def callback_1(result):
-    print("callback 1")
-    # do something more
-
-
-def callback_2(result):
-    print("callback 2")
-
-
 with AnalyzerCmd(ip="192.168.2.67") as opti:
-    opti.add_io_report_callback(callback_1)
-    opti.add_io_report_callback(callback_2)
-    opti.set_simualted_io_input("0x1005")
-    val = opti.get_process_number()
-    print("proc:", val)
-    print("callback count:", opti._io_report_count)
-    opti.removeS_io_report_callback(callback_1)
-    opti.set_simualted_io_input("0x1009")
-    print("callback count:", opti._io_report_count)
+    opti.set_area_time_range(1, 5, 2)
