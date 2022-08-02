@@ -2,6 +2,7 @@ import ctypes
 import socket
 import json
 from turtle import clear
+from xml.etree.ElementTree import Comment
 import numpy as np
 import time
 from enum import Enum, auto, IntEnum
@@ -143,11 +144,32 @@ class SysAmplitudesType(IntEnum):
     AMPLITUDE_MICRO_VOLT = 5
 
 
-class SysAreaViews(IntEnum):
+class AreaViews(IntEnum):
     View_1 = 0
     View_2 = 1
     View_3 = 2
     View_4 = 3
+
+
+class SysSettingsClass(IntEnum):
+    NO_CLASS = 0 	# Wird zur Zeit auch per Voreinstellung in "./config/QASS/analyzer.conf" gespeichert
+    # Das ist die Default-Klasse für pVars, die in einem VarSet untergebracht sind
+    VAR_SET_CLASS = 1
+    # Die Variable enthält System-Einstellungen, die später auch in ".config/QASS" gespeichert werden
+    SYSTEM_CONFIG = 2
+    USER_CONFIG = 3     # Wird in "./config/QASS/analyzer.conf" in der USER Sektion gespeichert
+    GLOBAL_TRIGGER_CONFIG = 4     # Globale Triggereinstellung
+    GLOBAL_MEASURE_CONFIG = 5     # Globale MeasureConfig Einstellung
+    MEASURE_CONFIG = 6     # MeasureConfig Struktur
+    CLIENT_CONFIG = 7     # Branding und application Start Einstellungen
+    VIDEO_CONFIG = 8     # This is a configuration Setting for a CAM or VideoRecording
+    COLOR_CONFIG = 9
+    NETWORK_CONFIG = 10    # A network configuration
+    FPGA_CONFIG = 11
+    PR_SEARCH_CONFIG = 12
+    GUI_CONFIG = 13    # global GUI and StyleSheet settings
+    SIM_BUFFER_CONFIG = 14    # Configuration of Simulation files
+    BACKUP_CONFIG = 15  # Configuration for backups and automatic backups
 
 
 class ReceiveThread(threading.Thread):
@@ -486,7 +508,7 @@ class AnalyzerCmd():
             raise ValueError(
                 "Choosen sckeyale is out of bounds. Scale should be in range(10,1001) and Area numbers betweeen 1 and (inclusive) 4.")
 
-    def set_area_colour(self, area_number: int, colour_scale=200):
+    def set_area_colour(self, area_number: int, colour_scale=200) -> None:
         """Set colour scale of each area independant.
 
         Colour scale should be in range(10,401)
@@ -507,18 +529,68 @@ class AnalyzerCmd():
             raise ValueError(
                 "Choosen key is out of bounds. Scale should be in range(10,401) and Area numbers betweeen 1 and (inclusive) 4.")
 
-    def set_area_time_range(self, area_number: int, start_time: int, time_range: int):
+    def set_area_time_range(self, area_number: int, start_time: int, time_range: int) -> None:
         """ Set of shown time range for each area.
 
         :param area_number: Area which shold be addressed
         :type area_number: int
         :param start_time: Start point of time range in ms.
         :type start_time: int
-        :param time_range: Range that will be shown from start_time
+        :param time_range: Range that will be shown from start_time in ms.
         :type time_range: int
         """
-        self._value_parser(expect_response=False, cmd="Appcmd", p1="SetAreaPosition",
+        self._value_parser(cmd="AppCmd", p1="SetAreaPosition",
                            p2=f"{area_number} {start_time} {time_range}")
+
+    def load_process(self, process_number: int, start_time=0) -> None:
+        """ Load and dispaly by process number.
+
+        :param process_number: Process that will be loaded
+        :type process_number: int
+        :param start_time: Start time in ms, defaults to 0
+        :type start_time: int, optional
+        """
+        self._value_parser(cmd="AppCmd", p1="LoadProcess",
+                           p2=f"{process_number} {start_time}")
+
+    def get_service_parameter(self, param_setting: str) -> str:
+        """Get settings out of Service Parameter (Configuration->Settings->Parameter)
+        .. note:: Only avaible for user level 8 or higher!
+
+        :param param_setting: Service parameter that should be read 
+        :type param_setting: str
+        :return: Current set service parameter value
+        :rtype: str
+        """
+        settings = self._value_parser(cmd="appfunc", p1="GetServiceParameter",
+                                      p2=param_setting)
+        return settings.get("result")
+
+    # TODO:Test
+    def set_service_parameter(self, param_setting: str, param_value: any) -> None:
+        """Set service parameter settings under Configuration->Settings->Parameter
+        .. note:: Only avaible for user level 8 or higher!
+
+        :param param_setting: Service parameter that should be set
+        :type param_setting: str
+        :param param_value: New value of choosen service parameter
+        :type param_value: any
+        """
+        self._value_parser(cmd="appfunc", p1="SetServiceParameter",
+                           p2=f"{param_setting} {param_value}")
+        self.logger.info(
+            f"Service parameter {param_setting} is changed to {param_value}")
+        # self._value_parser(cmd="appfunc", p1="SetServiceParameter",
+        #                   p2=f"{param_name} {param_value} {param_class}")
+
+    def send_analyzer_to_sleep(self, time=2000) -> None:
+        """ Command to send Analyzer system in sleep mode.
+
+        :param time: Time to sleep in ms, defaults to 2000
+        :type time: int, optional
+        """
+        self._value_parser(cmd="AppCmd", p1="sysSleep", p2=time)
+        self.logger.info("Analyzer tired. Analyzer sleep.")
 
     def set_appvar(self, appvar_name: str, appvar_value: any) -> None:
         """Parse value to specific AppVar operator in operator network of analyzer.
@@ -969,6 +1041,7 @@ class AnalyzerCmd():
         return int("0x" + inverted)
         # sorting = [0,1,6,5,4,3]"""
 
+    # TODO:test
     def set_simualted_io_input(self, io: str = "0xf0000"):
         """Set simulated I/O input register. I/0 input register can be set by inverted hexa (smallest significant left)
         or by giving in binary representation of set bits in I/O register. I/O register in binary should be parsed like real analyzer setting.
@@ -1045,7 +1118,7 @@ class AnalyzerCmd():
                                p1="false")
             self.logger.info("I/O report stopped")
 
-    def add_process_number_report_callback(self, callback):
+    def add_process_number_report_callback(self, callback) -> None:
         """Add callback function to report of process number. Everytime the process number changes, added callback functions will be executed. See networking_example.py for an example.
         By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
 
@@ -1064,7 +1137,7 @@ class AnalyzerCmd():
         self.logger.info(
             f"Callback {callback} for process number report added")
 
-    def remove_process_number_report_callback(self, callback):
+    def remove_process_number_report_callback(self, callback) -> None:
         """Removes specific callback function from process number report callback list. 
         By removing all callbacks the report function will be automatically stopped.
 
@@ -1094,11 +1167,61 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="appfunc",
                            p1=function_name, p2=function_param)
-    # def human_cofirmation --> expect_response=False
 
-    def write_to_database(self, result: any, comment: str):
-        self._value_parser(cmd="appfunc",
-                           p1=function_name, p2=function_param)
+    def human_confirmation(self, process_IO=False, **kwargs) -> None:
+        """ Send human confiramtion over current process. Score and comment can be parsed over kwargs. 
+
+        |------------------ kwargs ----------------|
+        | comment | Human comment for confirmation |
+        | score   | Score value for confirmation   |
+
+        :param process_IO: Confirmation if current process is IO or NIO, defaults to False
+        :type process_IO: bool
+        :raises ValueError: If kwargs key is not supported
+        """
+        translator = {False: "NIO", True: "IO"}
+        settings = {"cmd": "confirmation",
+                    "p1": translator[process_IO]}
+        if kwargs:
+            if kwargs.keys() not in ["comment", "score"]:
+                self.logger.error(
+                    "Key is not supported for operation human_confirmation")
+                raise ValueError(
+                    "Key is not supported for operation human_confirmation")
+            if "comment" in kwargs.keys():
+                settings["p2"] = kwargs["comment"]
+            if "score" in kwargs.keys():
+                settings["score"] = kwargs["score"]
+
+        self._value_parser(expect_response=False, **settings)
+
+    # TODO:test
+    def write_to_database(self, result: any, comment=None) -> None:
+        """ Writes database query for an entry with current project_id, process, process_id, result and comment as values
+
+        :param result: Result which should be saved in database
+        :type result: any
+        :param comment: Comment for result, defaults to None
+        :type comment: str, optional
+        """
+        if comment:
+            self._value_parser(cmd="humanconfirmationresult",
+                               p1=result, p2=comment)
+        else:
+            self._value_parser(cmd="humanconfirmationresult",
+                               p1=result)
+
+    # TODO:test
+    def write_backup(self) -> None:
+        """Creates an autoamtic analyzer backup. 
+        """
+        self._value_parser(cmd="AppCmd", p1="writeBackup")
+
+    # TODO:test
+    def reset_failstate(self) -> None:
+        """ Reset analyzer failure state and activates I/O ready by this 
+        """
+        self._value_parser(cmd="resetFailstate")
 
     def _recognition_translator(self, cmd_recognition: str):
         return "response" + cmd_recognition
@@ -1165,5 +1288,6 @@ class AnalyzerCmd():
             return analyzer_response
 
 
-with AnalyzerCmd(ip="192.168.2.67") as opti:
-    opti.set_area_time_range(1, 5, 2)
+with AnalyzerCmd(ip="192.168.2.67", debug_mode=True) as opti:
+    opti.human_confirmation(
+        process_IO=True, comment="Test", score=42, bla="nice")

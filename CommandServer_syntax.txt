@@ -18,7 +18,6 @@ Response: project_name, project_info, analyzer_version
 Analyzer_socket wrapper: get_project_info()
 
 ---------------External set of Mux and preamp settings
---> Log entry
 cmd: 			"setpreamp"
 channel(=ChannelList):	<window choice[int]>, default 0	
 chp(=channelPortList):	<window choice[int]>, default 0
@@ -37,7 +36,7 @@ Response: None
 Analyzer_socket wrapper: set_preamp()
 
 ---------------Create new project by name
---> name size has to be at least 4
+""" name size has to be at least 4 """
 cmd: 	"createloadproject"
 p1:	<project_name>[str]
 
@@ -95,18 +94,18 @@ Analyzer_socket wrapper: get_heartbeat()
 
 ---------------Start Measuring
 cmd: 	"startmeasuring"
-p1:	<mode> --> true 	start measuring
-		       false	stop measuring
-		       monitor	start monitoring
-
+p1:	<mode>  """ true 	start measuring
+		        false	stop measuring
+		        monitor	start monitoring
+            """
 Response: standardized analyzer response
 Analyzer_socket wrapper: run_measuring_mode()
 
 ---------------Start Monitoring
 cmd: 	"startmonitoring"
-p1:	<mode> --> true 	start monitoring
+p1:	<mode>  """true 	start monitoring
 		       false	stop monitoring
-
+            """
 Response: standardized analyzer response
 Analyzer_socket wrapper: run_monitoring_mode()
 
@@ -114,7 +113,7 @@ Analyzer_socket wrapper: run_monitoring_mode()
 cmd: 		"calcmaxamplitude"
 show:		<(show-)Channel>[int] (optional) by default 0
 p1:		<Channel>[int] (optional) by default 0
---> one of them is necessary
+""" one of them above is necessary, but not booth"""
 plot:		<boolean_if_plot>[boolean], by default true
 save:		<boolean_if_save>[boolean], by default false
 amplitudetype:	<sys_amplitude_type>[int], by default 0
@@ -185,16 +184,16 @@ Analyzer_socket wrapper: set_comment_pending_process()
 ---------------Set process comment for current process
 cmd: 	"setcomment"
 p1:	<comment>[str]
-quiet:	<enable_quiet>[boolean] --> if quiet is not set or true, there is no response
+quiet:	<enable_quiet>[boolean] """ if quiet is not set or true, there is no response"""
 
 Response: standardized analyzer response
 Analyzer_socket wrapper: set_comment_pending_process()
 
 ---------------Start defined operator
---> is marked as service request
+""" is marked as service request """
 cmd: 	"startoperator"
 p1:	<operator_name>[str]
-p2:	<operator_command>[str]       -> whats that??
+p2:	<operator_command>[str]
 
 Response: standardized analyzer response
 Analyzer_socket wrapper: start_operator()
@@ -228,15 +227,26 @@ Response: standardized analyzer response
 Analyzer_socket wrapper: stop_operator_results()
 
 --------------- Write result to database
---> database entry with: project_id, process, process_id, result, comment
+""" database entry with: project_id, process, process_id, result, comment"""
 cmd: 	"humanconfirmationresult"
 p1:	<result>[any]
 p2:	<comment>[str]
 
 Response: standardized analyzer response
-Analyzer_socket wrapper: write_result_to_database()
+Analyzer_socket wrapper: write_to_database()
+
+--------------- Write human cofirmation
+""" optional p2 and score """
+cmd: 	"humanconfirmation"
+p1:	    <confiramtion>["IO"/"NIO"]
+p2:	    <comment>[str]
+score:  <score_value[any]>
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: human_confirmation()
 
 --------------- Execute script function and return result as string
+""" general syntax """
 cmd: 	"appfunc"
 p1:	<function_name>[str]
 p2:	<function_param[any]
@@ -245,7 +255,7 @@ Response: script function result
 Analyzer_socket wrapper: start_script_function()
 
 --------------- Set measure simluation buffer
---> calls AppCmd --> see corresponding AppCmd
+""" calls AppCmd --> see corresponding AppCmd"""
 
 cmd: 	simulationbuffer
 p1:	<function_name>[str]
@@ -298,22 +308,22 @@ Analyzer_socket wrapper: set_simulated_io_output()
 
 --------------- Switch I/O register report on/off
 cmd: 	"reportio"
-p1:	<enabel[str]> 	--> to enable p1 = "true", else is disable
+p1:	<enabel[str]> 	"""to enable p1 = "true", else is disable """
 
 Response: standardized analyzer response and reports events
 Analyzer_socket wrapper: set_io_report()
 
 --------------- Switch process number report on/Off
 cmd: 	"reportprocessnumber"
-p1:	<enabel[str]> 	--> to enable p1 = "true", else is disable
+p1:	<enabel[str]> 	""" to enable p1 = "true", else is disable """
 
 Response: standardized analyzer response and reports events
 Analyzer_socket wrapper: set_process_number_report()
 
 --------------- Captured received picture-
 cmd: 	"capturedpic"
-p1:	<pictre[any]>             -->will be transformed to byte array
-p2:	<full_resolution[str]>    --> to enable p2 = full, else is disable
+p1:	<pictre[any]>            """ will be transformed to byte array """
+p2:	<full_resolution[str]>   """ to enable p2 = full, else is disable """
 v:	<remote_path[str]>
 
 
@@ -506,6 +516,47 @@ Analyzer_socket wrapper: set_area_scale()
 cmd: 	"AppCmd"
 p1:	"SetAreaPosition"
 p2: <start_time[int]> <time_range[int]>
-
-Response: None
+""" All time based vairables in ms"""
+Response: standardized analyzer response
 Analyzer_socket wrapper: set_area_time_range()
+
+--------------- Load process
+cmd: 	"AppCmd"
+p1:	"LoadProcess"
+p2: <processnumber[int]> <start_time[int]>
+""" All time based vairables in ms"""
+Response: standardized analyzer response
+Analyzer_socket wrapper: load_process()
+
+--------------- Get settings out of Configuration->Setting->Parameter
+cmd: 	"AppCmd"
+p1:	"GetServiceParameter"
+p2: <param[]> <param_class[int]>
+""" see PrefVarCore:VarClass"""
+Response: standardized analyzer response + response[result]=setting
+Analyzer_socket wrapper: get_service_parameter()
+
+
+seems to work with: {"cmd":"appfunc","p1":"GetServiceParameter","p2":"pKernelModeFlags"}
+
+--------------- Set settings in Konfiguration->Setting->Parameter
+cmd: 	"AppCmd"
+p1:	"SetServiceParameter"
+p2: <param[]> <param_value[]> <param_class[int]>
+""" see PrefVarCore:VarClass"""
+Response: standardized analyzer response
+Analyzer_socket wrapper: set_service_parameter()
+
+--------------- Let system sleep
+cmd: 	"AppCmd"
+p1:	"sysSleep"
+p2: <time_in_ms[int]>
+Response: standardized analyzer response
+Analyzer_socket wrapper: send_analyzer_to_sleep()
+
+--------------- Write automatic back up
+cmd: 	"AppCmd"
+p1:	"writeBackup"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: write_backup()
