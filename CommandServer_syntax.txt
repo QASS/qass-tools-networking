@@ -398,7 +398,7 @@ Analyzer_socket wrapper: stop_sineGenerator()
 ---------------Set area view
 cmd: 	"AppCmd"
 p1:	"SetAreaVew"
-p2: <are_type[int]>
+p2: <area_num[int]>
 
 Response: standardized analyzer response
 Analyzer_socket wrapper: set_area_view()
@@ -464,10 +464,48 @@ p2: <channel[int]> "pulsetest" <gain[int]> <count[int]> <delay[int]>
 Response: standardized analyzer response
 Analyzer_socket wrapper: pulsetest_channel()
 
----------------Pulsetest channel
+---------------Pulsetest port
 cmd: 	"AppCmd"
 p1:	"Preamp port"
-p2: "simioin" <channel[int]>
+p2: <port_number[int]> "pulsetest" <gain[int]> <count[int]> <delay[int]>
+"""
+    | gain   | Pulsetest gain in range(0,4096)  | Defaults to 800
+    | count  | Pulsetest count in range(0,200)  | Defaults to 1
+    | delay  | Pulsetest delay (geater null)    | Defaults to 0
+    ..warning:: Port here doesn't count from 0! Why though?!
+"""
+Response: standardized analyzer response
+Analyzer_socket wrapper: pulsetest_port()
+
+---------------Pulsetest port
+cmd: 	"AppCmd"
+p1:	"Preamp port"
+p2: <port_number[int]> "frqtest"
 
 Response: standardized analyzer response
-Analyzer_socket wrapper: not implemented
+Analyzer_socket wrapper: frequency_test_port()
+
+---------------Set area color scale
+cmd: 	"AppCmd"
+p1:	"SetAreaColor"
+p2: <area_num[int]> <colour_scale[int]>
+"""Colour scale should be in range(10,401)"""
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: set_area_colour()
+
+---------------Set area scale
+cmd: 	"AppCmd"
+p1:	"SetAreaScale"
+p2: <area_num[int]> <scale[int]>
+"""Scale should be in range(10,1001)"""
+Response: standardized analyzer response
+Analyzer_socket wrapper: set_area_scale()
+
+---------------Set area time range
+cmd: 	"AppCmd"
+p1:	"SetAreaPosition"
+p2: <start_time[int]> <time_range[int]>
+
+Response: None
+Analyzer_socket wrapper: set_area_time_range()
