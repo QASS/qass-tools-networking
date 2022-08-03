@@ -182,7 +182,7 @@ class SysSettingsClass(IntEnum):
 
 class ConnectionError(socket.error):
     def __init__(self, ip, port):
-        self.msg = f"Connection to ip: {ip} on port: {port} could not be established."
+        self.msg = f"Connection to ip: {ip} on port: {port} could not be established.\n"
 
     def __str__(self):
         return self.msg
@@ -376,7 +376,7 @@ class AnalyzerCmd():
         self.__recv_thread.start()
         return self
 
-    def value_exception(logger, custom_msg):
+    def value_exception(self, custom_msg=None):
         def decorator(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
@@ -384,15 +384,15 @@ class AnalyzerCmd():
                     return func(*args, **kwargs)
                 except:
                     # define logger msg
-                    issue = f"Values out of bounds.\n"
+                    issue = f"{args} out of bounds.\n"
                     if custom_msg:
                         issue = issue+custom_msg
-                    logger.error(issue)
+                    self.logger.error(issue)
                     raise
             return wrapper
         return decorator
 
-    def key_exception(logger, custom_msg):
+    def key_exception(self, custom_msg=None, kwargs_key=True):
         def decorator(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
@@ -400,10 +400,13 @@ class AnalyzerCmd():
                     return func(*args, **kwargs)
                 except:
                     # define logger msg
-                    issue = f"Used keys: {kwargs} not supported.\n"
+                    if kwargs_key:
+                        issue = f"Used keys: {kwargs} not supported.\n"
+                    else:
+                        issue = f"Used keys: {args} not supported.\n"
                     if custom_msg:
                         issue = issue+custom_msg
-                    logger.error(issue)
+                    self.logger.error(issue)
                     raise
             return wrapper
         return decorator
@@ -417,7 +420,7 @@ class AnalyzerCmd():
         :return: Logger obj
         """
         logging.basicConfig(stream=sys.stdout, level=level_mode,
-                            format='[%(asctime)s]  %(levelname)s: in %(funcName)s %(lineno)d \n %(message)s')
+                            format='[%(asctime)s]  %(levelname)s: %(message)s')
         logger = logging.getLogger()
         return logger
 
@@ -434,12 +437,10 @@ class AnalyzerCmd():
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.s.settimeout(1)
             self.s.connect((self.ip, self.port))
-        except socket.timeout as e:
-            print(e)
+        except socket.timeout:
             raise ConnectionError(self.ip, self.port)
 
-        except socket.error as e:
-            print(e)
+        except socket.error:
             raise ConnectionError(self.ip, self.port)
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -447,6 +448,14 @@ class AnalyzerCmd():
         (start in enter method of contextmanager) and also raise and log raisen errors.
         """
         time.sleep(2.0)
+        if self._measuring_active:
+            self.stop_measuring()
+        if self._sine_gen_active:
+            self.stop_sineGenerator()
+        if self._monitoring_active:
+            self.monitoring_mode(mode="false")
+        if self._opertator_fucntions_active:
+            self.stop_operator_function()
         self.__recv_thread.kill_thread()
         self.s.close()
         self.logger.info("Socket connection closed")
@@ -471,9 +480,9 @@ class AnalyzerCmd():
         return self.port
 
     def start_measuring(self) -> None:
-        """Method sends a command to the connected analyzer to start a maesuring process.
-        """
+        """Method sends a command to the connected analyzer to start a maesuring process."""
         self._value_parser(cmd="AppCmd", p1="startMeasuring")
+        self._measuring_active = True
 
     def start_sineGenerator(self, frequency: int, amplitude: Union[int, Amplitudes]) -> None:
         """Method to start sine wave generation with custom frequency and amplitude settings.
@@ -495,6 +504,7 @@ class AnalyzerCmd():
                     cmd="AppCmd", p1="StartSineGen", p2=f"{frequency} {amplitude}")
                 self.logger.info(
                     f"Sine generator startet with f={frequency} Hz and {amplitude} mV amplitude.")
+                self._sine_gen_active = True
             else:
                 raise ValueError
         except ValueError:
@@ -510,6 +520,7 @@ class AnalyzerCmd():
     def stop_measuring(self) -> None:
         """Method to stop current running measuring process."""
         self._value_parser(cmd="AppCmd", p1="stopMeasuring")
+        self._measuring_active = False
 
     def set_process_comment(self, proc_comm: str) -> None:
         """Set a process comment for current selected process.
@@ -520,6 +531,7 @@ class AnalyzerCmd():
         :type proc_comm: str
         """
         self._value_parser(cmd="AppCmd", p1="setprocesscomment", p2=proc_comm)
+    # TODO:does not work
 
     def set_area_view(self, split: int) -> None:
         """Set analyzer view to a spit view with up to 4 different splitted proccess. Reversed process to change back to
@@ -533,8 +545,8 @@ class AnalyzerCmd():
             self._value_parser(
                 cmd="AppCmd", p1="SetAreaView", p2=split)
         else:
-            self.logger.error("Area split is out of bounds")
-            raise ValueError("Area split is out of bounds")
+            self.logger.error("Split amount vor view is out of bounds.")
+            raise ValueError("Split amount vor view is out of bounds.")
 
     def save_area_view(self, tempalte_num: int) -> None:
         """Saves current area view settings under template number. Each area can be set different.
@@ -933,7 +945,7 @@ class AnalyzerCmd():
             self.logger.info("No worries. I'm still alive.")
             return True
 
-    def run_measuring_mode(self, mode: Union[bool, str]) -> None:
+    def measuring_mode(self, mode: Union[bool, str]) -> None:
         """Start or stop a measurement.
 
         Short settings:
@@ -949,7 +961,7 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="startmeasuring", p1=self.translator[mode])
 
-    def run_monitoring_mode(self, mode: Union[bool, str]) -> None:
+    def monitoring_mode(self, mode: Union[bool, str]) -> None:
         """Start or stop monitoring modus. See
 
         Short settings:
@@ -963,8 +975,12 @@ class AnalyzerCmd():
         :raises KeyError: Raises if keyword argument "mode" is parsed with invalid values.
         """
         self._value_parser(cmd="startmonitoring", p1=self.translator[mode])
+        if self.translator[mode] == "true":
+            self._monitoring_active = True
+        elif self.translator[mode] == "false":
+            self._monitoring_active = False
 
-    def calc_max_amp_per_band(self, **kwargs):
+    def calc_max_amp_per_band(self, **kwargs) -> np.ndarray:
         """Method to calculate maximum amplitude per band. For futher information see default settings below. 
 
         By entering a new value as **kwargs, you are able to change default values, which will be sended.
@@ -1006,8 +1022,7 @@ class AnalyzerCmd():
         return np.fromstring(max_amp, sep=',')
 
     def load_test_project(self) -> None:
-        """ Loads the set test project.
-        """
+        """ Loads the set test project."""
         self._value_parser(cmd="loadtestproject")
 
     def load_last_user_project(self) -> None:
@@ -1021,14 +1036,14 @@ class AnalyzerCmd():
         self._value_parser(cmd="loaduserproject")
 
     def get_measure_positions(self) -> Dict:
-        """ Gets a dictionary with all measure positions and if used a energy value.
+        """ Gets a dictionary with all measure positions and if used an energy value.
 
         :return: Measurepositions and their calculated energy value.
         :rtype: Dict
         """
         return self._value_parser(cmd="getmaxmeasurepositions")
 
-    def get_preamp_hardware_info(self, preamp_port):
+    def get_preamp_hardware_info(self, preamp_port) -> str:
         """ Returns a string with hadware infos to preamplifier connected to parsed port
 
         :param preamp_port: Preamp port with connected preampifier
@@ -1048,21 +1063,40 @@ class AnalyzerCmd():
                 "Choosen preampport is not a analyzer system preamp port.")
 
     def start_operator_function(self, mode: Union[str, bool] = "start") -> None:
-        """_summary_
+        """Start operator functions.
 
         :param mode: Function can start or end operator function by changing mode to a stopping key, defaults to "start". For more allowed keys look up translator dict
-        :type mode: Union[str, bool], optional
+        :type mode: str, bool], optional
         """
         self._value_parser(cmd="startoperatorfunctionvalues",
                            p1=self.translator[mode])
+        if self.translator[mode] == "true":
+            self.operator_fucntion_active = True
+        elif self.translator[mode] == "false":
+            self.operator_fucntion_active = False"
 
-    def stopp_operator_function(self) -> None:
-        """Stop of running operator function
-        """
+    def stop_operator_function(self) -> None:
+        """Stop of running operator function."""
         self._value_parser(cmd="stoppoperatorfunctionvalues")
+        self.operator_fucntion_active = False
+
+    def set_serial_number(self, serial_number: int, process_number: int) -> None:
+        """Setting serial number for arbitary process.
+
+        Serial number is stored under in database under process.serial
+
+        :param serial_number: Serial number thast should be set.
+        :type serial_number: int
+        :param process_number: Porcess which should be connected to serial.
+        :type process_number: int
+        """
+        self._value_parser(cmd="AppCmd", p1="SetProcessSerial",
+                           p2=f"{process_number} {serial_number}")
 
     def set_serial_number_pending_process(self, serial_number: int) -> None:
         """Setting serial number for next process.
+
+        Serial number is stored under in database under process.serial
 
         :param serial_number: Serial number for next process
         :type serial_number: int
@@ -1072,15 +1106,19 @@ class AnalyzerCmd():
     def set_comment_pending_process(self, comment: str) -> None:
         """Set process comment for pending process.
 
+        Comment is saved in database under process.comment
+
         :param comment: Comment for next process.
         :type comment: str
         """
         self._value_parser(cmd="setpendingcomment", p1=comment)
 
+    # TODO:kill
     def set_comment_current_process(self, comment: str):
         """ Sets comment for current activatet process.
 
         Similair to set_proces_comment but as JSON communication Server command.
+        Comment is saved in database under process.comment
 
         :param comment: Process comment to set
         :type comment: str
@@ -1095,8 +1133,9 @@ class AnalyzerCmd():
         :param operator_command: _description_
         :type operator_command: str
         """
-        self._value_parser(cmd="startoperator",
-                           p1=operator_name, p2=operator_command, expect_response=False)
+        self._value_parser(expect_response=False, cmd="startoperator",
+                           p1=operator_name, p2=operator_command)
+        self._operator_active = True
 
     def import_operators(self, operator_fielpath: str, force_load: str) -> None:
         """Import a local file on optimizer.
@@ -1427,4 +1466,5 @@ class AnalyzerCmd():
 
 
 with AnalyzerCmd(ip="192.168.2.67", debug_mode=True) as opti:
-    opti.set_area_colour(1, 20)
+    opti.set_area_scale(1, 100)
+    opti.m

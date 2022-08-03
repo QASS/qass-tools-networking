@@ -50,8 +50,7 @@ with AnalyzerCmd(ip="192.168.2.67") as opti:
 
 
 ######## Example 4 ############
+with AnalyzerCmd(ip="192.168.2.67") as opti:
 
-
-
- opti.human_confirmation(
+    opti.human_confirmation(
         process_IO=True, comment="Test", score=42, bla="nice")
