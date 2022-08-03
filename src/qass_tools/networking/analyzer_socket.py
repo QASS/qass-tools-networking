@@ -1,8 +1,7 @@
-import ctypes
 import socket
 import json
-from turtle import clear
-from xml.etree.ElementTree import Comment
+#from turtle import clear
+#from xml.etree.ElementTree import Comment
 import numpy as np
 import time
 from enum import Enum, auto, IntEnum
@@ -12,11 +11,13 @@ import sys
 import threading
 import queue
 from collections import defaultdict
+from retry import retry
+from functools import wraps
+import warnings
 
 
 class Amplitudes(Enum):
-    """ Enum class to list and check avaible amplitudes in mV to generate sine wave. 
-    """
+    """ Enum class to list and check avaible amplitudes in mV to generate sine wave."""
     AMP_64_mV = 64
     AMP_128_mV = 128
     AMP_191_mV = 191
@@ -43,6 +44,7 @@ class Amplitudes(Enum):
 
 
 class Channels(IntEnum):
+    """Avaible selection box choices for channel in multiplexer configuration that will be addressed"""
     CHANNEL_1 = 0
     CHANNEL_2 = 1
     CHANNEL_3 = 2
@@ -50,6 +52,7 @@ class Channels(IntEnum):
 
 
 class ChannelPorts(IntEnum):
+    """Avaible selection box choices for channel port in multiplexer configuration that will be addressed"""
     CHANNEL_PORT_1 = 0
     CHANNEL_PORT_2 = 1
     CHANNEL_PORT_3 = 2
@@ -70,6 +73,7 @@ class ChannelPorts(IntEnum):
 
 
 class PreampPorts(IntEnum):
+    """Avaible selection box choices for preamplifier port in multiplexer configuration that will be addressed"""
     PREAMP_PORT_1 = 0
     PREAMP_PORT_2 = 1
     PREAMP_PORT_3 = 2
@@ -81,6 +85,7 @@ class PreampPorts(IntEnum):
 
 
 class Samplerates(IntEnum):
+    """Avaible selection box choices for used samplerate in multiplexer configuration"""
     SAMPLERATE_100_MHz = 0
     SAMPLERATE_50_MHz = 1
     SAMPLERATE_25_MHz = 2
@@ -95,6 +100,7 @@ class Samplerates(IntEnum):
 
 
 class FFTOversampling(IntEnum):
+    """Avaible selection box choices for used oversampling in multiplexer configuration"""
     FFT_OVERSAMPLING_2_TIMES = 1
     FFT_OVERSAMPLING_4_TIMES = 2
     FFT_OVERSAMPLING_8_TIMES = 3
@@ -105,11 +111,13 @@ class FFTOversampling(IntEnum):
 
 
 class FFTWindowing(IntEnum):
+    """Avaible selection box choices for used windowing function in multiplexer configuration"""
     FFT_WINDOWING_HANNING = 0
     NONE_FFT_WINDOWING = 1
 
 
 class FFTLogarithmic(IntEnum):
+    """Avaible selection box choices for dispalyed FFT logarithmic base in multiplexer configuration"""
     FFT_LOGARITHMIC_BASE_1 = 1
     FFT_LOGARITHMIC_BASE_2 = 2
     FFT_LOGARITHMIC_BASE_3 = 3
@@ -131,8 +139,7 @@ class FFTLogarithmic(IntEnum):
 
 class SysAmplitudesType(IntEnum):
     """System amplitud types avaible in analyzer software. Helps to represent calced
-    maximum amplitudes in different styles.
-    """
+    maximum amplitudes in different styles."""
     AMPLITUDE_DEFAULT = 0
     # Amplitude is original ADC output value from hardware
     AMPLITUDE_ADC_OUT = 1
@@ -145,10 +152,11 @@ class SysAmplitudesType(IntEnum):
 
 
 class AreaViews(IntEnum):
-    View_1 = 0
-    View_2 = 1
-    View_3 = 2
-    View_4 = 3
+    """ Avaible view possibilities in analyzer area view."""
+    View_1 = 1
+    View_2 = 2
+    View_3 = 3
+    View_4 = 4
 
 
 class SysSettingsClass(IntEnum):
@@ -172,10 +180,24 @@ class SysSettingsClass(IntEnum):
     BACKUP_CONFIG = 15  # Configuration for backups and automatic backups
 
 
+class ConnectionError(socket.error):
+    def __init__(self, ip, port):
+        self.msg = f"Connection to ip: {ip} on port: {port} could not be established."
+
+    def __str__(self):
+        return self.msg
+
+
+class NoneRegistrationError(Exception):
+    pass
+
+
 class ReceiveThread(threading.Thread):
+    """ Receiving thread which runs due to contextmanager the whole time and listen to analyzer socket for responeses. 
+    Responses will be processed and parsed to a callback function (regular: adds response to queue for main thread to fetch te data."""
+
     def __init__(self, socket_obj, logger_obj, group=None, target=None, name=None, args=()):
         threading.Thread.__init__(self, group, target, name, args)
-        self.return_value = "Receiver thread is now killed."
         self.lock = threading.RLock()
         self.__callbacks = defaultdict(list)
         self.s = socket_obj
@@ -183,7 +205,11 @@ class ReceiveThread(threading.Thread):
 
     def register_callbacks(self, recognition: Union[str, int], callback) -> None:
         """ Function to register incomming analyzer response by msg_id or cmd name.
-        Parsed callback will be regsitered to handle response.
+        Parsed callback will be regsitered by added as recognition-callback pair to a dict self.__callbacks.
+
+
+        Here is used a MultiDict which by default creates a list for every dict entry. 
+        So it is possible to store mutiple callbacks for one recognition. 
 
         :param recognition: Recognition to identify message.
         :type recognition: str, int
@@ -196,8 +222,12 @@ class ReceiveThread(threading.Thread):
     def deregister_callbacks(self, recognition: Union[str, int], user_callback=None) -> None:
         """ Remove callback registration.
 
+        Due to the used MultiDict we have to check if only one vallback has to be removed or the complete registration.
+
         :param recognition: Recognition to identify message.
         :type recognition: str, int
+        :param user_callback: Deregister , defaults to None
+        :type user_callback: function, optional
         """
         with self.lock:
             if user_callback:
@@ -208,6 +238,14 @@ class ReceiveThread(threading.Thread):
                 self.__callbacks.pop(recognition)
 
     def handle_response(self, response, encoding_style="utf-8") -> None:
+        """Handles every complete message. Handling means decoding byte string do dict and apply response to every registered callback.
+        Therefore response is not in an unit form, we need a if block which handles recognition over cmd name and message id 
+
+        :param response: Compelte analyzer response
+        :type response: bytes string
+        :param encoding_style: Encoding style used from Json module, defaults to "utf-8"
+        :type encoding_style: str, optional
+        """
         self.logger.debug(response)
         # change appearance
         response = response.decode(encoding_style)
@@ -215,20 +253,34 @@ class ReceiveThread(threading.Thread):
 
         with self.lock:
             if response['cmd'] in self.__callbacks:
+                # reports alwys registered with cmd->only case we need tot est for mutiple callbacks
                 length = len(self.__callbacks[response['cmd']])
                 if length > 1:
+                    # if mutiple callbacks apply response to all of them
                     for idx in range(0, length):
                         self.__callbacks[response['cmd']][idx](response)
                 else:
                     self.__callbacks[response['cmd']][0](response)
+            # if no report there is only one entry--> [0] always uses right callback
             elif 'resid' in response:
                 if response['resid'] in self.__callbacks:
                     self.__callbacks[response['resid']][0](response)
             elif 'msgid' in response:
                 if response['msgid'] in self.__callbacks:
                     self.__callbacks[response['msgid']][0](response)
+            else:
+                warnings.warn(
+                    f"Not expected analyzer response (no registration).")
+                self.logger.warning(
+                    "Not expected analyzer response (no registration):\n")
+                self.logger.warning(response)
 
     def run(self) -> None:
+        """ Overriden run method of thread module will be executed as the thread starts.
+
+        Method listens to socket in forever loop 'till kill_thread method is executed. Listens for small parts and set message together.
+        If complete parse them to handle_response.
+        """
         current_len = 0
         buffer = bytearray()
         READ_SIZE = 4
@@ -236,36 +288,47 @@ class ReceiveThread(threading.Thread):
         while not self.kill:
             try:
                 buffer.extend(self.s.recv(READ_SIZE))
+            # if nothing is received socket runs into failstate (socket.timeout)
             except socket.timeout as e:
+                # in this case just continue while loop
                 continue
+            # catch other socket exception and crash
             except socket.error as e:
                 self.logger.error(e)
                 if int.from_bytes(buffer, byteorder='big') > 0:
-                    self.logger.warning("Unfinished message received")
+                    self.logger.warning("Unfinished message received:\n")
                     self.logger.warning(buffer)
+            # only enter for new current length setting or if message is complete
             while (len(buffer) >= current_len and len(buffer) != 0) or (current_len is 0 and len(buffer) >= 2):
                 if current_len is 0:
+                    # every two first characters of a message are the incoming length
                     current_len = int.from_bytes(buffer[:2], byteorder='big')
+                    # cut length away
                     buffer = buffer[2:]
-
+                # if message is complete
                 if len(buffer) >= current_len:
+                    # seperate message
                     response = buffer[:current_len]
+                    # handle response
                     self.handle_response(response)
+                    # throw ahdnled part away
                     buffer = buffer[current_len:]
+                    # reset current_length
                     current_len = 0
 
     def kill_thread(self) -> None:
+        """End forever loop in run method and join thread."""
         #self.daemon = True
         self.kill = True
+        self.logger.info("Receiver thread is now killed.")
         self.join()
 
 
 class AnalyzerCmd():
-    """ Class for external analyzer control (system operator independant) over a TCP socket.
-    """
+    """ Class provides methods for external analyzer control (system operator independant) over a TCP socket."""
 
     def __init__(self, ip: str, port=17000, debug_mode=False):
-        """Constructor of the class defines details for logger object.
+        """Constructor provides helper and creates logger module .
 
         :param ip: Analyzer IP in network.
         :type ip: str
@@ -293,35 +356,101 @@ class AnalyzerCmd():
         self._appvar_report_count = 0
         # short solution logger to sys.stdout
         msg_mode = logging.DEBUG if debug_mode else logging.INFO
-        logging.basicConfig(stream=sys.stdout, level=msg_mode,
-                            format='[%(asctime)s] - %(levelname)s - %(message)s')
-        self.logger = logging.getLogger()
+        self.logger = self._create_logger(msg_mode)
 
     def __enter__(self):
         """ Connects the machine to an analyzer reachable over user-given Input of IP (self.ip) and Port (self.port) 
-        via TCP and returns an isntance of the class
+        via TCP and returns an instance of the class. Additionally a second thread (called receiving thread) will be started.
+        This thread will run until __exit__ method will kill recieve thread.
 
         :return: Instance of AnalyzerCmd class
         :rtype: AnalyzerCmd object
         """
         # connect to socket
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.settimeout(1)
-        self.s.connect((self.ip, self.port))
+        self._connecting_analyzer()
 
         # create thread instance
         self.__recv_thread = ReceiveThread(self.s, self.logger,
                                            group=None, target=None, name="receive thread")
+        # start thread
         self.__recv_thread.start()
         return self
 
+    def value_exception(logger, custom_msg):
+        def decorator(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                try:
+                    return func(*args, **kwargs)
+                except:
+                    # define logger msg
+                    issue = f"Values out of bounds.\n"
+                    if custom_msg:
+                        issue = issue+custom_msg
+                    logger.error(issue)
+                    raise
+            return wrapper
+        return decorator
+
+    def key_exception(logger, custom_msg):
+        def decorator(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                try:
+                    return func(*args, **kwargs)
+                except:
+                    # define logger msg
+                    issue = f"Used keys: {kwargs} not supported.\n"
+                    if custom_msg:
+                        issue = issue+custom_msg
+                    logger.error(issue)
+                    raise
+            return wrapper
+        return decorator
+
+    def _create_logger(self, level_mode):
+        """Creates a logger which will print out to sys.stdout and log custom message and time, log level, 
+        function name and if avaible line number where log occured.
+
+        :param level_mode: logging msg mode (e.g. logging.debug)
+        :type level_mode: Message level that will be displayed
+        :return: Logger obj
+        """
+        logging.basicConfig(stream=sys.stdout, level=level_mode,
+                            format='[%(asctime)s]  %(levelname)s: in %(funcName)s %(lineno)d \n %(message)s')
+        logger = logging.getLogger()
+        return logger
+
+    @retry(ConnectionError, tries=4, delay=1)
+    def _connecting_analyzer(self):
+        """ Method to create a TCP socket connection with socket address(ip and port) from constructor 
+
+        Retry decorator will retry method funtionalities by occuring ConnectionError. Here set delay layes by 1 second and 
+        decorator will try again for four times before giving up.
+
+        :raises ConnectionError: Connection error sis raisen if no connection can be established.
+        """
+        try:
+            self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.s.settimeout(1)
+            self.s.connect((self.ip, self.port))
+        except socket.timeout as e:
+            print(e)
+            raise ConnectionError(self.ip, self.port)
+
+        except socket.error as e:
+            print(e)
+            raise ConnectionError(self.ip, self.port)
+
     def __exit__(self, exc_type, exc_value, traceback):
+        """ If contextmanager is left, another two second will be waited before private function will be called to reiceiving thread
+        (start in enter method of contextmanager) and also raise and log raisen errors.
+        """
         time.sleep(2.0)
         self.__recv_thread.kill_thread()
         self.s.close()
         self.logger.info("Socket connection closed")
         if exc_type != None:
-
             self.logger.error(
                 f"\nExecution type: {exc_type}\nTraceback: {traceback}")
 
@@ -346,38 +475,40 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="AppCmd", p1="startMeasuring")
 
-    def start_sineGenerator(self, frequency: int, amplitude: Amplitudes) -> None:
-        """Method sends command that sine generator generates a sine wave with custom frequency and amplitude settings.
+    def start_sineGenerator(self, frequency: int, amplitude: Union[int, Amplitudes]) -> None:
+        """Method to start sine wave generation with custom frequency and amplitude settings.
 
-        Note that you should consider that the sine generator needs a couple µs to start.
+        .. warning:: Sine generator has to be already switched on!
+        .. note::Note that you should consider that the sine generator needs a couple µs to start
+        .. note::Reminder: Frequency range is limited by used sine generator
 
-        :param frequency: Used frequency to generate sine wave.
+        :param frequency: Used frequency to generate sine wave with in Hz.
         :type frequency: int
-        :param amplitude: Used amplitude to generate sine wave.
-        :type amplitude: int
+        :param amplitude: Used amplitude to generate sine wave in mV. See Amplitudes class for more all supported amplitude values.
+        :type amplitude: int, Amplitudes
         :raises ValueError: Set amplitude has to be equal to one class constances of class Amplitudes. If exception is raised the user is asked to enter new amplitude and frequency. 
         """
         a = list(Amplitudes)
         try:
-            if amplitude in Amplitudes:
+            if amplitude in a or amplitude in Amplitudes:
                 self._value_parser(
                     cmd="AppCmd", p1="StartSineGen", p2=f"{frequency} {amplitude}")
+                self.logger.info(
+                    f"Sine generator startet with f={frequency} Hz and {amplitude} mV amplitude.")
             else:
                 raise ValueError
         except ValueError:
-            (f" Desiered amplitude cannot be set. Please enter one of the following amplitudes to continue: {a}")
+            (f" Desiered amplitude {amplitude} is not supported by. Please enter one of the following amplitudes to continue: {a}")
             NEWamp = input("Enter new sine amplitude:")
             NEWf = input("Enter new sine frequency:")
             self.start_sineGenerator(NEWf, NEWamp)
 
     def stop_sineGenerator(self) -> None:
-        """Command to stop generating sine waves.
-        """
+        """Stops generating sine waves."""
         self._value_parser(cmd="AppCmd", p1="StopSineGen")
 
     def stop_measuring(self) -> None:
-        """Command to stop current measuring process.
-        """
+        """Method to stop current running measuring process."""
         self._value_parser(cmd="AppCmd", p1="stopMeasuring")
 
     def set_process_comment(self, proc_comm: str) -> None:
@@ -390,28 +521,34 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="AppCmd", p1="setprocesscomment", p2=proc_comm)
 
-    # TODO:test not implemented in analyzer
-    def set_area_view(self, area_amount: int) -> None:
-        if 0 < area_amount <= 4:
+    def set_area_view(self, split: int) -> None:
+        """Set analyzer view to a spit view with up to 4 different splitted proccess. Reversed process to change back to
+        single view.
+
+        :param split: Amount of splitted area views. Limited to 4.
+        :type split: int
+        :raises ValueError: Raises if split lays out of bounds 
+        """
+        if 0 < split <= 4:
             self._value_parser(
-                cmd="AppCmd", p1="SetAreaView", p2=area_amount)
+                cmd="AppCmd", p1="SetAreaView", p2=split)
         else:
             self.logger.error("Area split is out of bounds")
             raise ValueError("Area split is out of bounds")
 
     def save_area_view(self, tempalte_num: int) -> None:
-        """Saves current area view settings under template number. Each area can be se different.
+        """Saves current area view settings under template number. Each area can be set different.
 
-        :param tempalte_num: Storage number to save
+        :param tempalte_num: Storage number to save.
         :type tempalte_num: int
         """
         self._value_parser(
             cmd="AppCmd", p1="SaveAreaView", p2=tempalte_num)
 
     def load_area_view(self, tempalte_num: int) -> None:
-        """Load presaved area view tempalte. 
+        """Load presaved area view template. 
 
-        :param tempalte_num: Storage number to load
+        :param tempalte_num: Storage number to load.
         :type tempalte_num: int
         """
         self._value_parser(
@@ -487,11 +624,12 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd", p1="Preamp",
                            p2=f"port {port_number} frqtest")
 
-    def set_area_scale(self, area_number: int, scale=500) -> None:
-        """ Set scale of each area independant.
+    def set_area_scale(self, area_number: int, scale: int = 500) -> None:
+        """ Set scale of each view area. Avaible for splitted analyzer view and single view. 
+        In case of single view area_number equals one.
 
         Scale should be in range(10,1001)
-        Area should be in range(1,5)
+        Area number should be in range(1,5), but is limited to current activitated area views.
 
         :param area_number: Which area should be addressed
         :type area_number: int
@@ -504,12 +642,12 @@ class AnalyzerCmd():
                                p1="SetAreaScale", p2=f"{area_number} {scale}")
         else:
             self.logger.error(
-                "Choosen key is out of bounds. Scale should be in range(10,1001) and Area numbers betweeen 1 and (inclusive) 4.")
+                "Choosen key is out of bounds. Scale should be in range(10,1001) and area number should be in range(1,5).")
             raise ValueError(
-                "Choosen sckeyale is out of bounds. Scale should be in range(10,1001) and Area numbers betweeen 1 and (inclusive) 4.")
+                "Choosen key is out of bounds. Scale should be in range(10,1001) and area number should be in range(1,5).")
 
-    def set_area_colour(self, area_number: int, colour_scale=200) -> None:
-        """Set colour scale of each area independant.
+    def set_area_colour(self, area_number: int, colour_scale: int = 200) -> None:
+        """Set colour scale for area view. Only avaible in area
 
         Colour scale should be in range(10,401)
         Area should be in range(1,5)
@@ -525,9 +663,9 @@ class AnalyzerCmd():
                                p1="SetAreaColor", p2=f"{area_number} {colour_scale}")
         else:
             self.logger.error(
-                "Choosen key is out of bounds. Scale should be in range(10,401) and Area numbers betweeen 1 and (inclusive) 4.")
+                "Choosen key is out of bounds. Scale should be in range(10,401) and area number should be in range(1,5).")
             raise ValueError(
-                "Choosen key is out of bounds. Scale should be in range(10,401) and Area numbers betweeen 1 and (inclusive) 4.")
+                "Choosen key is out of bounds. Scale should be in range(10,401) and area number should be in range(1,5).")
 
     def set_area_time_range(self, area_number: int, start_time: int, time_range: int) -> None:
         """ Set of shown time range for each area.
@@ -1289,5 +1427,4 @@ class AnalyzerCmd():
 
 
 with AnalyzerCmd(ip="192.168.2.67", debug_mode=True) as opti:
-    opti.human_confirmation(
-        process_IO=True, comment="Test", score=42, bla="nice")
+    opti.set_area_colour(1, 20)
