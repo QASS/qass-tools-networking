@@ -17,37 +17,37 @@ def kill_callback(callback):
     callbacks[recognition].remove(callback)
 
 
-callbacks["2"].append("nice")
-callbacks["3"].append("nein")
-callbacks["2"].append("nice")
-print(callbacks)
-
-
-def shift_binary(original_bin: int) -> int:
+def shift_binary(original_bin) -> int:
     """Helper to invert incomming binaries.
     :param original_bin: Incomming binary
-    :type original_bin: int
+    :type original_bin: str
     :return: Inversed binary
-    :rtype: int
+    :rtype: str
     """
-    new_val = 0
-    new_binary = ""
-    for i in range(16):
-        bit_state = (original_bin & (1 << i) >> i)
-        print(bit_state)
-        new_val = new_val | (bit_state << (16-i))
+    # Elias Version didn't worked
+    #new_val = 0
+    # for i in range(16):
+    #    bit_state = (original_bin & (1 << i) >> i)
+    #    print("bit state", bit_state)
+    #    new_val = new_val | (bit_state << (16-i))
 
-    return str(new_val)
+    # return new_val
+
+    new_val = [0] * len(original_bin)
+    for (i, bit) in enumerate(original_bin):
+        new_val[len(new_val)-1-i] = bit
+
+    return "".join(new_val)
 
 
 def binary_to_hexa(binary: str):
-    deci_num = int(binary, 2)
+    #deci_num = int(binary, 2)
     print(binary)
-    print(hex(deci_num))
-    return hex(deci_num)
+    #hexa = hex(deci_num)
 
 
-#b = "00100000 00000000"
-# b = b.replace(" ", "")  # delete space
-#b_shifted = shift_binary(int(b))
-# binary_to_hexa(b_shifted)
+b = "10110000 00000000"
+b = b.replace(" ", "")  # delete space
+
+b_shifted = shift_binary(b)
+binary_to_hexa(b_shifted)
