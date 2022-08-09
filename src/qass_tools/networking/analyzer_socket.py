@@ -742,7 +742,6 @@ class AnalyzerCmd():
                                       p2=param_setting)
         return settings.get("result")
 
-    # TODO:Test
     def set_service_parameter(self, param_setting: str, param_value: any) -> None:
         """Set service parameter settings under Configuration->Settings->Parameter
         .. note:: Only avaible for user level 8 or higher!
@@ -752,16 +751,15 @@ class AnalyzerCmd():
         :param param_value: New value of choosen service parameter
         :type param_value: any
         """
-        self._value_parser(cmd="appfunc", p1="setServiceParameter",
+        self._value_parser(cmd="AppCmd", p1="setServiceParameter",
                            p2=f"{param_setting} {param_value}")
         self.logger.info(
             f"Service parameter {param_setting} is changed to {param_value}")
         # self._value_parser(cmd="appfunc", p1="SetServiceParameter",
         #                   p2=f"{param_name} {param_value} {param_class}")
 
-    # TODO: find way to prove
     def send_analyzer_to_sleep(self, time=2000) -> None:
-        """ Command to send Analyzer system in sleep mode.
+        """ Only testing purpose. Command to send Analyzer system in sleep mode.
 
         :param time: Time to sleep in ms, defaults to 2000
         :type time: int, optional
@@ -1440,7 +1438,6 @@ class AnalyzerCmd():
 
         self._value_parser(expect_response=False, **settings)
 
-    # TODO:test
     def write_to_database(self, result: any, comment=None) -> None:
         """ Writes database query for an entry with current project_id, process, process_id, result and comment as values
 
@@ -1548,5 +1545,4 @@ class AnalyzerCmd():
 
 
 with AnalyzerCmd(ip="192.168.1.50", debug_mode=True) as opti:
-    opti.write_to_database(5, "test")
-    #opti.set_service_parameter("pFPGAVersion", 2)
+    opti.set_service_parameter("pFPGAVersion", 2)

@@ -462,6 +462,7 @@ Response: standardized analyzer response
 Analyzer_socket wrapper: not implemented
 
 ---------------Pulsetest channel
+""" no real response"
 cmd: 	"AppCmd"
 p1:	"Preamp channel"
 p2: <channel[int]> "pulsetest" <gain[int]> <count[int]> <delay[int]>
@@ -475,6 +476,7 @@ Response: standardized analyzer response
 Analyzer_socket wrapper: pulsetest_channel()
 
 ---------------Pulsetest port
+""" no real response"
 cmd: 	"AppCmd"
 p1:	"Preamp port"
 p2: <port_number[int]> "pulsetest" <gain[int]> <count[int]> <delay[int]>
@@ -487,7 +489,8 @@ p2: <port_number[int]> "pulsetest" <gain[int]> <count[int]> <delay[int]>
 Response: standardized analyzer response
 Analyzer_socket wrapper: pulsetest_port()
 
----------------Pulsetest port
+--------------- Frequencytest port
+""" no real response"
 cmd: 	"AppCmd"
 p1:	"Preamp port"
 p2: <port_number[int]> "frqtest"
@@ -529,21 +532,17 @@ Response: standardized analyzer response
 Analyzer_socket wrapper: load_process()
 
 --------------- Get settings out of Configuration->Setting->Parameter
-cmd: 	"AppCmd"
+cmd: 	"appfunc"
 p1:	"GetServiceParameter"
-p2: <param[]> <param_class[int]>
+p2: <param[str]>
 """ see PrefVarCore:VarClass"""
 Response: standardized analyzer response + response[result]=setting
 Analyzer_socket wrapper: get_service_parameter()
 
-
-seems to work with: {"cmd":"appfunc","p1":"GetServiceParameter","p2":"pKernelModeFlags"}
-
 --------------- Set settings in Konfiguration->Setting->Parameter
 cmd: 	"AppCmd"
 p1:	"SetServiceParameter"
-p2: <param[]> <param_value[]> <param_class[int]>
-""" see PrefVarCore:VarClass"""
+p2: <param[str]> <param_value[any]> 
 Response: standardized analyzer response
 Analyzer_socket wrapper: set_service_parameter()
 
