@@ -1,10 +1,9 @@
+from email.errors import InvalidMultipartContentTransferEncodingDefect
 import socket
 import json
-# from turtle import clear
-# from xml.etree.ElementTree import Comment
 import numpy as np
 import time
-from enum import Enum, auto, IntEnum
+from enum import Enum, IntEnum
 from typing import Any, Dict, Union
 import logging
 import sys
@@ -280,7 +279,7 @@ class ReceiveThread(threading.Thread):
                 self.logger.warning(response)
 
     def run(self) -> None:
-        # TODO: if not signal is received, change to mainthread
+        # BUG: if not signal is received, change to mainthread
         """ Overriden run method of thread module will be executed as the thread starts.
 
         Method listens to socket in forever loop 'till kill_thread method is executed. Listens for small parts and sets messages together.
@@ -388,6 +387,14 @@ class AnalyzerCmd():
         self.__recv_thread.start()
         return self
 
+    def analyzer_functionality_warning_decorator(func):
+        def inner(*args, **kwargs):
+            result = func(*args, **kwargs)
+            warnings.warn(
+                "Analyzer has no complete implementation for this yet.")
+            return result
+        return inner
+
     def value_exception(self, custom_msg=None):
         def decorator(func):
             @wraps(func)
@@ -465,22 +472,22 @@ class AnalyzerCmd():
         self.__recv_thread.kill_thread()
         # save exit and stop all running services
         if self._measuring_active:
-            self._value_parser(expect_reponse=False,
+            self._value_parser(expect_response=False,
                                cmd="App", p1="stopMeasuring")
         if self._sine_gen_active:
-            self._value_parser(expect_reponse=False,
+            self._value_parser(expect_response=False,
                                cmd="AppCmd", p1="StopSineGen")
         if self._monitoring_active:
-            self._value_parser(expect_reponse=False,
+            self._value_parser(expect_response=False,
                                cmd="startmonitoring", p1="false")
         if self._operator_functions_active:
-            self._value_parser(expect_reponse=False,
+            self._value_parser(expect_response=False,
                                cmd="stoppoperatorfunctionvalues")
         if self._operator_active:
-            self._value_parser(expect_reponse=False,
+            self._value_parser(expect_response=False,
                                cmd="AppCmd", p1="StopSineGen")
         if self._operator_results_active:
-            self._value_parser(expect_reponse=False,
+            self._value_parser(expect_response=False,
                                cmd="stopoperatorresults")
 
         self.s.close()
@@ -591,76 +598,151 @@ class AnalyzerCmd():
         self._value_parser(
             cmd="AppCmd", p1="LoadAreaView", p2=tempalte_num)
 
-    # TODO: not working
-    def load_simualtion_buffer(self, file_path: str, channel=Channels.CHANNEL_1) -> None:
-        self._value_parser(cmd="AppCmd",
-                           p1="SimulationBuffer", p2=f"{channel} {file_path}")
-
-    # TODO: not working
-    def set_simualtion_buffer(self, channel=Channels.CHANNEL_1, mode="enable") -> None:
-        keys = ["all", *Channels]
-        if channel in keys:
-            if channel == "all":
-                self._value_parser(cmd="AppCmd",
-                                   p1="SimulationBuffer", p2=self.translator[mode])
-            else:
-                self._value_parser(cmd="AppCmd",
-                                   p1="SimulationBuffer", p2=f"{channel} {self.translator[mode]}")
+    def load_simulation_buffer(self, file_path: str, channel: int, do_not_copy_meta_data=False) -> None:
+        settings = {'cmd': "AppCmd",
+                    'p1': "SimulationBuffer",
+                    'p2': ""}
+        channel = channel + 1
+        if do_not_copy_meta_data:
+            settings.update["p2"] = f"channel {channel} nometa path {file_path}"
         else:
-            self.logger.error("Choosed channel is not supported")
-            raise KeyError("Choosed channel is not supported")
+            settings.update["p2"] = f"channel {channel} path {file_path}"
+        self._value_parser(**settings)
 
-    def pulsetest_channel(self, channel_number, gain: int, count: int, delay: int) -> None:
+    # BUG: not working
+    def set_simulation_buffer(self, channel: Union[str, int], mode: str) -> None:
+
+        if channel == "all":
+            self._value_parser(cmd="AppCmd",
+                               p1="SimulationBuffer", p2=self.translator[mode])
+        else:
+            channel = channel + 1
+            self._value_parser(cmd="AppCmd",
+                               p1="SimulationBuffer", p2=f"{channel} {self.translator[mode]}")
+
+    def pulsetest_channel(self, channel_number: int, **kwargs) -> None:
         """External set of pulse test. Only avaible for exisiting ports and sensors.
 
+        | ---------------- **kwargs --------------------------------- |
+        | gain   | Pulsetest gain in range(0,4096)  | Defaults to 800 |
+        | count  | Pulsetest count in range(0,200)  | Defaults to 1   |
+        | delay  | Pulsetest delay (geater null)    | Defaults to 0   |
+
+        ..warning::Analyzer function is not null based. Basically if you want to test the first Channel,
+        it is counted from null and integer representation if CHANNELS.CHANNEL_1 equals zero. But this specfic function 
+        will need a corrected number based on one. So this interface method automatically correct all parsed integers
+        by addding the value with one.
         :param channel_number: Channel where pulsetest gets executed.
         :type channel_number: int or Channels
-        :param gain: Pulsetest gain in range(0,4096)
-        :type gain: int
-        :param count: Pulsetest count in range(0,201)
-        :type count: int
-        :param delay: Pulsetest delay (geater null)
-        :type delay: int
         :raises ValueError: If gain is out of bounds: range(0,4096) | If count is out of bounds: range(0,200) | If delay is out of bounds: smaller zero
         """
+        settings = {'gain': 800,
+                    'count': 1,
+                    'delay': 0}
         # channel nummer starts in this case by 1
         channel_number += 1
+        # update witgh kwargs
+        if kwargs:
+            if kwargs.keys() in settings.keys():
+                settings.update(kwargs)
+
         # check params limits
-        if not 0 <= gain < 4096 and not 0 <= count < 201 and not 0 <= delay:
+        if not 0 <= settings['gain'] < 4096 and not 0 <= settings['count'] < 201 and not 0 <= settings['delay']:
             self.logger.error("Params out of bounds")
             raise ValueError("Params out of bounds")
 
-        settings = {"cmd": "AppCmd", "p1": "Preamp",
-                    "p2": f"channel {channel_number} pulsetest {gain} {count} {delay}"}
-        self._value_parser(**settings)
+        p2_string = f"channel {channel_number} pulsetest {settings['gain']} {settings['count']} {settings['delay']}"
+        self._value_parser(cmd="AppCmd",
+                               p1="Preamp", p2=p2_string)
 
-    def pulsetest_port(self, port_number, gain: int, count: int, delay: int) -> None:
+    def pulsetest_port(self, port_number: int, **kwargs) -> None:
         """External set of pulse test. Only avaible for exisiting ports and sensors.
+
+        | ------------------------ **kwargs ----------------------------- |
+        | key    | Description                          | Defaults Value  |
+        | ------ | ------------------------------------ | --------------- |
+        | gain   | Pulsetest gain in range(0,4096)      | Defaults to 800 |
+        | count  | Pulsetest count in range(0,200)      | Defaults to 1   |
+        | delay  | Pulsetest delay (geater null)        | Defaults to 0   |
+        | input  | Input number for Multi Input Preamps | Defaults NONE   |
+
+        ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
+        it is counted from null and integer representation if PREAM_PORTS.PORT_1 equals zero. But this specfic function 
+        will need a corrected number based on one. So this interface method automatically correct all parsed integers
+        by addding the value with one.
 
         :param port_number: Port where pulsetest gets executed.
         :type port_number: int or Channels
-        :param gain: Pulsetest gain in range(0,4096)
-        :type gain: int
-        :param count: Pulsetest count in range(0,201)
-        :type count: int
-        :param delay: Pulsetest delay (geater null)
-        :type delay: int
         :raises ValueError: If gain is out of bounds: range(0,4096) | If count is out of bounds: range(0,200) | If delay is out of bounds: smaller zero
         """
+        settings = {'gain': 800,
+                    'count': 1,
+                    'delay': 0,
+                    'input': 0}
+
+        # port_number is one based here
         port_number += 1
-        if not 0 <= gain < 4096 and not 0 <= count < 201 and not 0 <= delay:
+        # update witgh kwargs
+        if kwargs:
+            if kwargs.keys() in settings.keys():
+                settings.update(kwargs)
+
+        # check params limits
+        if not 0 <= settings['gain'] < 4096 and not 0 <= settings['count'] < 201 and not 0 <= settings['delay']:
             self.logger.error("Params out of bounds")
             raise ValueError("Params out of bounds")
 
-        settings = {"cmd": "AppCmd", "p1": "Preamp",
-                    "p2": f"channel {port_number} pulsetest {gain} {count} {delay}"}
-        self._value_parser(**settings)
+        p2_string = f"channel {port_number} pulsetest {settings['gain']} {settings['count']} {settings['delay']}"
+        self._value_parser(cmd="AppCmd",
+                               p1="Preamp", p2=p2_string)
 
-    # TODO: not working
-    def frequency_test_port(self, port_number):
+    # TODO: Test
+    def change_preamp_input():
+        return
+
+    # ANALYZER: no recognizable response
+    def frequency_test_port(self, port_number: int, **kwargs):
+        """Execute a frequency test for a specific port. By entering the integer 0 or 1 as "input" as kwargs, you can
+        chnage the used input for multi input preamps
+
+        | ------------------------ **kwargs ----------------------------- |
+        | key    | Description                          | Defaults Value  |
+        | ------ | ------------------------------------ | --------------- |
+        | input  | Input number for Multi Input Preamps | Defaults NONE   |
+
+        ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
+        it is counted from null and integer representation if PREAM_PORTS.PORT_1 equals zero. But this specfic function 
+        will need a corrected number based on one. So this interface method automatically correct all parsed integers
+        by addding the value with one.
+
+        :param port_number: Port number for frequency test
+        :type port_number: int or PREAMP_PORTS
+        """
         port_number += 1
+        if kwargs.keys() == "input":
+            input_num = kwargs.get("input")
+            self._value_parser(cmd="AppCmd", p1="Preamp",
+                               p2=f"port {port_number} input {input_num} frqtest")
+        else:
+            self._value_parser(cmd="AppCmd", p1="Preamp",
+                               p2=f"port {port_number} frqtest")
+
+    # ANALYZER: no recognizable response
+    def frequency_test_channel(self, channel_number: int):
+        """Execute a frequency test for a specific port. Analyzer  isn't resonsing in any way (not in a visual, acoustic
+        or information way).
+
+        ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
+        it is counted from null and integer representation if CHANNELS.CHANNEL_1 equals zero. But this specfic function 
+        will need a corrected number based on one. So this interface method automatically correct all parsed integers
+        by addding the value with one.
+
+        :param port_number: Channel number for frequency test
+        :type port_number: int or PREAMP_PORTS
+        """
+        channel_number += 1
         self._value_parser(cmd="AppCmd", p1="Preamp",
-                           p2=f"port {port_number} frqtest")
+                           p2=f"channel {channel_number} frqtest")
 
     def set_area_scale(self, area_number: int, scale: int = 500) -> None:
         """ Set scale of each view area. Avaible for splitted analyzer view and single view.
@@ -755,8 +837,6 @@ class AnalyzerCmd():
                            p2=f"{param_setting} {param_value}")
         self.logger.info(
             f"Service parameter {param_setting} is changed to {param_value}")
-        # self._value_parser(cmd="appfunc", p1="SetServiceParameter",
-        #                   p2=f"{param_name} {param_value} {param_class}")
 
     def send_analyzer_to_sleep(self, time=2000) -> None:
         """ Only testing purpose. Command to send Analyzer system in sleep mode.
@@ -1099,8 +1179,9 @@ class AnalyzerCmd():
             raise KeyError(
                 "Choosen preampport is not a analyzer system preamp port.")
 
+    @analyzer_functionality_warning_decorator
     def start_operator_function(self, mode: Union[str, bool] = "start") -> None:
-        # TODO: implementation arbitary
+        # ANALYZER: analyzer implementation not provided
         """Start operator functions.
 
         :param mode: Function can start or end operator function by changing mode to a stopping key, defaults to "start". For more allowed keys look up translator dict
@@ -1163,7 +1244,8 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="setcomment", p1=comment, quiet=False)
 
-    # TODO: implementation arbitary
+    # ANALYZER: analyzer implementation not provided
+    @analyzer_functionality_warning_decorator
     def start_operator(self, operator_name: str, operator_command: str) -> None:
         """External start of existing operator by name.
 
@@ -1176,7 +1258,8 @@ class AnalyzerCmd():
                            p1=operator_name, p2=operator_command)
         self._operator_active = True
 
-    # TODO: implementation arbitary
+    # ANALYZER: analyzer implementation not provided
+    @analyzer_functionality_warning_decorator
     def import_operators(self, operator_fielpath: str, force_load: str) -> None:
         """Import a local file on optimizer.
         .. warning:: not implemented
@@ -1189,7 +1272,7 @@ class AnalyzerCmd():
                            p1=operator_fielpath, p2=force_load)
 
     def import_patterns(self, directory_path: str) -> None:
-        # TODO: implementation arbitary
+        # ANALYZER: analyzer implementation not provided
         """Import all pattern files from a optimizer local directory.
 
         :param directory_path: Directory path to patterns that will be imported.
@@ -1198,8 +1281,9 @@ class AnalyzerCmd():
         self._value_parser(expect_response=False, cmd="importpatterns",
                            p1=directory_path)
 
+    @analyzer_functionality_warning_decorator
     def start_operator_results(self, mode: Union[str, bool] = "enable") -> None:
-        # TODO: implementation arbitary
+        # ANALYZER: analyzer implementation not provided
         """Sets enable flag to send ot operator results if avaible. Results will be sended separately
 
         :param mode: Enables start or stops by "disable", defaults to "enable"
@@ -1213,8 +1297,9 @@ class AnalyzerCmd():
         if self.translator[mode] == "false":
             self._operator_results_active = False
 
+    @analyzer_functionality_warning_decorator
     def stop_operator_results(self) -> None:
-        # TODO: implementation arbitary
+        # ANALYZER: analyzer implementation not provided
         """Sets disable flag to send operator results if avaible."""
         self._value_parser(cmd="stopoperatorresults")
         self._operator_results_active = False
@@ -1545,4 +1630,6 @@ class AnalyzerCmd():
 
 
 with AnalyzerCmd(ip="192.168.1.50", debug_mode=True) as opti:
-    opti.set_service_parameter("pFPGAVersion", 2)
+    #opti.set_service_parameter("pFPGAVersion", 2)
+    opti.load_simulation_buffer(
+        "/home/opti/RAWS/2021_08_11_Magna_stationary_5QF_803_505_H_00103p0088c0b01_dump_00.000", Channels.CHANNEL_2)

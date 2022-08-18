@@ -429,43 +429,54 @@ p2: <area_template_num[int]>
 Response: standardized analyzer response
 Analyzer_socket wrapper: load_area_view()
 
----------------Load simulation buffer
+---------------Load simulation buffer and sets active, possible to not copy meta data
 cmd: 	"AppCmd"
 p1:	"SimulationBuffer"
-p2: <channel[int]> <filepath[str]>
+p2: "channel <channel[int]> file <filepath[str]>"
+    "channel <channel[int]> path <filepath[str]>"
+    "channel <channel[int]> nometa file <filepath[str]>"
+    "channel <channel[int]> nometa path <filepath[str]>"
 
+"""..warning:: channel is 1 based here"""
 Response: standardized analyzer response
 Analyzer_socket wrapper: load_simualtion_buffer()
 
----------------Set simulation buffer
+---------------Set all simulation buffer ports active
 cmd: 	"AppCmd"
 p1:	"SimulationBuffer"
-p2: <enable[bool]>
+p2: "path true"
+    "path enable"
+    "path on"
+    "path false"
+    "path disable"
+    "path off"
 
 Response: standardized analyzer response
 Analyzer_socket wrapper: set_simualtion_buffer()
 
----------------Set simulation buffer
+---------------Set specific simulation buffer port active
 cmd: 	"AppCmd"
 p1:	"SimulationBuffer"
-p2: <channel[int]> <enable[bool]>
+p2: "channel <channel[int]> <enable[bool]>
 
+"""..warning:: channel is 1 based here"""
 Response: standardized analyzer response
-Analyzer_socket wrapper: load_simualtion_buffer()
+Analyzer_socket wrapper: set_simualtion_buffer()
 
----------------Set simulation buffer
+---------------Set simulated I/O from channel
 cmd: 	"AppCmd"
 p1:	"SimulationBuffer"
-p2: "simioin" <channel[int]>
+p2: "simioin channel <channel[int]>"
 
+"""..warning:: channel is one based here"""
 Response: standardized analyzer response
 Analyzer_socket wrapper: not implemented
 
 ---------------Pulsetest channel
-""" no real response"
 cmd: 	"AppCmd"
-p1:	"Preamp channel"
-p2: <channel[int]> "pulsetest" <gain[int]> <count[int]> <delay[int]>
+p1:	"Preamp"
+p2: "channel <channel[int]> pulsetest <gain[int]> <count[int]> <delay[int]>"
+    "channel <channel[int]> pulse <gain[int]> <count[int]> <delay[int]>"
 """
     | gain   | Pulsetest gain in range(0,4096)  | Defaults to 800
     | count  | Pulsetest count in range(0,200)  | Defaults to 1
@@ -476,10 +487,12 @@ Response: standardized analyzer response
 Analyzer_socket wrapper: pulsetest_channel()
 
 ---------------Pulsetest port
-""" no real response"
 cmd: 	"AppCmd"
-p1:	"Preamp port"
-p2: <port_number[int]> "pulsetest" <gain[int]> <count[int]> <delay[int]>
+p1:	"Preamp"
+p2: "port <port_number[int]> pulsetest <gain[int]> <count[int]> <delay[int]>"
+    "port <port_number[int]> puls <gain[int]> <count[int]> <delay[int]>"
+    "port <port_number[int]> input <input> pulsetest <gain[int]> <count[int]> <delay[int]>"
+    "port <port_number[int]> input <input> pulse <gain[int]> <count[int]> <delay[int]>"
 """
     | gain   | Pulsetest gain in range(0,4096)  | Defaults to 800
     | count  | Pulsetest count in range(0,200)  | Defaults to 1
@@ -489,12 +502,31 @@ p2: <port_number[int]> "pulsetest" <gain[int]> <count[int]> <delay[int]>
 Response: standardized analyzer response
 Analyzer_socket wrapper: pulsetest_port()
 
---------------- Frequencytest port
-""" no real response"
-cmd: 	"AppCmd"
-p1:	"Preamp port"
-p2: <port_number[int]> "frqtest"
+----------Change preamp input
+"""only for multi input preamps"""
+cmd:"AppCmd"
+p1:	"Preamp"
+p2: "port <port_number[int]> switchinput <input>"
 
+Response: standardized analyzer response
+Analyzer_socket wrapper: change_preamp_input()
+
+--------------- Frequency test channel
+cmd: 	"AppCmd"
+p1:	"Preamp"
+p2: "channel <channel_number[int]> frqtest"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: frequency_test_channel()
+
+--------------- Frequency test port
+
+cmd: 	"AppCmd"
+p1:	"Preamp"
+p2: "port <port_number[int]> frqtest"
+    "port <port_number[int]> input <input> frqtest"
+
+..warning:: Port here doesn't count from 0! Why though?! 
 Response: standardized analyzer response
 Analyzer_socket wrapper: frequency_test_port()
 
