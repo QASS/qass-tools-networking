@@ -599,6 +599,15 @@ class AnalyzerCmd():
             cmd="AppCmd", p1="LoadAreaView", p2=tempalte_num)
 
     def load_simulation_buffer(self, file_path: str, channel: int, do_not_copy_meta_data=False) -> None:
+        """Load and set local simualtion buffer for specific channel.
+
+        :param file_path: Local file path to buffer.
+        :type file_path: str
+        :param channel: Channel where simualtionbuffer gets laoded.
+        :type channel: int
+        :param do_not_copy_meta_data: Identical to analyzer check box, defaults to False
+        :type do_not_copy_meta_data: bool, optional
+        """
         settings = {'cmd': "AppCmd",
                     'p1': "SimulationBuffer",
                     'p2': ""}
@@ -606,19 +615,26 @@ class AnalyzerCmd():
         if do_not_copy_meta_data:
             settings.update["p2"] = f"channel {channel} nometa path {file_path}"
         else:
-            settings.update["p2"] = f"channel {channel} path {file_path}"
+            settings["p2"] = f"channel {channel} path {file_path}"
         self._value_parser(**settings)
 
-    # BUG: not working
-    def set_simulation_buffer(self, channel: Union[str, int], mode: str) -> None:
+    # BUG: Keyword all is not working
+    # TODO: When working extend doc string by all
+    def set_simulation_buffer(self, channel_number: Union[str, int], mode: str) -> None:
+        """ Enable or disable alredy laoded simualtion buffer channel.
 
-        if channel == "all":
+        :param channel_number: Channel to activate simualtion buffer on.
+        :type channel_number: Union[str, int]
+        :param mode: If channel should be enabled or disabled as sim buffer.
+        :type mode: str
+        """
+        if channel_number == "all":
             self._value_parser(cmd="AppCmd",
-                               p1="SimulationBuffer", p2=self.translator[mode])
+                               p1="SimulationBuffer", p2=f"path {self.translator[mode]}")
         else:
-            channel = channel + 1
+            channel_number += 1
             self._value_parser(cmd="AppCmd",
-                               p1="SimulationBuffer", p2=f"{channel} {self.translator[mode]}")
+                               p1="SimulationBuffer", p2=f"channel {channel_number} {self.translator[mode]}")
 
     def pulsetest_channel(self, channel_number: int, **kwargs) -> None:
         """External set of pulse test. Only avaible for exisiting ports and sensors.
@@ -629,7 +645,7 @@ class AnalyzerCmd():
         | delay  | Pulsetest delay (geater null)    | Defaults to 0   |
 
         ..warning::Analyzer function is not null based. Basically if you want to test the first Channel,
-        it is counted from null and integer representation if CHANNELS.CHANNEL_1 equals zero. But this specfic function 
+        it is counted from null and integer representation if CHANNELS.CHANNEL_1 equals zero. But this specfic function
         will need a corrected number based on one. So this interface method automatically correct all parsed integers
         by addding the value with one.
         :param channel_number: Channel where pulsetest gets executed.
@@ -667,7 +683,7 @@ class AnalyzerCmd():
         | input  | Input number for Multi Input Preamps | Defaults NONE   |
 
         ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
-        it is counted from null and integer representation if PREAM_PORTS.PORT_1 equals zero. But this specfic function 
+        it is counted from null and integer representation if PREAM_PORTS.PORT_1 equals zero. But this specfic function
         will need a corrected number based on one. So this interface method automatically correct all parsed integers
         by addding the value with one.
 
@@ -697,11 +713,21 @@ class AnalyzerCmd():
                                p1="Preamp", p2=p2_string)
 
     # TODO: Test
-    def change_preamp_input():
-        return
+    def change_preamp_input(self, port_number: int, input_number: int) -> None:
+        """ Change used preamp input for a port.
+
+        Only avaible for multi input preamps.
+
+        :param port_number: Port number to adress.
+        :type port_number: int
+        :param input_number: Switched input number
+        :type input_number: int
+        """
+        self._value_parser(cmd="AppCmd", p1="Preamp",
+                               p2=f"port {port_number} switchinput {input_number}")
 
     # ANALYZER: no recognizable response
-    def frequency_test_port(self, port_number: int, **kwargs):
+    def frequency_test_port(self, port_number: int, **kwargs) -> None:
         """Execute a frequency test for a specific port. By entering the integer 0 or 1 as "input" as kwargs, you can
         chnage the used input for multi input preamps
 
@@ -711,7 +737,7 @@ class AnalyzerCmd():
         | input  | Input number for Multi Input Preamps | Defaults NONE   |
 
         ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
-        it is counted from null and integer representation if PREAM_PORTS.PORT_1 equals zero. But this specfic function 
+        it is counted from null and integer representation if PREAM_PORTS.PORT_1 equals zero. But this specfic function
         will need a corrected number based on one. So this interface method automatically correct all parsed integers
         by addding the value with one.
 
@@ -728,12 +754,12 @@ class AnalyzerCmd():
                                p2=f"port {port_number} frqtest")
 
     # ANALYZER: no recognizable response
-    def frequency_test_channel(self, channel_number: int):
+    def frequency_test_channel(self, channel_number: int) -> None:
         """Execute a frequency test for a specific port. Analyzer  isn't resonsing in any way (not in a visual, acoustic
         or information way).
 
         ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
-        it is counted from null and integer representation if CHANNELS.CHANNEL_1 equals zero. But this specfic function 
+        it is counted from null and integer representation if CHANNELS.CHANNEL_1 equals zero. But this specfic function
         will need a corrected number based on one. So this interface method automatically correct all parsed integers
         by addding the value with one.
 
@@ -1104,7 +1130,7 @@ class AnalyzerCmd():
         Default settings:
         | Type                   | Key | kwargs    | Default value | Action                   |
         | ---------------------- | --------------- | ------------- | ------------------------ |
-        #1    | Choose channel buffer    |
+        # 1    | Choose channel buffer    |
         | int|Channels           | channel         | Channel
         | bool                   | plot            | true          | Creates plot buffer      |
         | bool                   | save            | false         | Creates buffer with data |
@@ -1179,6 +1205,7 @@ class AnalyzerCmd():
             raise KeyError(
                 "Choosen preampport is not a analyzer system preamp port.")
 
+    # ANALYZER: analyzer implementation not provided
     @analyzer_functionality_warning_decorator
     def start_operator_function(self, mode: Union[str, bool] = "start") -> None:
         # ANALYZER: analyzer implementation not provided
@@ -1194,6 +1221,8 @@ class AnalyzerCmd():
         elif self.translator[mode] == "false":
             self._operator_functions_active = False
 
+    # ANALYZER: analyzer implementation not provided
+    @analyzer_functionality_warning_decorator
     def stop_operator_function(self) -> None:
         """Stop of running operator function."""
         self._value_parser(cmd="stoppoperatorfunctionvalues")
@@ -1232,7 +1261,7 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="setpendingcomment", p1=comment)
 
-    def set_comment_current_process(self, comment: str):
+    def set_comment_current_process(self, comment: str) -> None:
         # TODO: kill
         """ Sets comment for current activatet process.
 
@@ -1271,6 +1300,7 @@ class AnalyzerCmd():
         self._value_parser(expect_response=False, cmd="importoperators",
                            p1=operator_fielpath, p2=force_load)
 
+    # BUG: says okay but is not wokring
     def import_patterns(self, directory_path: str) -> None:
         # ANALYZER: analyzer implementation not provided
         """Import all pattern files from a optimizer local directory.
@@ -1281,6 +1311,7 @@ class AnalyzerCmd():
         self._value_parser(expect_response=False, cmd="importpatterns",
                            p1=directory_path)
 
+    # ANALYZER: analyzer implementation not provided
     @analyzer_functionality_warning_decorator
     def start_operator_results(self, mode: Union[str, bool] = "enable") -> None:
         # ANALYZER: analyzer implementation not provided
@@ -1297,6 +1328,7 @@ class AnalyzerCmd():
         if self.translator[mode] == "false":
             self._operator_results_active = False
 
+    # ANALYZER: analyzer implementation not provided
     @analyzer_functionality_warning_decorator
     def stop_operator_results(self) -> None:
         # ANALYZER: analyzer implementation not provided
@@ -1330,7 +1362,7 @@ class AnalyzerCmd():
         :rtype: str
         """
         # Elias Version didn't worked
-        #new_val = 0
+        # new_val = 0
         # for i in range(16):
         #    bit_state = (original_bin & (1 << i) >> i)
         #    print("bit state", bit_state)
@@ -1482,7 +1514,9 @@ class AnalyzerCmd():
                                p1="false")
             self.logger.info("Report of process number stopped.")
 
-    def start_script_function(self, function_name: str, function_param: any):
+    # ANALYZER: analyzer implementation not provided
+    @analyzer_functionality_warning_decorator
+    def start_script_function(self, function_name: str, function_param: any) -> None:
         """ General syntax to start script function. Response is dependant on called function.
 
         .. warning:: Service function, should not be used without required kmowledge.
@@ -1630,6 +1664,5 @@ class AnalyzerCmd():
 
 
 with AnalyzerCmd(ip="192.168.1.50", debug_mode=True) as opti:
-    #opti.set_service_parameter("pFPGAVersion", 2)
-    opti.load_simulation_buffer(
-        "/home/opti/RAWS/2021_08_11_Magna_stationary_5QF_803_505_H_00103p0088c0b01_dump_00.000", Channels.CHANNEL_2)
+    # opti.set_service_parameter("pFPGAVersion", 2)
+    opti.set_simulation_buffer(Channels.CHANNEL_1, "enabled")

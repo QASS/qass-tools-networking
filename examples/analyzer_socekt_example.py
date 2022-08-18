@@ -1,5 +1,5 @@
 import time
-from qass_tools.networking.analyzer_socket import AnalyzerCmd, Channels, Amplitudes
+from qass_tools.networking.analyzer_socket import AnalyzerCmd, Channels, Amplitudes, PreampPorts
 
 ######## Example 1 ############
 """ Simple example how to intialize a socket connection to the optimizer and have access to analyzer functions."""
@@ -49,5 +49,11 @@ with AnalyzerCmd(ip="192.168.2.67") as opti:
 
 
 ######## Example 4 ############
+""" Possible first start for optimizer script"""
 with AnalyzerCmd(ip="192.168.2.67") as opti:
-    opti.ge
+    project_dict = opti.get_project_info()
+    current_state = opti.get_service_parameter("pFPGAVersion")
+    if current_state is not 2:
+        opti.set_service_parameter("pFPGAVersion", 2)
+    opti.pulsetest_port(PreampPorts.PREAMP_PORT_1)
+    opti.import_patterns("/home/opti/patterns/")
