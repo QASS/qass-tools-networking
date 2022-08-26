@@ -63,8 +63,11 @@ class Client(QObject):
                 elif obj["method"] == "stderr":
                     self.output_err.emit(obj["params"]["text"])
 
-    def send_obj(self, obj):
-        """ Send Obj to socket after encoding."""
+    def send_obj(self, obj: str):
+        """ Send Obj to socket after encoding.
+        :param obj: Object which will be written to socket
+        :type obj: str
+        """
         #import json
         text = json.dumps(obj)
         # text = str(len(text)) + ':' + text
@@ -76,6 +79,17 @@ class Client(QObject):
         self.sock.write(text)
 
     def buildJsonRpc(self, func, params):
+        """_summary_
+
+        _extended_summary_
+
+        :param func: _description_
+        :type func: _type_
+        :param params: _description_
+        :type params: _type_
+        :return: _description_
+        :rtype: _type_
+        """
         self.pkt_id += 1
 
         return {
