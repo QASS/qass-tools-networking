@@ -5,7 +5,7 @@ from qass_tools.networking.analyzer_socket import AnalyzerCmd, Channels, Amplitu
 """ Simple example how to intialize a socket connection to the optimizer and have access to analyzer functions."""
 with AnalyzerCmd(ip="192.168.2.67") as opti:
     opti.set_preamp(channel=Channels.CHANNEL_1)
-    info = opti.get_info()
+    info = opti.get_project_info()
     print(info)
     opti.set_preamp(gain=800)
 
@@ -22,7 +22,7 @@ with AnalyzerCmd(ip="192.168.2.67") as opti:
 ######## Example 2 ############
 """ Example two shows an easy way to debug system in case you need some more detailed information how to process incomming responses"""
 with AnalyzerCmd(ip="192.168.2.67", debug_mode=True) as opti:
-    info = opti.get_info()
+    info = opti.get_project_info()
     print(info)
 
 ######## Example 3 ############
