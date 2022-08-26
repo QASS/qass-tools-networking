@@ -1390,7 +1390,7 @@ class AnalyzerCmd():
         hexa = "0xf" + "{0:0>4x}".format(int(binary_str, 2))
         return hexa
 
-    def set_simualted_io_input(self, io: str):
+    def set_simualted_io_input(self, io: str) -> None:
         """Set simulated I/O input register. I/0 input register can be set by inverted hexa (smallest significant right)
         or by giving in binary representation of seen bits set in I/O register.
 
@@ -1661,8 +1661,3 @@ class AnalyzerCmd():
             # check response for failure
             self._check_response(analyzer_response)
             return analyzer_response
-
-
-with AnalyzerCmd(ip="192.168.1.50", debug_mode=True) as opti:
-    # opti.set_service_parameter("pFPGAVersion", 2)
-    opti.set_simulation_buffer(Channels.CHANNEL_1, "enabled")
