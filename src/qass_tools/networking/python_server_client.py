@@ -69,26 +69,18 @@ class Client(QObject):
         :param obj: Object which will be written to socket
         :type obj: str
         """
-        #import json
         text = json.dumps(obj)
-        # text = str(len(text)) + ':' + text
-
-        # why should I do this?
-        # text = text
-
         text = text.encode()
         self.sock.write(text)
 
     def buildJsonRpc(self, func, params) -> Dict:
-        """Method 
+        """Helper method to build a JSON-RPC-Call to send to server.
 
-        _extended_summary_
-
-        :param func: _description_
-        :type func: function
-        :param params: _description_
-        :type params: _type_
-        :return: _description_
+        :param func: Name of function/method that should be called.
+        :type func: function or str
+        :param params: Array or object with params for parsed function.
+        :type params: Any
+        :return: Builded JSON-RPC-Call
         :rtype: Dict
         """
         self.pkt_id += 1
@@ -101,13 +93,35 @@ class Client(QObject):
         }
 
     def callFunc(self, func, **kwargs):
+        """ Helper method to send a JSON-RPC which calls a specific function.
+
+        Kwargs:
+        By kwargs you can specify params for called function.
+
+        :param func: Name of fucntion that should be called.
+        :type func: Str or function
+        """
         packet = self.buildJsonRpc(func, kwargs)
         self.send_obj(packet)
 
-    def remoteInteractive(self, script):
+    def remoteInteractive(self, script: str) -> Dict:
+        """ Toplevel function to start remote interactive function.
+
+        :param script: Script function that should be started
+        :type script: str
+        :return: Builded JSON-RPC
+        :rtype: Dict
+        """
         return self.callFunc('interactive', script=script)
 
-    def remoteEval(self, script):
+    def remoteEval(self, script) -> Dict:
+        """Toplevel function to start remote eval function.
+
+        :param script: Script function that should be started
+        :type script: str
+        :return: Builded JSON-RPC
+        :rtype: Dict
+        """
         return self.callFunc('eval', script=script)
 
 
@@ -119,6 +133,7 @@ class HistoryLineEdit(QLineEdit):
         self.__history_idx = 0
 
     def onInputFinished(self):
+        """ Method to append command-text and length to History dict by input finish."""
         self.__history.append(self.text())
         self.__history_idx = len(self.__history)
 
@@ -141,6 +156,7 @@ class HistoryLineEdit(QLineEdit):
 
 class Window(QWidget):
     def __init__(self):
+        """ Constructor to set up QT Window"""
         super().__init__()
 
         self.setWindowTitle("Analyzer4D remote Python console")
