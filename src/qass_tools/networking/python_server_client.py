@@ -15,6 +15,7 @@ from PySide2.QtWidgets import QVBoxLayout
 
 import sys
 import json
+from typing import Dict
 
 
 class Client(QObject):
@@ -78,17 +79,17 @@ class Client(QObject):
         text = text.encode()
         self.sock.write(text)
 
-    def buildJsonRpc(self, func, params):
-        """_summary_
+    def buildJsonRpc(self, func, params) -> Dict:
+        """Method 
 
         _extended_summary_
 
         :param func: _description_
-        :type func: _type_
+        :type func: function
         :param params: _description_
         :type params: _type_
         :return: _description_
-        :rtype: _type_
+        :rtype: Dict
         """
         self.pkt_id += 1
 
