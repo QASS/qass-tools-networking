@@ -1,4 +1,3 @@
-from email.errors import InvalidMultipartContentTransferEncodingDefect
 import socket
 import json
 import numpy as np
@@ -35,7 +34,7 @@ class Amplitudes(Enum):
 
     @property
     def get_list(self):
-        """Property lists all allowed amplitudes to generate sine wave from:
+        """Property lists all allowed amplitudes to generate sine wave from.
 
         :rtype: List
         """
@@ -159,6 +158,7 @@ class AreaViews(IntEnum):
 
 
 class SysSettingsClass(IntEnum):
+    """ Predefined system settings classes."""
     NO_CLASS = 0 	# Wird zur Zeit auch per Voreinstellung in "./config/QASS/analyzer.conf" gespeichert
     # Das ist die Default-Klasse für pVars, die in einem VarSet untergebracht sind
     VAR_SET_CLASS = 1
@@ -188,10 +188,12 @@ class ConnectionError(socket.error):
 
 
 class NoneRegistrationError(Exception):
+    """ Error raised if programm cannot find a registered callback for a command. When this exception occurs prgramm run into failstate."""
     pass
 
 
 class AnalyzerSyntaxError(Exception):
+    """ Error risen if analyzer sends a 'not okay' command back which means that sended command syntax is not supported."""
     pass
 
 
@@ -619,12 +621,11 @@ class AnalyzerCmd():
         self._value_parser(**settings)
 
     # BUG: Keyword all is not working
-    # TODO: When working extend doc string by all
     def set_simulation_buffer(self, channel_number: Union[str, int], mode: str) -> None:
-        """ Enable or disable alredy laoded simualtion buffer channel.
+        """ Enable or disable alredy loaded simualtion buffer channel.
 
         :param channel_number: Channel to activate simualtion buffer on.
-        :type channel_number: Union[str, int]
+        :type channel_number: str or int
         :param mode: If channel should be enabled or disabled as sim buffer.
         :type mode: str
         """
