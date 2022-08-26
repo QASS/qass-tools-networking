@@ -16,6 +16,7 @@ from PySide2.QtWidgets import QVBoxLayout
 import sys
 import json
 
+
 class Client(QObject):
     output_std = Signal(str)
     output_err = Signal(str)
@@ -35,16 +36,16 @@ class Client(QObject):
     disconnected = Signal()
 
     def disconnect(self):
+        """ Method will close the socket connection."""
         self.sock.close()
 
     def onReadyRead(self):
+        """ Method will read sended data out of socket and change appearance. Data will be check for errors or methods."""
         packet = self.sock.readAll().data().decode()
         packet = packet.replace('}{', '},{')
         packet = '[' + packet + ']'
 
-        # print(packet)
         objs = json.loads(packet)
-        # print(objs)
 
         for obj in objs:
             if "result" in obj:
@@ -63,12 +64,15 @@ class Client(QObject):
                     self.output_err.emit(obj["params"]["text"])
 
     def send_obj(self, obj):
-        import json
+        """ Send Obj to socket after encoding."""
+        #import json
         text = json.dumps(obj)
         # text = str(len(text)) + ':' + text
-        text = text
+
+        # why should I do this?
+        # text = text
+
         text = text.encode()
-        print(text)
         self.sock.write(text)
 
     def buildJsonRpc(self, func, params):
@@ -83,7 +87,6 @@ class Client(QObject):
 
     def callFunc(self, func, **kwargs):
         packet = self.buildJsonRpc(func, kwargs)
-        # print(packet)
         self.send_obj(packet)
 
     def remoteInteractive(self, script):
@@ -112,12 +115,13 @@ class HistoryLineEdit(QLineEdit):
                 self.setText(self.__history[self.__history_idx])
             elif event.key() == QtCore.Qt.Key_Down:
                 self.__history_idx += 1
-                self.__history_idx = min(len(self.__history) -1, self.__history_idx)
+                self.__history_idx = min(
+                    len(self.__history) - 1, self.__history_idx)
                 self.setText(self.__history[self.__history_idx])
             else:
                 self.__history_idx = len(self.__history)
 
-        super().keyPressEvent(event);
+        super().keyPressEvent(event)
 
 
 class Window(QWidget):
@@ -127,7 +131,8 @@ class Window(QWidget):
         self.setWindowTitle("Analyzer4D remote Python console")
         self.setGeometry(300, 300, 500, 400)
         self.ip = QLineEdit(self)
-        re = QRegExp('^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$')
+        re = QRegExp(
+            '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$')
         self.ip.setValidator(QRegExpValidator(re))
         self.ip.setText('127.0.0.1')
 
@@ -141,7 +146,8 @@ class Window(QWidget):
         self.output = QPlainTextEdit(self)
         self.input = HistoryLineEdit(self)
 
-        self.output.setTextInteractionFlags(self.output.textInteractionFlags() & ~QtCore.Qt.TextEditable)
+        self.output.setTextInteractionFlags(
+            self.output.textInteractionFlags() & ~QtCore.Qt.TextEditable)
         self.input.returnPressed.connect(self.onInputFinished)
         self.input.setFocus()
         self.input.setDisabled(True)
@@ -159,7 +165,6 @@ class Window(QWidget):
 
         self.setLayout(layout)
         self.__history = []
-
 
     def onInputFinished(self):
         text = self.input.text()
