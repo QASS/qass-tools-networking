@@ -909,7 +909,7 @@ class AnalyzerCmd():
         :param app_var_name: Name of AppVar to adress.
         :type app_var_name: str
         :return: AppVar value
-        :rtype: any
+        :rtype: str
         """
         val = self._value_parser(cmd="getappvar", p1=appvar_name)
 
