@@ -875,33 +875,19 @@ class AnalyzerCmd():
         self.logger.info("Analyzer tired. Analyzer sleep.")
 
     def set_appvar(self, appvar_name: str, appvar_value: any) -> None:
-        """Parse value to specific AppVar operator in operator network of analyzer.
+        """Set the value of an AppVar by using the name of the AppVar.  The prefix "pro_" will result in the AppVar being
+        saved in the project and persist between restarts. The prefix "sys_" will result in the AppVar being saved globally
+        and made available over all projects.
 
-        There has to be an already existing AppVar operator which can accessed by (matching) name.
+        If the AppVar doesn't exist yet it will be created.
 
-        :param app_var_name: Name of existing AppVar operator.
+        :param app_var_name: Name of the AppVar.
         :type app_var_name: str
-        :param app_var_value: Value which should be assigned to operator. As value can be choosed any datatyp supported by python (e.g. float, int, str, json, ...).
+        :param app_var_value: Value of AppVar. As value can be choosed any datatyp supported by python (e.g. float, int, str, json, ...).
         :type app_var_value: any
         """
+
         self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value)
-
-    def set_appvar_appcmd(self, appvar_name: str, value: any) -> None:
-        # TODO: kill
-        """Parse value to specific AppVar operator in operator network of analyzer.
-
-        An extra method is provided because this method works with an general analyzer AppCommand.
-
-        .. seealso:: set_appvar()
-
-        :param app_var_name: Name of existing AppVar operator.
-        :type app_var_name: str
-        :param app_var_value: Value which should be assigned to operator. As value can be choosed any datatyp supported by python (e.g. float, int, str, json, ...).
-        :type app_var_value: any
-        """
-
-        self._value_parser(cmd="AppCmd", p1="SetAppVar",
-                           p2=f"{appvar_name} {value}")
 
     def get_app_var(self, appvar_name: str) -> None:
         """Get value of AppVar by name.
