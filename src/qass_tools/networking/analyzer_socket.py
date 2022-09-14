@@ -889,13 +889,15 @@ class AnalyzerCmd():
 
         self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value)
 
-    def get_app_var(self, appvar_name: str) -> None:
+    def get_app_var(self, appvar_name: str) -> str:
         """Get value of AppVar by name.
 
         :param app_var_name: Name of AppVar to adress.
         :type app_var_name: str
         :return: AppVar value
-        :rtype: any
+        :rtype: str
+
+        .. note: If requested appvar is a json, the parsed value will be changed due to string escape.
         """
         val = self._value_parser(cmd="getappvar", p1=appvar_name)
 
