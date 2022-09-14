@@ -626,7 +626,7 @@ class AnalyzerCmd():
 
         :param channel_number: Channel to activate simualtion buffer on.
         :type channel_number: str or int
-        :param mode: If channel should be enabled or disabled as sim buffer.
+        :param mode: If channel should be "enabled" or "disabled" as sim buffer. Check Translator dict for more keywords.
         :type mode: str
         """
         if channel_number == "all":
@@ -714,18 +714,18 @@ class AnalyzerCmd():
                                p1="Preamp", p2=p2_string)
 
     # TODO: Test
-    def change_preamp_input(self, port_number: int, input_number: int) -> None:
-        """ Change used preamp input for a port.
+    def change_preamp_input(self, opti_port_number: int, preamp_input_number: int) -> None:
+        """ Method changes which physical preamp input will be used for datastream output to optimizer.
 
         Only avaible for multi input preamps.
 
-        :param port_number: Port number to adress.
-        :type port_number: int
-        :param input_number: Switched input number
-        :type input_number: int
+        :param opti_port_number: opti port number to adress
+        :type opti_port_number: int
+        :param preamp_input_number: Switched input channel from preamp (0,1)
+        :type preamp_input_number: int
         """
         self._value_parser(cmd="AppCmd", p1="Preamp",
-                               p2=f"port {port_number} switchinput {input_number}")
+                               p2=f"port {opti_port_number} switchinput {preamp_input_number}")
 
     # ANALYZER: no recognizable response
     def frequency_test_port(self, port_number: int, **kwargs) -> None:
@@ -1392,7 +1392,7 @@ class AnalyzerCmd():
         hexa = "0xf" + "{0:0>4x}".format(int(binary_str, 2))
         return hexa
 
-    def set_simualted_io_input(self, io: str) -> None:
+    def set_simulated_io_input(self, io: str) -> None:
         """Set simulated I/O input register. I/0 input register can be set by inverted hexa (smallest significant right)
         or by giving in binary representation of seen bits set in I/O register.
 
