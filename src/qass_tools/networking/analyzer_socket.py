@@ -978,7 +978,7 @@ class AnalyzerCmd():
         :raises TypeError: Type Check for second parameter, exception is raised if value is not equal to type str.
         """
         if param_two:
-            if param_two == str:
+            if isinstance(param_two, str):
                 self._value_parser(cmd="AppCmd", p1=param_one, p2=param_two)
             else:
                 raise TypeError("Second parameter has to be a string.")
@@ -1094,7 +1094,7 @@ class AnalyzerCmd():
             self._monitoring_active = True
 
     def monitoring_mode(self, mode: Union[bool, str]) -> None:
-        """Start or stop monitoring modus. See
+        """Start or stop monitoring modus.
 
         Short settings:
         | Measuring mode    | Key       |
