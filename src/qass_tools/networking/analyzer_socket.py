@@ -659,9 +659,9 @@ class AnalyzerCmd():
         # channel nummer starts in this case by 1
         channel_number += 1
         # update witgh kwargs
-        if kwargs:
-            if kwargs.keys() in settings.keys():
-                settings.update(kwargs)
+        for key in kwargs.key():
+            if key in settings.keys():
+                settings.update(kwargs[key])
 
         # check params limits
         if not 0 <= settings['gain'] < 4096 and not 0 <= settings['count'] < 201 and not 0 <= settings['delay']:
@@ -700,9 +700,9 @@ class AnalyzerCmd():
         # port_number is one based here
         port_number += 1
         # update witgh kwargs
-        if kwargs:
-            if kwargs.keys() in settings.keys():
-                settings.update(kwargs)
+        for key in kwargs.keys():
+            if key in settings.keys():
+                settings.update(kwargs[key])
 
         # check params limits
         if not 0 <= settings['gain'] < 4096 and not 0 <= settings['count'] < 201 and not 0 <= settings['delay']:
@@ -1003,7 +1003,7 @@ class AnalyzerCmd():
         By entering a new value as **kwargs, you are able to change default values, which will be sended.
         .. warning:: Range of params will not be checked.
         Default settings:
-        | Type                  | Multiplexer     | Value        |
+        | Type                  | Keyword         | Value        |
         | --------------------- | ----------------| ------------ |
         | Channels        | int | channel         | Channel #1   |
         | ChannelPorts    | int | chp             | Port 1       |
@@ -1034,9 +1034,10 @@ class AnalyzerCmd():
                     'gain': 800,
                     'subport': 0
                     }
-        if kwargs:
-            if kwargs.keys() in settings.keys():
-                settings.update(kwargs)
+
+        for key in kwargs.keys():
+            if key in settings.keys():
+                settings[key] = kwargs[key]
             else:
                 self.logger.error("Choosen Preamp setting is not exisiting.")
                 raise KeyError("Choosen Preamp setting is not exisiting.")
@@ -1150,13 +1151,13 @@ class AnalyzerCmd():
                     'amplitudetype': SysAmplitudesType.AMPLITUDE_DEFAULT
                     }
         # Check for right kwargs keys
-        if kwargs:
-            if kwargs.keys() not in settings.keys():
+        for key in kwargs.keys():
+            if key not in settings.keys():
                 self.logger.error(
                     "Choosen settings key is not supported in this method.")
                 raise ValueError(
                     "Choosen settings key is not supported in this method.")
-            settings.update(kwargs)
+            settings.update(kwargs[key])
             self.logger.info(
                 f"Updated settings to {kwargs.items()}")
         response_dict = self._value_parser(**settings)
