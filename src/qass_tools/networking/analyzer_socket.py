@@ -582,23 +582,23 @@ class AnalyzerCmd():
             self.logger.error("Split amount vor view is out of bounds.")
             raise ValueError("Split amount vor view is out of bounds.")
 
-    def save_area_view(self, tempalte_num: int) -> None:
+    def save_area_view(self, template_num: int) -> None:
         """Saves current area view settings under template number. Each area can be set different.
 
         :param tempalte_num: Storage number to save.
-        :type tempalte_num: int
+        :type template_num: int
         """
         self._value_parser(
-            cmd="AppCmd", p1="SaveAreaView", p2=tempalte_num)
+            cmd="AppCmd", p1="SaveAreaView", p2=template_num)
 
-    def load_area_view(self, tempalte_num: int) -> None:
+    def load_area_view(self, template_num: int) -> None:
         """Load presaved area view template.
 
-        :param tempalte_num: Storage number to load.
-        :type tempalte_num: int
+        :param template_num: Storage number to load.
+        :type template_num: int
         """
         self._value_parser(
-            cmd="AppCmd", p1="LoadAreaView", p2=tempalte_num)
+            cmd="AppCmd", p1="LoadAreaView", p2=template_num)
 
     def load_simulation_buffer(self, file_path: str, channel: int, do_not_copy_meta_data=False) -> None:
         """Load and set local simualtion buffer for specific channel.
