@@ -1161,10 +1161,10 @@ class AnalyzerCmd():
     def load_last_user_project(self) -> None:
         """ Load last user project before a test project was loaded.
 
-        .. warning:: To use this a test project must be laoded before!!!
+        .. warning:: To use this a test project must be loaded before!!!
         .. note:: If no testproject was laoded beforehand, name_variable in analyzer software will be not addressed and
-        a new project without name!(="") will be created. Once a project like this exist, analyzer cannot perform this action gainst
-        and without laoding a test project beforehand, function will do nothing.
+        a new project without name!(="") will be created. Once a project like this exist, analyzer cannot perform this action again
+        and without loading a test project beforehand, function will do nothing.
         """
         self._value_parser(cmd="loaduserproject")
 
