@@ -1,3 +1,4 @@
+from ast import Return, operator
 import socket
 import json
 import numpy as np
@@ -114,6 +115,11 @@ class FFTWindowing(IntEnum):
     NONE_FFT_WINDOWING = 1
 
 
+@property
+def get_operator_state(self):
+    return self._operator_active
+
+
 class FFTLogarithmic(IntEnum):
     """Avaible selection box choices for dispalyed FFT logarithmic base in multiplexer configuration"""
     FFT_LOGARITHMIC_BASE_1 = 1
@@ -208,12 +214,18 @@ class ReceiveThread(threading.Thread):
         self.s = socket_obj
         self.logger = logger_obj
 
+    def warn_none_registered_response(self, message):
+        """ Warning is used when a not expected or not registered message comes in from analyzer. A warning is send out und the message will be looged."""
+        new_message = "Not registered analyzer response:" + str(message)
+        self.logger.warning(new_message)
+        warnings.warn(new_message)
+
     def register_callbacks(self, recognition: Union[str, int], callback) -> None:
         """ Function to register incomming analyzer response by msg_id or cmd name.
         Parsed callback will be regsitered by added as recognition-callback pair to a dict self.__callbacks.
 
 
-        Here is used a MultiDict which by default creates a list for every dict entry.
+        Here is used a MultiDict which by default creates a list for every dict entry (basical a key-list-pair).
         So it is possible to store mutiple callbacks for one recognition.
 
         :param recognition: Recognition to identify message.
@@ -246,7 +258,7 @@ class ReceiveThread(threading.Thread):
         """Handles every complete message. Handling means decoding byte string do dict and apply response to every registered callback.
         Therefore response is not in an unit form, we need a if block which handles recognition over cmd name and message id
 
-        :param response: Compelte analyzer response
+        :param response: Complete analyzer response
         :type response: bytes string
         :param encoding_style: Encoding style used from Json module, defaults to "utf-8"
         :type encoding_style: str, optional
@@ -256,8 +268,16 @@ class ReceiveThread(threading.Thread):
         response = response.decode(encoding_style)
         response = json.loads(response)
 
+        # handle cases
         with self.lock:
-            if response['cmd'] in self.__callbacks:
+            # case start_operator: sends a second message which has no cmd entry
+            if "cmd" not in response.keys():
+                if "operator" in response.keys() and "finished" in response.keys():
+                    self.__callbacks[response["operator"]][0](response)
+                    self.deregister_callbacks(response["operator"])
+                return
+            # reports always use their cmd name as recognition
+            elif response['cmd'] in self.__callbacks:
                 # reports alwys registered with cmd->only case we need tot est for mutiple callbacks
                 length = len(self.__callbacks[response['cmd']])
                 if length > 1:
@@ -267,21 +287,20 @@ class ReceiveThread(threading.Thread):
                 else:
                     self.__callbacks[response['cmd']][0](response)
             # if no report there is only one entry--> [0] always uses right callback
+            # case resid
             elif 'resid' in response:
                 if response['resid'] in self.__callbacks:
                     self.__callbacks[response['resid']][0](response)
+            # case msgid
             elif 'msgid' in response:
                 if response['msgid'] in self.__callbacks:
                     self.__callbacks[response['msgid']][0](response)
+            # messages wich are not registered will be just logged
             else:
-                warnings.warn(
-                    f"Not expected analyzer response (no registration).")
-                self.logger.warning(
-                    "Not expected analyzer response (no registration):\n")
-                self.logger.warning(response)
+                self.warn_none_registered_response(response)
 
     def run(self) -> None:
-        # BUG: if not signal is received, change to mainthread
+        # BUG: if no signal is received, change to mainthread
         """ Overriden run method of thread module will be executed as the thread starts.
 
         Method listens to socket in forever loop 'till kill_thread method is executed. Listens for small parts and sets messages together.
@@ -363,7 +382,6 @@ class AnalyzerCmd():
         self._measuring_active = False
         self._sine_gen_active = False
         self._monitoring_active = False
-        self._operator_active = False
         self._operator_functions_active = False
         self._operator_results_active = False
 
@@ -485,9 +503,6 @@ class AnalyzerCmd():
         if self._operator_functions_active:
             self._value_parser(expect_response=False,
                                cmd="stoppoperatorfunctionvalues")
-        if self._operator_active:
-            self._value_parser(expect_response=False,
-                               cmd="AppCmd", p1="StopSineGen")
         if self._operator_results_active:
             self._value_parser(expect_response=False,
                                cmd="stopoperatorresults")
@@ -499,7 +514,7 @@ class AnalyzerCmd():
                 f"\nExecution type: {exc_type}\nTraceback: {traceback}")
 
     @property
-    def socket_ip(self):
+    def get_socket_ip(self):
         """Property that gives out connected IP.
 
         :rtype: str
@@ -507,12 +522,52 @@ class AnalyzerCmd():
         return self.ip
 
     @property
-    def socket_port(self):
+    def get_socket_port(self):
         """Property that gives out connected Port.
 
         :rtype: int
         """
         return self.port
+
+    @property
+    def get_measuring_state(self):
+        """Property that gives out if measuring has been started remotely.
+
+        :rtype: boolean
+        """
+        return self._measuring_active
+
+    @property
+    def get_monitoring_state(self):
+        """Property that gives out if monitoring has been started remotely.
+
+        :rtype: boolean
+        """
+        return self._monitoring_active
+
+    @property
+    def get_sine_gen_state(self):
+        """Property that gives out if sine generator has been activated remotely.
+
+        :rtype: boolean
+        """
+        return self._sine_gen_active
+
+    @property
+    def get_operator_functions_state(self):
+        """Property that gives out if operator functions has been activated remotely.
+
+        :rtype: boolean
+        """
+        return self._operator_functions_active
+
+    @property
+    def get_operator_results_state(self):
+        """Property that gives out if operator results has been activated remotely.
+
+        :rtype: boolean
+        """
+        return self._operator_results_active
 
     def start_measuring(self) -> None:
         """Method sends a command to the connected analyzer to start a maesuring process."""
@@ -970,8 +1025,8 @@ class AnalyzerCmd():
 
     def send_AppCmd(self, param_one: str, param_two=None) -> None:
         """General method to send arbitrary AppCmd to analyzer.
-        .. warning:: Developer fucntion. No use without required knowledge.
-        :param param_one: Setting which AppCmd should be used.
+        .. warning:: Developer function. No use without required knowledge.
+        :param param_one: AppCmd
         :type param_one: str
         :param param_two: If needed second parameter to specify params used in AppCmd, defaults to None
         :type param_two: str, optional
@@ -1263,19 +1318,21 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="setcomment", p1=comment, quiet=False)
 
-    # ANALYZER: analyzer implementation not provided
-    @analyzer_functionality_warning_decorator
-    def start_operator(self, operator_name: str, operator_command: str) -> None:
-        """External start of existing operator by name.
+    def start_operator(self, operator_name: str, operator_setting: str, user_callback=None) -> None:
+        """Manual start of existing operator by name. By adding a callback function, software will execute callback when operator finish.
+
+        .. note:: Ever callback needs a arguemnt for passed response, whether it is used or not. 
 
         :param operator_name: Name of network operator that should start
         :type operator_name: str
-        :param operator_command: _description_
-        :type operator_command: str
+        :param operator_setting: Operator settings like "loop from 0 to -1 simulation 2"
+        :type operator_setting: str
         """
+        if user_callback:
+            self.__recv_thread.register_callbacks(
+                operator_name, user_callback)
         self._value_parser(expect_response=False, cmd="startoperator",
-                           p1=operator_name, p2=operator_command)
-        self._operator_active = True
+                           p1=operator_name, p2=operator_setting)
 
     # ANALYZER: analyzer implementation not provided
     @analyzer_functionality_warning_decorator
@@ -1290,7 +1347,7 @@ class AnalyzerCmd():
         self._value_parser(expect_response=False, cmd="importoperators",
                            p1=operator_fielpath, p2=force_load)
 
-    # BUG: says okay but is not wokring
+    # BUG: says okay but is not working
     def import_patterns(self, directory_path: str) -> None:
         # ANALYZER: analyzer implementation not provided
         """Import all pattern files from a optimizer local directory.
@@ -1642,7 +1699,8 @@ class AnalyzerCmd():
         # send command
         self._send(command)
 
-        # receive response
+        # receive response for not reports
+        # reports are handled external
         if expect_response and user_callback == None:
             # get resonse out of queue
             analyzer_response = q.get()
