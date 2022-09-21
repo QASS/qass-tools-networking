@@ -612,18 +612,28 @@ Analyzer_socket wrapper: import_operator_network()
 --------------- Import project archive (tar.gz)
 cmd: 	"AppCmd"
 p1:	"importprojectarchive"
-p2: "<filepath[str]> <project_name[str]>"
-p2: "<filepath[str]> <project_name[str]> --originalnums"
-p2: "<filepath[str]> <project_name[str]> --originalnums --overwrite"
-p2: "<filepath[str]> <project_name[str]> --overwrite"
-
+p2:
+    base structure:     "<filepath[str]> <project_name[str]>"
+    options to append:  " --originalnums"
+                        " --overwrite"
 """
 if --original_nums is parsed, the original process number from the example process that will also be exported,
 will be kept. there will be as much as needed empty processes created for all process before the imported one.
 As an example if process 17000 has been exported, this flag will create 16999 empty processes before.
 
---overwrite will overwrite and delete current activated project
+--overwrite will overwrite current activated project
 """
 Response: None
 Analyzer_socket wrapper: import_project_archive()
 
+--------------- Export project archive (into tar.gz)
+cmd: 	"AppCmd"
+p1:	"importprojectarchive"
+p2: 
+    base structure:     "<target_folder_filepath[str]> <export_name[str]>"
+    options to append:  " --process <process_num[int]>" # example process with data to export with
+                        " --pengui" # export pengui
+                        " --keepfolder" # keep local folder structure alive
+
+Response: None
+Analyzer_socket wrapper: import_project_archive()

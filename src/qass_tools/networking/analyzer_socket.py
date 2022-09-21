@@ -1356,6 +1356,7 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                            p1="import", p2=f"opnet {filepath}")
 
+    # TODO: Ask Peter for overwrite param
     def import_project_archive(self, filepath: str, project_name: str, keep_original_process_nums: bool = False, overwrite: bool = False) -> None:
         """ Import a complete project archive file (tar.gz). 
 
@@ -1371,7 +1372,7 @@ class AnalyzerCmd():
         :type project_name: str
         :param original_nums: Keeps the original process number, defaults to False
         :type original_nums: bool, optional
-        :param overwrite: Overwrites and deletes current active project, defaults to False
+        :param overwrite: Overwrites current active project, defaults to False
         :type overwrite: bool, optional
         """
         p2_string = f"{filepath} {project_name}"
@@ -1392,10 +1393,32 @@ class AnalyzerCmd():
         pass
     # TODO: Test
 
-    def export_project_archive(self) -> None:
-        pass
-    # TODO: Test
+    def export_project_archive(self, filepath_target: str, export_name: str, export_process: int = None, export_pengui: bool = True, keep_folder: bool = True) -> None:
+        """ Export current project
 
+        :param filepath_target: Target folder path
+        :type filepath_target: str
+        :param export_name: Give export file a name
+        :type export_name: str
+        :param export_process: Export a example process with measurement data, defaults to None
+        :type export_process: int, optional
+        :param export_pengui: Export PenGUI, defaults to True
+        :type export_pengui: bool, optional
+        :param keep_folder: Keep folders of project archive, defaults to True
+        :type keep_folder: bool, optional
+        """
+        p2_string = f"{filepath_target} {export_name}"
+        if export_process:
+            p2_string = p2_string + f" --process {export_process}"
+        if export_pengui:
+            p2_string = p2_string + " --pengui"
+        if keep_folder:
+            p2_string = p2_string + " --keepfolder"
+
+        self._value_parser(cmd="AppCmd", expect_response=False,
+                           p1="exportprojectarchive", p2=p2_string)
+
+    # TODO: Test
     def flash_preamp(self) -> None:
         pass
     # TODO: Test
