@@ -6,5 +6,5 @@ def bla(response):
     print("I did it")
 
 
-with AnalyzerCmd("192.168.1.50", debug_mode=False) as opti:
+with AnalyzerCmd("192.168.1.233", debug_mode=False) as opti:
     opti.set_preamp()

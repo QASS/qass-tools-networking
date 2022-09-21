@@ -317,12 +317,12 @@ class ReceiveThread(threading.Thread):
             # if nothing is received socket runs into failstate (socket.timeout)
             except socket.timeout as e:
                 # in this case just continue while loop
-                timeout += timeout
+                timeout += 1
                 if timeout < 5:
                     continue
                 else:
                     self.logger.error(
-                        "No signal received wether signal is expected. Programm stopps.")
+                        "No signal received altough signal is expected. Programm stopps.")
                     raise e
 
             # catch other socket exception and crash
