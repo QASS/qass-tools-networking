@@ -391,6 +391,7 @@ class AnalyzerCmd():
                            "beginn": "true", "enabled": "true", "enable": "true", "on": "true",
                            False: "false", "stop": "false", "end": "false", "disabled": "false",
                            "false": "false", "disable": "false", "monitor": "monitor"}
+        # flags for exit method of context manager
         self._io_report_count = 0
         self._proc_report_count = 0
         self._appvar_report_count = 0
@@ -680,15 +681,17 @@ class AnalyzerCmd():
         :param do_not_copy_meta_data: Identical to analyzer check box, defaults to False
         :type do_not_copy_meta_data: bool, optional
         """
-        settings = {'cmd': "AppCmd",
-                    'p1': "SimulationBuffer",
-                    'p2': ""}
-        channel = channel + 1
+
+        # ..warning::Analyzer function is not null based. Basically if you want to test the first Channel,
+        # syntax is counted from null and integer representation from Channels.Channel_1 equals zero. But this specfic function
+        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for channels
+        # by addding the value with one.
+        channel += 1
         if do_not_copy_meta_data:
-            settings.update["p2"] = f"channel {channel} nometa path {file_path}"
+            p2_string = f"channel {channel} nometa path {file_path}"
         else:
-            settings["p2"] = f"channel {channel} path {file_path}"
-        self._value_parser(**settings)
+            p2_string = f"channel {channel} path {file_path}"
+        self._value_parser(cmd="AppCmd", p1="SimulationBuffer", p2=p2_string)
 
     # BUG: Keyword all is not working
     def set_simulation_buffer(self, channel_number: Union[str, int], mode: str) -> None:
@@ -1151,7 +1154,7 @@ class AnalyzerCmd():
         elif self.translator[mode] == "false":
             self._monitoring_active = False
 
-    def calc_max_amp_per_band(self, channel=Channels.CHANNEL_1, create_plot_buffer: bool = True, create_data_buffer: bool = False, amplitude_type=SysAmplitudesType.AMPLITUDE_DEFAULT) -> np.ndarray:
+    def calculate_max_amplitude_per_band(self, channel=Channels.CHANNEL_1, create_plot_buffer: bool = True, create_data_buffer: bool = False, amplitude_type=SysAmplitudesType.AMPLITUDE_DEFAULT) -> np.ndarray:
         """ Method to calculate maximum amplitude per band.
 
         :param channel: Datastream Channel, defaults to Channels.CHANNEL_1
@@ -1333,7 +1336,7 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="startoperatorresults",
                            p1=self.translator[mode])
-
+        # just flags for exit method of context manager
         if self.translator[mode] == "true":
             self._operator_results_active = True
         if self.translator[mode] == "false":
