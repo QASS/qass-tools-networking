@@ -742,7 +742,7 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
-    def pulsetest_port(self, port_number: int, gain: int = 800, count: int = 1, delay: int = 0, input=MultiPreampInput.NONE_MULTI_INPUT) -> None:
+    def pulsetest_port(self, port_number: int, gain: int = 800, count: int = 1, delay: int = 0, preamp_input=MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """External set of pulse test. Only avaible for exisiting ports and sensors.
 
         :param port_number: Port where pulsetest gets executed.
@@ -753,16 +753,14 @@ class AnalyzerCmd():
         :type count: int
         :param delay: Pulsetest delay in ms, defaults to 0
         :type delay: int
-        :param input: Input number for Multi Input Preamps, defaults to NONE
-        :type input: int or MultiPreampInputs
+        :param preamp_input: Input number for Multi Input Preamps, defaults to NONE
+        :type preamp_input: int or MultiPreampInputs
         :raises ValueError: If gain is out of bounds: range(0,4096) | If count is out of bounds: range(0,200) | If delay is out of bounds: smaller zero
         """
-
-        # port_number is one based here
-        # warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
-        # it is counted from null and integer representation if PREAM_PORTS.PORT_1 equals zero. But this specfic function
-        # will need a corrected number based on one. So this interface method automatically correct all parsed integers
-        # by addding the value with one
+        # ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
+        # syntax is counted from null and integer representation from PREAMP_PORTS.PORT_1 equals zero. But this specfic function
+        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for preampports
+        # by addding the value with one.
         port_number += 1
 
         # check params limits
@@ -770,10 +768,10 @@ class AnalyzerCmd():
             self.logger.error("Params out of bounds")
             raise ValueError("Params out of bounds")
 
-        if input == MultiPreampInput.NONE_MULTI_INPUT:
+        if preamp_input == MultiPreampInput.NONE_MULTI_INPUT:
             p2_string = f"channel {port_number} pulsetest {gain} {count} {delay}"
         else:
-            p2_string = f"channel {port_number} {input} pulsetest {gain} {count} {delay}"
+            p2_string = f"channel {port_number} {preamp_input} pulsetest {gain} {count} {delay}"
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
@@ -785,39 +783,33 @@ class AnalyzerCmd():
 
         :param opti_port_number: opti port number to adress
         :type opti_port_number: int
-        :param preamp_input_number: Switched input channel from preamp (target)
+        :param preamp_input_number: Switched input channel from preamp (target), defaults to MULTI_INPUT_2
         :type preamp_input_number: int or MultiPreampInput
         """
         self._value_parser(cmd="AppCmd", p1="Preamp",
                                p2=f"port {opti_port_number} switchinput {preamp_input_number}")
 
     # ANALYZER: no recognizable response
-    def frequency_test_port(self, port_number: int, **kwargs) -> None:
-        """Execute a frequency test for a specific port. By entering the integer 0 or 1 as "input" as kwargs, you can
-        chnage the used input for multi input preamps
-
-        | ------------------------ **kwargs ----------------------------- |
-        | key    | Description                          | Defaults Value  |
-        | ------ | ------------------------------------ | --------------- |
-        | input  | Input number for Multi Input Preamps | Defaults NONE   |
-
-
+    def frequency_test_port(self, port_number: int, preamp_input: MultiPreampInput.NONE_MULTI_INPUT) -> None:
+        """Execute a frequency test for a specific port.
 
         :param port_number: Port number for frequency test
-        :type port_number: int or PREAMP_PORTS
+        :type port_number: int or PreampPorts
+        :param preamp_input: Used Input
+        :type preamp_input: int or MultiPreampInput, defaults to NONE for no multi input preamp
         """
+
         # ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
-        # t is counted from null and integer representation if PREAM_PORTS.PORT_1 equals zero. But this specfic function
-        # will need a corrected number based on one. So this interface method automatically correct all parsed integers
+        # syntax is counted from null and integer representation from PREAMP_PORTS.PORT_1 equals zero. But this specfic function
+        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for preampports
         # by addding the value with one.
         port_number += 1
-        if kwargs.keys() == "input":
-            input_num = kwargs.get("input")
-            self._value_parser(cmd="AppCmd", p1="Preamp",
-                               p2=f"port {port_number} input {input_num} frqtest")
-        else:
+        if preamp_input == MultiPreampInput.NONE_MULTI_INPUT:
             self._value_parser(cmd="AppCmd", p1="Preamp",
                                p2=f"port {port_number} frqtest")
+        else:
+            self._value_parser(cmd="AppCmd", p1="Preamp",
+                               p2=f"port {port_number} input {preamp_input} frqtest")
 
     # ANALYZER: no recognizable response
     def frequency_test_channel(self, channel_number: int) -> None:
