@@ -1,4 +1,4 @@
-from analyzer_socket import AnalyzerCmd
+from analyzer_socket import AnalyzerCmd, PreampPorts
 from time import sleep
 
 
@@ -7,4 +7,4 @@ def bla(response):
 
 
 with AnalyzerCmd("192.168.1.233", debug_mode=False) as opti:
-    opti.set_preamp(gain=900)
+    print(opti.get_preamp_hardware_info(PreampPorts.PREAMP_PORT_1))

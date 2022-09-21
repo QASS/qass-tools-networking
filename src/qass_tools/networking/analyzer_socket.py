@@ -821,6 +821,10 @@ class AnalyzerCmd():
         :param port_number: Channel number for frequency test
         :type port_number: int or PREAMP_PORTS
         """
+        # ..warning::Analyzer function is not null based. Basically if you want to test the first Channel,
+        # syntax is counted from null and integer representation from Channels.Channel_1 equals zero. But this specfic function
+        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for channels
+        # by addding the value with one.
         channel_number += 1
         self._value_parser(cmd="AppCmd", p1="Preamp",
                            p2=f"channel {channel_number} frqtest")
@@ -1128,6 +1132,7 @@ class AnalyzerCmd():
         :raises KeyError: Raises if keyword argument "mode" is parsed with invalid values.
         """
         self._value_parser(cmd="startmeasuring", p1=self.translator[mode])
+        # flags for context manager exit method
         if self.translator[mode] == "true":
             self._measuring_active = True
         elif self.translator[mode] == "false":
@@ -1149,6 +1154,7 @@ class AnalyzerCmd():
         :raises KeyError: Raises if keyword argument "mode" is parsed with invalid values.
         """
         self._value_parser(cmd="startmonitoring", p1=self.translator[mode])
+        # flags for context manager exit method
         if self.translator[mode] == "true":
             self._monitoring_active = True
         elif self.translator[mode] == "false":
@@ -1228,6 +1234,7 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="startoperatorfunctionvalues",
                            p1=self.translator[mode])
+        # flags for context manager exit method
         if self.translator[mode] == "true":
             self._operator_functions_active = True
         elif self.translator[mode] == "false":
@@ -1238,6 +1245,7 @@ class AnalyzerCmd():
     def stop_operator_function(self) -> None:
         """Stop of running operator function."""
         self._value_parser(cmd="stoppoperatorfunctionvalues")
+        # flags for context manager exit method
         self._operator_functions_active = False
 
     def set_serial_number(self, serial_number: int, process_number: int) -> None:
@@ -1375,7 +1383,7 @@ class AnalyzerCmd():
         :return: Shifted binary
         :rtype: str
         """
-        # Elias Version didn't worked
+        # Elia's Version didn't worked
         # new_val = 0
         # for i in range(16):
         #    bit_state = (original_bin & (1 << i) >> i)
@@ -1384,13 +1392,15 @@ class AnalyzerCmd():
 
         # return new_val
 
-        # Oli versoion
+        # Oli's version
         # helper list
         new_val = [0] * len(original_bin)
+
         # save current val to shifted position in list
         for (i, bit) in enumerate(original_bin):
             new_val[len(new_val)-1-i] = bit
-        # convert list to string
+
+        # convert list to string and return
         return "".join(new_val)
 
     def _binary_to_hexa(self, binary_str: str) -> str:
@@ -1433,6 +1443,7 @@ class AnalyzerCmd():
 
         :param io: Combination on bits set to I/O input register (one and two), defaults to "0xf0000". For further informations see extended summary.
         :type io: str
+        :raises ValueError: If parsed I/O input is not supported in this form. Means no from like "00000000 00000000" or "0xf0000". 
         """
         # helper
         bin_ref = "00000000 00000000"
