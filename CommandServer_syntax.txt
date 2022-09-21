@@ -609,7 +609,7 @@ p2: "opnet <filepath[str]>"
 Response: standardized analyzer response
 Analyzer_socket wrapper: import_operator_network()
 
---------------- Import project archive (JSON file)
+--------------- Import project archive (tar.gz)
 cmd: 	"AppCmd"
 p1:	"importprojectarchive"
 p2: "<filepath[str]> <project_name[str]>"
@@ -617,6 +617,13 @@ p2: "<filepath[str]> <project_name[str]> --originalnums"
 p2: "<filepath[str]> <project_name[str]> --originalnums --overwrite"
 p2: "<filepath[str]> <project_name[str]> --overwrite"
 
+"""
+if --original_nums is parsed, the original process number from the example process that will also be exported,
+will be kept. there will be as much as needed empty processes created for all process before the imported one.
+As an example if process 17000 has been exported, this flag will create 16999 empty processes before.
 
-Response: standardized analyzer response
+--overwrite will overwrite and delete current activated project
+"""
+Response: None
 Analyzer_socket wrapper: import_project_archive()
+

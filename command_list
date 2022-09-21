@@ -48,7 +48,7 @@
 * [ ] import_patterns(**NOT TESTED**)
 * [x] import_trigger_list
 * [ ] import_operator_network(**NOT TESTED**)
-
+* [x] import_project_archive
 * [ ] start_operator_results (**NOT TESTED**)
 * [ ] stop_operator_results (**NOT TESTED**)
 * [x] get_io_input

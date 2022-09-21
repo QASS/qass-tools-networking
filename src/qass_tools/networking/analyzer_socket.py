@@ -1356,20 +1356,22 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                            p1="import", p2=f"opnet {filepath}")
 
-    def import_project_archive(self, filepath: str, project_name: str, keep_original_process_nums: bool = False, overwrite: bool = True) -> None:
-        """ 
+    def import_project_archive(self, filepath: str, project_name: str, keep_original_process_nums: bool = False, overwrite: bool = False) -> None:
+        """ Import a complete project archive file (tar.gz). 
 
-        .. warning:: if keeo_original_process_nums is activated and the original process number will be kept, there will be
+        .. warning:: if keep_original_process_nums is activated and the original process number will be kept, there will be
         as much as needed empty processes created for all process before the imported one. As an example if 
         process 17000 has been exported, this flag will create 16999 empty processes before.
+
+        .. warning:: if overwrite is activated this will be overwrite and delete current activated project
 
         :param filepath: Local filepath to archive file
         :type filepath: str
         :param project_name: Name of the now imported project
         :type project_name: str
-        :param original_nums: Keeps the original process number, defaults to True
+        :param original_nums: Keeps the original process number, defaults to False
         :type original_nums: bool, optional
-        :param overwrite: Overwrites current project, defaults to True
+        :param overwrite: Overwrites and deletes current active project, defaults to False
         :type overwrite: bool, optional
         """
         p2_string = f"{filepath} {project_name}"
@@ -1378,7 +1380,7 @@ class AnalyzerCmd():
         if overwrite:
             p2_string = p2_string + " --overwrite"
 
-        self._value_parser(cmd="AppCmd", expect_response=False
+        self._value_parser(cmd="AppCmd", expect_response=False,
                            p1="importprojectarchive", p2=p2_string)
 
     # TODO: Test
