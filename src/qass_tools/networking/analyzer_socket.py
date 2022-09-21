@@ -330,13 +330,13 @@ class ReceiveThread(threading.Thread):
                     self.logger.error(
                         "No signal received altough signal is expected. Programm stopps.")
                     raise e
-
             # catch other socket exception and crash
             except socket.error as e:
                 self.logger.error(e)
                 if int.from_bytes(buffer, byteorder='big') > 0:
                     self.logger.warning("Unfinished message received:\n")
                     self.logger.warning(buffer)
+                    raise e
             # only enter for new current length setting or if message is complete
             while (len(buffer) >= current_len and len(buffer) != 0) or (current_len is 0 and len(buffer) >= 2):
                 if current_len is 0:
