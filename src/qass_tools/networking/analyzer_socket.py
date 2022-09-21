@@ -180,6 +180,17 @@ class SysSettingsClass(IntEnum):
     BACKUP_CONFIG = 15  # Configuration for backups and automatic backups
 
 
+class MultiPreampInput(IntEnum):
+    """ Enums for Multi Input Preamps."""
+    NONE_MULTI_INPUT = 999  # Just a flag, to not use any input values
+    MULTI_INPUT_1 = 0
+    MULTI_INPUT_2 = 1
+    MULTI_INPUT_3 = 2
+    MULTI_INPUT_4 = 3
+    MULTI_INPUT_5 = 4
+    MULTI_INPUT_6 = 6
+
+
 class ConnectionError(socket.error):
     def __init__(self, ip, port):
         self.msg = f"Connection to ip: {ip} on port: {port} could not be established.\n"
@@ -731,26 +742,21 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
-    def pulsetest_port(self, port_number: int, gain: int = 800, count: int = 1, delay: int = 0, input) -> None:
+    def pulsetest_port(self, port_number: int, gain: int = 800, count: int = 1, delay: int = 0, input=MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """External set of pulse test. Only avaible for exisiting ports and sensors.
-
-        | key    | Description                          | Defaults Value  |
-        | ------ | ------------------------------------ | --------------- |
-        | gain   | Pulsetest gain in range(0,4096)      | Defaults to 800 |
-        | count  | Pulsetest count in range(0,200)      | Defaults to 1   |
-        | delay  | Pulsetest delay (geater null)        | Defaults to 0   |
-        | input  | Input number for Multi Input Preamps | Defaults NONE   |
-
-        .
 
         :param port_number: Port where pulsetest gets executed.
         :type port_number: int or Channels
+        :param gain: Pulsetest gain in range(0,4096), defaults to 800
+        :type gain: int
+        :param count: Pulsetest count in range(0,200), defaults to 1
+        :type count: int
+        :param delay: Pulsetest delay in ms, defaults to 0
+        :type delay: int
+        :param input: Input number for Multi Input Preamps, defaults to NONE
+        :type input: int or MultiPreampInputs
         :raises ValueError: If gain is out of bounds: range(0,4096) | If count is out of bounds: range(0,200) | If delay is out of bounds: smaller zero
         """
-        settings = {'gain': 800,
-                    'count': 1,
-                    'delay': 0,
-                    'input': 0}
 
         # port_number is one based here
         # warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
@@ -758,17 +764,16 @@ class AnalyzerCmd():
         # will need a corrected number based on one. So this interface method automatically correct all parsed integers
         # by addding the value with one
         port_number += 1
-        # update witgh kwargs
-        for key in kwargs.keys():
-            if key in settings.keys():
-                settings.update(kwargs[key])
 
         # check params limits
-        if not 0 <= settings['gain'] < 4096 and not 0 <= settings['count'] < 201 and not 0 <= settings['delay']:
+        if not 0 <= gain < 4096 and not 0 <= count < 201 and not 0 <= delay:
             self.logger.error("Params out of bounds")
             raise ValueError("Params out of bounds")
 
-        p2_string = f"channel {port_number} pulsetest {settings['gain']} {settings['count']} {settings['delay']}"
+        if input == MultiPreampInput.NONE_MULTI_INPUT:
+            p2_string = f"channel {port_number} pulsetest {gain} {count} {delay}"
+        else:
+            p2_string = f"channel {port_number} {input} pulsetest {gain} {count} {delay}"
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
