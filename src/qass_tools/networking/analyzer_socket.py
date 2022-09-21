@@ -330,7 +330,6 @@ class ReceiveThread(threading.Thread):
                     self.logger.error(
                         "No signal received altough signal is expected. Programm stopps.")
                     raise e
-
             # catch other socket exception and crash
             except socket.error as e:
                 self.logger.error(e)
@@ -1385,14 +1384,30 @@ class AnalyzerCmd():
                            p1="importprojectarchive", p2=p2_string)
 
     # TODO: Test
-    def export_operator_network(self) -> None:
-        pass
-    # TODO: Test
+    def export_operator_network(self, filepath: str, export: str = "root") -> None:
+        """ Export operator network as JSON file. Exported can the current activated
+            ("root"), all ("all") or just the network template ("tempalte") by parsing the key to export. 
 
-    def export_trigger_list(self) -> None:
-        pass
-    # TODO: Test
+        :param folderpath: Target file path
+        :type folderpath: str
+        :param export: Decided what from operator will be exported. Current activated("root"), all operators or the template, defaults to "root"
+        :type export: str, optional
+        """
+        my_translator = {"root": "-r", "all": "-a", "template": "-t"}
+        self._value_parser(cmd="AppCmd", expect_response=False,
+                           p1="export", p2=f"opnet {filepath} {my_translator[export]}")
 
+    # TODO: Test
+    def export_trigger_list(self, filepath: str) -> None:
+        """ Export current trigger list to path
+
+        :param filepath: Target file path
+        :type filepath: str
+        """
+        self._value_parser(cmd="AppCmd", expect_response=False,
+                           p1="export", p2=f"triggerlist {filepath}")
+
+    # TODO: Test
     def export_project_archive(self, filepath_target: str, export_name: str, export_process: int = None, export_pengui: bool = True, keep_folder: bool = True) -> None:
         """ Export current project
 

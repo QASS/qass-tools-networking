@@ -628,7 +628,7 @@ Analyzer_socket wrapper: import_project_archive()
 
 --------------- Export project archive (into tar.gz)
 cmd: 	"AppCmd"
-p1:	"importprojectarchive"
+p1:	"exportprojectarchive"
 p2: 
     base structure:     "<target_folder_filepath[str]> <export_name[str]>"
     options to append:  " --process <process_num[int]>" # example process with data to export with
@@ -636,4 +636,24 @@ p2:
                         " --keepfolder" # keep local folder structure alive
 
 Response: None
-Analyzer_socket wrapper: import_project_archive()
+Analyzer_socket wrapper: export_project_archive()
+
+--------------- Export operator network
+cmd: 	"AppCmd"
+p1:	"export"
+p2: 
+    base structure:     "opnet <filepath[str]>"
+    options to append:  " -a" # export all operators
+                        " -r" # export root operator (current active)
+                        " -t" # export tempalte operator
+
+Response: None
+Analyzer_socket wrapper: export_operator_network()
+
+--------------- Export trigger list
+cmd: 	"AppCmd"
+p1:	"export"
+p2: "triggerlist <filepath[str]>"
+
+Response: None
+Analyzer_socket wrapper: export_trigger_list()
