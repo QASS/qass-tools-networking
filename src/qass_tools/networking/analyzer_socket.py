@@ -707,38 +707,32 @@ class AnalyzerCmd():
             self._value_parser(cmd="AppCmd",
                                p1="SimulationBuffer", p2=f"channel {channel_number} {self.translator[mode]}")
 
-    def pulsetest_channel(self, channel_number: int, **kwargs) -> None:
-        """External set of pulse test. Only avaible for exisiting ports and sensors.
+    def pulsetest_channel(self, channel_number: int, gain: int = 800, count: int = 1, delay: int = 0) -> None:
+        """ External set of pulse test. Only avaible for exisiting ports and sensors.
 
-        | ---------------- **kwargs --------------------------------- |
-        | gain   | Pulsetest gain in range(0,4096)  | Defaults to 800 |
-        | count  | Pulsetest count in range(0,200)  | Defaults to 1   |
-        | delay  | Pulsetest delay (geater null)    | Defaults to 0   |
-
-        ..warning::Analyzer function is not null based. Basically if you want to test the first Channel,
-        it is counted from null and integer representation if CHANNELS.CHANNEL_1 equals zero. But this specfic function
-        will need a corrected number based on one. So this interface method automatically correct all parsed integers
-        by addding the value with one.
         :param channel_number: Channel where pulsetest gets executed.
-        :type channel_number: int or Channels
+        :type channel_number: int or Channel
+        :param gain: Used gain for pulsetest, defaults to 800
+        :type gain: int, optional
+        :param count: Used count for pulsetest, defaults to 1
+        :type count: int, optional
+        :param delay: Used delay for pulsetest, defaults to 0
+        :type delay: int, optional
         :raises ValueError: If gain is out of bounds: range(0,4096) | If count is out of bounds: range(0,200) | If delay is out of bounds: smaller zero
         """
-        settings = {'gain': 800,
-                    'count': 1,
-                    'delay': 0}
-        # channel nummer starts in this case by 1
+
+        # ..warning::Analyzer function is not null based. Basically if you want to test the first Channel,
+        # syntax is counted from null and integer representation from Channels.Channel_1 equals zero. But this specfic function
+        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for channels
+        # by addding the value with one.
         channel_number += 1
-        # update witgh kwargs
-        for key in kwargs.key():
-            if key in settings.keys():
-                settings.update(kwargs[key])
 
         # check params limits
-        if not 0 <= settings['gain'] < 4096 and not 0 <= settings['count'] < 201 and not 0 <= settings['delay']:
+        if not 0 <= gain < 4096 and not 0 <= count < 201 and not 0 <= delay:
             self.logger.error("Params out of bounds")
             raise ValueError("Params out of bounds")
 
-        p2_string = f"channel {channel_number} pulsetest {settings['gain']} {settings['count']} {settings['delay']}"
+        p2_string = f"channel {channel_number} pulsetest {gain} {count} {delay}"
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
