@@ -46,8 +46,8 @@
 * [x] start_operator
 * [ ] import_operators (**NOT TESTED**)
 * [ ] import_patterns(**NOT TESTED**)
-* [ ] import_trigger_list(**NOT TESTED**)
-
+* [x] import_trigger_list
+* [ ] import_operator_network(**NOT TESTED**)
 
 * [ ] start_operator_results (**NOT TESTED**)
 * [ ] stop_operator_results (**NOT TESTED**)

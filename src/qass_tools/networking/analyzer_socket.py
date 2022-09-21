@@ -1332,13 +1332,11 @@ class AnalyzerCmd():
         self._value_parser(expect_response=False, cmd="importpatterns",
                            p1=directory_path)
 
-    # TODO: Test
     def import_trigger_list(self, filepath: str, append: bool = False) -> None:
-        """ Import a trigger list file from local path. Append option decides if tigger list will be replaced or extended.
-
+        """ Import a trigger list file from local path. Append option decides already exisitng triggers will be set active or not.
         :param filepath: Local filepath
         :type filepath: str
-        :param append: Decision to replace or extend already existing trigger list, defaults to False
+        :param append: Decision to set already existing trigger list active or passive by extending, defaults to False
         :type append: bool, optional
         """
         p2_string = f"triggerlist {filepath}"
@@ -1358,15 +1356,49 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                            p1="import", p2=f"opnet {filepath}")
 
-        # def export_operator_network(self):  ->None
-        # def import_project_archive(self):  ->None
-        # def export_trigger_list(self):  ->None
-        # def export_project_archive(self):  ->None
-        # def flash_preamp(self):  ->None
-        # def set_default_project(self):  ->None
+    # TODO: Test
+    def import_project_archive(self, filepath: str, project_name: str, original_nums: bool = True, overwrite: bool = True) -> None:
+        """_summary_
 
-        # ANALYZER: analyzer implementation not provided
+        :param filepath: _description_
+        :type filepath: str
+        :param project_name: _description_
+        :type project_name: str
+        :param original_nums: _description_, defaults to True
+        :type original_nums: bool, optional
+        :param overwrite: _description_, defaults to True
+        :type overwrite: bool, optional
+        """
+        p2_string = f"{filepath} {project_name}"
+        if original_nums:
+            p2_string = p2_string + " --originalnums"
+        if overwrite:
+            p2_string = p2_string + " --overwrite"
 
+        self._value_parser(cmd="AppCmd",
+                           p1="importprojectarchive", p2=p2_string)
+
+    # TODO: Test
+    def export_operator_network(self) -> None:
+        pass
+    # TODO: Test
+
+    def export_trigger_list(self) -> None:
+        pass
+    # TODO: Test
+
+    def export_project_archive(self) -> None:
+        pass
+    # TODO: Test
+
+    def flash_preamp(self) -> None:
+        pass
+    # TODO: Test
+
+    def set_default_project(self) -> None:
+        pass
+
+    # ANALYZER: analyzer implementation not provided
     @analyzer_functionality_warning_decorator
     def start_operator_results(self, mode: Union[str, bool] = "enable") -> None:
         # ANALYZER: analyzer implementation not provided

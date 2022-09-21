@@ -595,8 +595,28 @@ Analyzer_socket wrapper: write_backup()
 --------------- Import trigger list
 cmd: 	"AppCmd"
 p1:	"import"
-p2: "triggerlist <filepath[str]> # replaces existing trigger list
-p2: "triggerlist <filepath[str] -a> # extended  existing trigger list
+p2: "triggerlist <filepath[str]> # sets existing trigger inactive
+p2: "triggerlist <filepath[str] -a> # extend  existing trigger list
 
 Response: standardized analyzer response
 Analyzer_socket wrapper: import_trigger_list()
+
+--------------- Import operator network (JSON file)
+cmd: 	"AppCmd"
+p1:	"import"
+p2: "opnet <filepath[str]>"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: import_operator_network()
+
+--------------- Import project archive (JSON file)
+cmd: 	"AppCmd"
+p1:	"importprojectarchive"
+p2: "<filepath[str]> <project_name[str]>"
+p2: "<filepath[str]> <project_name[str]> --originalnums"
+p2: "<filepath[str]> <project_name[str]> --originalnums --overwrite"
+p2: "<filepath[str]> <project_name[str]> --overwrite"
+
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: import_project_archive()
