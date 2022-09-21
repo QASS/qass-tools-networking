@@ -1356,26 +1356,29 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                            p1="import", p2=f"opnet {filepath}")
 
-    # TODO: Test
-    def import_project_archive(self, filepath: str, project_name: str, original_nums: bool = True, overwrite: bool = True) -> None:
-        """_summary_
+    def import_project_archive(self, filepath: str, project_name: str, keep_original_process_nums: bool = False, overwrite: bool = True) -> None:
+        """ 
 
-        :param filepath: _description_
+        .. warning:: if keeo_original_process_nums is activated and the original process number will be kept, there will be
+        as much as needed empty processes created for all process before the imported one. As an example if 
+        process 17000 has been exported, this flag will create 16999 empty processes before.
+
+        :param filepath: Local filepath to archive file
         :type filepath: str
-        :param project_name: _description_
+        :param project_name: Name of the now imported project
         :type project_name: str
-        :param original_nums: _description_, defaults to True
+        :param original_nums: Keeps the original process number, defaults to True
         :type original_nums: bool, optional
-        :param overwrite: _description_, defaults to True
+        :param overwrite: Overwrites current project, defaults to True
         :type overwrite: bool, optional
         """
         p2_string = f"{filepath} {project_name}"
-        if original_nums:
+        if keep_original_process_nums:
             p2_string = p2_string + " --originalnums"
         if overwrite:
             p2_string = p2_string + " --overwrite"
 
-        self._value_parser(cmd="AppCmd",
+        self._value_parser(cmd="AppCmd", expect_response=False
                            p1="importprojectarchive", p2=p2_string)
 
     # TODO: Test
