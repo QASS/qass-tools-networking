@@ -21,16 +21,16 @@ Analyzer_socket wrapper: get_project_info()
 cmd: 			"setpreamp"
 channel(=ChannelList):	<window choice[int]>, default 0	
 chp(=channelPortList):	<window choice[int]>, default 0
-preampport: 		<window choice[int]>
-fft:			<if_fft_buffer[boolean]>
-signal:			<if_signal_buffer[boolean]>
-samplerate: 		<window choice[int]>
-fftoversampling:	<window choice[int]>
-fftwindwowing: 		<window choice[int]>
-fftlogarithmic:		<window choice[int]>
-filter:			<if_filter[boolean]>		
-gain:			<gain[int]>
-subport:		<subport[int]>
+preampport: 		    <window choice[int]>
+fft:			        <if_fft_buffer[boolean]>
+signal:			        <if_signal_buffer[boolean]>
+samplerate: 		    <window choice[int]>
+fftoversampling:	    <window choice[int]>
+fftwindwowing: 		    <window choice[int]>
+fftlogarithmic:		    <window choice[int]>
+filter:			        <if_filter[boolean]>		
+gain:			        <gain[int]>
+subport:		        <subport[int]>
 
 Response: None
 Analyzer_socket wrapper: set_preamp()

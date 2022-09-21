@@ -15,6 +15,8 @@ from PySide2.QtWidgets import QVBoxLayout
 
 import sys
 import json
+from typing import Dict
+
 
 class Client(QObject):
     output_std = Signal(str)
@@ -35,16 +37,16 @@ class Client(QObject):
     disconnected = Signal()
 
     def disconnect(self):
+        """ Method will close the socket connection."""
         self.sock.close()
 
     def onReadyRead(self):
+        """ Method will read sended data out of socket and change appearance. Data will be check for errors or methods."""
         packet = self.sock.readAll().data().decode()
         packet = packet.replace('}{', '},{')
         packet = '[' + packet + ']'
 
-        # print(packet)
         objs = json.loads(packet)
-        # print(objs)
 
         for obj in objs:
             if "result" in obj:
@@ -62,16 +64,25 @@ class Client(QObject):
                 elif obj["method"] == "stderr":
                     self.output_err.emit(obj["params"]["text"])
 
-    def send_obj(self, obj):
-        import json
+    def send_obj(self, obj: str):
+        """ Send Obj to socket after encoding.
+        :param obj: Object which will be written to socket
+        :type obj: str
+        """
         text = json.dumps(obj)
-        # text = str(len(text)) + ':' + text
-        text = text
         text = text.encode()
-        print(text)
         self.sock.write(text)
 
-    def buildJsonRpc(self, func, params):
+    def buildJsonRpc(self, func, params) -> Dict:
+        """Helper method to build a JSON-RPC-Call to send to server.
+
+        :param func: Name of function/method that should be called.
+        :type func: function or str
+        :param params: Array or object with params for parsed function.
+        :type params: Any
+        :return: Builded JSON-RPC-Call
+        :rtype: Dict
+        """
         self.pkt_id += 1
 
         return {
@@ -82,14 +93,35 @@ class Client(QObject):
         }
 
     def callFunc(self, func, **kwargs):
+        """ Helper method to send a JSON-RPC which calls a specific function.
+
+        Kwargs:
+        By kwargs you can specify params for called function.
+
+        :param func: Name of fucntion that should be called.
+        :type func: Str or function
+        """
         packet = self.buildJsonRpc(func, kwargs)
-        # print(packet)
         self.send_obj(packet)
 
-    def remoteInteractive(self, script):
+    def remoteInteractive(self, script: str) -> Dict:
+        """ Toplevel function to start remote interactive function.
+
+        :param script: Script function that should be started
+        :type script: str
+        :return: Builded JSON-RPC
+        :rtype: Dict
+        """
         return self.callFunc('interactive', script=script)
 
-    def remoteEval(self, script):
+    def remoteEval(self, script) -> Dict:
+        """Toplevel function to start remote eval function.
+
+        :param script: Script function that should be started
+        :type script: str
+        :return: Builded JSON-RPC
+        :rtype: Dict
+        """
         return self.callFunc('eval', script=script)
 
 
@@ -101,6 +133,7 @@ class HistoryLineEdit(QLineEdit):
         self.__history_idx = 0
 
     def onInputFinished(self):
+        """ Method to append command-text and length to History dict by input finish."""
         self.__history.append(self.text())
         self.__history_idx = len(self.__history)
 
@@ -112,22 +145,25 @@ class HistoryLineEdit(QLineEdit):
                 self.setText(self.__history[self.__history_idx])
             elif event.key() == QtCore.Qt.Key_Down:
                 self.__history_idx += 1
-                self.__history_idx = min(len(self.__history) -1, self.__history_idx)
+                self.__history_idx = min(
+                    len(self.__history) - 1, self.__history_idx)
                 self.setText(self.__history[self.__history_idx])
             else:
                 self.__history_idx = len(self.__history)
 
-        super().keyPressEvent(event);
+        super().keyPressEvent(event)
 
 
 class Window(QWidget):
     def __init__(self):
+        """ Constructor to set up QT Window"""
         super().__init__()
 
         self.setWindowTitle("Analyzer4D remote Python console")
         self.setGeometry(300, 300, 500, 400)
         self.ip = QLineEdit(self)
-        re = QRegExp('^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$')
+        re = QRegExp(
+            '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$')
         self.ip.setValidator(QRegExpValidator(re))
         self.ip.setText('127.0.0.1')
 
@@ -141,7 +177,8 @@ class Window(QWidget):
         self.output = QPlainTextEdit(self)
         self.input = HistoryLineEdit(self)
 
-        self.output.setTextInteractionFlags(self.output.textInteractionFlags() & ~QtCore.Qt.TextEditable)
+        self.output.setTextInteractionFlags(
+            self.output.textInteractionFlags() & ~QtCore.Qt.TextEditable)
         self.input.returnPressed.connect(self.onInputFinished)
         self.input.setFocus()
         self.input.setDisabled(True)
@@ -159,7 +196,6 @@ class Window(QWidget):
 
         self.setLayout(layout)
         self.__history = []
-
 
     def onInputFinished(self):
         text = self.input.text()
