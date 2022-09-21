@@ -1045,24 +1045,33 @@ class AnalyzerCmd():
     def set_preamp(self, channel=Channels.CHANNEL_1, chp=ChannelPorts.CHANNEL_PORT_1, preampport=PreampPorts.PREAMP_PORT_1,
                    fft=True, signal=False, samplerate=Samplerates.SAMPLERATE_1600_kHz, fftoversampling=FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
                    fftwindowing=FFTWindowing.FFT_WINDOWING_HANNING, fftlogarithmic=FFTLogarithmic.FFT_LOGARITHMIC_BASE_14, filter=True, gain=800, subport=0) -> None:
-        """Method to set preamplifier and multiplexer settings.
-
+        """ Method to set preamplifier and multiplexer settings.
         .. warning:: Range of params will not be checked.
-        Default settings:
-        | Type                      | Keyword         | Value        |
-        | ------------------------- | --------------- | ------------ |
-        | Channels        | int     | channel         | Channel #1   |
-        | ChannelPorts    | int     | chp             | Port 1       |
-        | PreampPorts     | int     | preampport      | Preampport 1 |
-        | Checkbox        | Boolean | fft             | enabled      |
-        | Checkbox        | Boolean | signal          | disabled     |
-        | samplerate      | int     | samplerate      | 1600 kHz     |
-        | FFTOversampling | int     | fftoversampling | 8 times      |
-        | FFTWindowing    | int     | fftwindowing    | Hanning      |
-        | FFTLogarithmic  | int     | fftlogarithmic  | Base 14      |
-        | Checkbox        | Boolean | filter          | disabled     |
-        | Gain            | int     | gain            | 800          |
-        | Subport         | int     | subport         | 0            |
+
+        :param channel: Desired channel (Dropdown), defaults to Channels.CHANNEL_1
+        :type channel: int or Channels, optional
+        :param chp: Desired channelport (Dropdown), defaults to ChannelPorts.CHANNEL_PORT_1
+        :type chp: int or Channelports, optional
+        :param preampport: Which Preampport should be used, defaults to PreampPorts.PREAMP_PORT_1
+        :type preampport: int or PreampPorts, optional
+        :param fft: Checkbox if fft buffer should be recorded, defaults to True
+        :type fft: bool, optional
+        :param signal: Checkbox if signal buffer should be recorded, defaults to False
+        :type signal: bool, optional
+        :param samplerate: Desired samplerate (Dropdown) defaults to Samplerates.SAMPLERATE_1600_kHz
+        :type samplerate: int or Samplerates, optional
+        :param fftoversampling: Desired FFTOversampling (Dropdown), defaults to FFTOversampling.FFT_OVERSAMPLING_8_TIMES
+        :type fftoversampling: int or FFTOversampling, optional
+        :param fftwindowing: Desired FFTOversampling (Dropdown), defaults to FFTWindowing.FFT_WINDOWING_HANNING
+        :type fftwindowing: int or FFTWindowing, optional
+        :param fftlogarithmic: Desired FFTLogarithmic (Dropdown), defaults to FFTLogarithmic.FFT_LOGARITHMIC_BASE_14
+        :type fftlogarithmic: int or FFTLogarithmic, optional
+        :param filter: If frequency filter should be set, defaults to True
+        :type filter: bool, optional
+        :param gain: Gain of Preamp, defaults to 800
+        :type gain: int, optional
+        :param subport: Desired Subport (Dropdown), defaults to 0
+        :type subport: int, optional
         """
         self._value_parser(cmd="setpreamp", expect_response=False, channel=channel, chp=chp, preampport=preampport, fft=fft, signal=signal, samplerate=samplerate,
                            fftoversampling=fftoversampling, fftwindowing=fftwindowing, fftlogarithmic=fftlogarithmic, filter=filter, gain=gain, subport=subport)
