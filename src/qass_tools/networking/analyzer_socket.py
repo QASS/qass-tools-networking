@@ -309,6 +309,7 @@ class ReceiveThread(threading.Thread):
         current_len = 0
         buffer = bytearray()
         READ_SIZE = 4
+        timeout = 0
         self.kill = False
         while not self.kill:
             try:
@@ -316,7 +317,14 @@ class ReceiveThread(threading.Thread):
             # if nothing is received socket runs into failstate (socket.timeout)
             except socket.timeout as e:
                 # in this case just continue while loop
-                continue
+                timeout += timeout
+                if timeout < 5:
+                    continue
+                else:
+                    self.logger.error(
+                        "No signal received wether signal is expected. Programm stopps.")
+                    raise e
+
             # catch other socket exception and crash
             except socket.error as e:
                 self.logger.error(e)
@@ -340,6 +348,7 @@ class ReceiveThread(threading.Thread):
                     buffer = buffer[current_len:]
                     # reset current_length
                     current_len = 0
+                    timeout = 0
 
     def kill_thread(self) -> None:
         """End forever loop in run method and join thread."""
