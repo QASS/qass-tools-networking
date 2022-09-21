@@ -7,4 +7,4 @@ def bla(response):
 
 
 with AnalyzerCmd("192.168.1.233", debug_mode=False) as opti:
-    opti.set_preamp()
+    opti.set_preamp(gain=900)

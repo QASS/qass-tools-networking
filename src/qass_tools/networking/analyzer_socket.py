@@ -115,11 +115,6 @@ class FFTWindowing(IntEnum):
     NONE_FFT_WINDOWING = 1
 
 
-@property
-def get_operator_state(self):
-    return self._operator_active
-
-
 class FFTLogarithmic(IntEnum):
     """Avaible selection box choices for dispalyed FFT logarithmic base in multiplexer configuration"""
     FFT_LOGARITHMIC_BASE_1 = 1
@@ -736,10 +731,9 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
-    def pulsetest_port(self, port_number: int, **kwargs) -> None:
+    def pulsetest_port(self, port_number: int, gain: int = 800, count: int = 1, delay: int = 0, input) -> None:
         """External set of pulse test. Only avaible for exisiting ports and sensors.
 
-        | ------------------------ **kwargs ----------------------------- |
         | key    | Description                          | Defaults Value  |
         | ------ | ------------------------------------ | --------------- |
         | gain   | Pulsetest gain in range(0,4096)      | Defaults to 800 |
@@ -747,10 +741,7 @@ class AnalyzerCmd():
         | delay  | Pulsetest delay (geater null)        | Defaults to 0   |
         | input  | Input number for Multi Input Preamps | Defaults NONE   |
 
-        ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
-        it is counted from null and integer representation if PREAM_PORTS.PORT_1 equals zero. But this specfic function
-        will need a corrected number based on one. So this interface method automatically correct all parsed integers
-        by addding the value with one.
+        .
 
         :param port_number: Port where pulsetest gets executed.
         :type port_number: int or Channels
@@ -762,6 +753,10 @@ class AnalyzerCmd():
                     'input': 0}
 
         # port_number is one based here
+        # warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
+        # it is counted from null and integer representation if PREAM_PORTS.PORT_1 equals zero. But this specfic function
+        # will need a corrected number based on one. So this interface method automatically correct all parsed integers
+        # by addding the value with one
         port_number += 1
         # update witgh kwargs
         for key in kwargs.keys():
@@ -1071,7 +1066,7 @@ class AnalyzerCmd():
         | Gain            | int     | gain            | 800          |
         | Subport         | int     | subport         | 0            |
         """
-        self._value_parser(cmd="setpreamp", channel=channel, chp=chp, preampport=preampport, fft=fft, signal=signal, samplerate=samplerate,
+        self._value_parser(cmd="setpreamp", expect_response=False, channel=channel, chp=chp, preampport=preampport, fft=fft, signal=signal, samplerate=samplerate,
                            fftoversampling=fftoversampling, fftwindowing=fftwindowing, fftlogarithmic=fftlogarithmic, filter=filter, gain=gain, subport=subport)
 
     def get_analyzer_versions(self) -> str:
