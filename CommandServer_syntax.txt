@@ -591,3 +591,12 @@ p1:	"writeBackup"
 
 Response: standardized analyzer response
 Analyzer_socket wrapper: write_backup()
+
+--------------- Import trigger list
+cmd: 	"AppCmd"
+p1:	"import"
+p2: "triggerlist <filepath[str]> # replaces existing trigger list
+p2: "triggerlist <filepath[str] -a> # extended  existing trigger list
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: import_trigger_list()

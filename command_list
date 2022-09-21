@@ -1,0 +1,55 @@
+* [x] set_preamp
+* [x] get_project_info
+* [x] get_process_number
+* [x] set_process_comment
+* [x] start_measuring
+* [x] stop_measuring
+* [x] start_sineGenerator
+* [x] get_service_parameter
+* [x] set_service_parameter
+* [x] socket_ip
+* [x] socket_port
+* [x] set_area_view
+* [ ] load_area_view (AnalyzerSyntaxError)
+* [x] set_simulation_buffer 
+* [x] load_simulation_buffer 
+* [ ] pulsetest_channel (**NOT TESTED**)
+* [ ] change_preamp_input (AnalyzerSyntaxError)
+* [ ] frequency_test_port (**NOT TESTED**)
+* [x] set_area_scale
+* [x] set_area_colour
+* [x] set_area_time_range
+* [x] load_process
+* [x] send_analyzer_to_sleep
+* [x] set_appvar
+* [x] set_appvar_appcmd
+* [x] get_app_var
+* [x] remove_appvar
+* [ ] add_appvar_report_callback (callback not called)
+* [ ] remove_appvar_report_callback (**NOT TESTED**)
+* [ ] send_AppCmd
+* [x] get_analyzer_versions
+* [x] get_heartbeat
+* [ ] measuring_mode ("monitor" stops after 2 seconds)
+* [ ] monitoring_mode (stops after 2 seconds)
+* [x] calcualte_max_amplitude_per_band (renamed)
+* [x] load_test_project
+* [ ] load_last_user_project (**NOT TESTED**)
+* [x] get_measure_positions
+* [x] get_preamp_hardware_info
+* [ ] start_operator_function (**NOT TESTED**)
+* [ ] stop_operator_function (**NOT TESTED**)
+* [x] set_serial_number 
+* [x] set_serial_number_pending_process
+* [x] set_comment_pending_process
+* [x] set_comment_current_process
+* [x] start_operator
+* [ ] import_operators (**NOT TESTED**)
+* [ ] import_patterns(**NOT TESTED**)
+* [ ] import_trigger_list(**NOT TESTED**)
+
+
+* [ ] start_operator_results (**NOT TESTED**)
+* [ ] stop_operator_results (**NOT TESTED**)
+* [x] get_io_input
+* [x] get_io_output

@@ -306,7 +306,7 @@ class ReceiveThread(threading.Thread):
                 self.warn_none_registered_response(response)
 
     def run(self) -> None:
-        # BUG: if no signal is received, change to mainthread
+        # BUG: if no signal is received, waits and after time raises exceptions
         """ Overriden run method of thread module will be executed as the thread starts.
 
         Method listens to socket in forever loop 'till kill_thread method is executed. Listens for small parts and sets messages together.
@@ -693,9 +693,8 @@ class AnalyzerCmd():
             p2_string = f"channel {channel} path {file_path}"
         self._value_parser(cmd="AppCmd", p1="SimulationBuffer", p2=p2_string)
 
-    # BUG: Keyword all is not working
     def set_simulation_buffer(self, channel_number: Union[str, int], mode: str) -> None:
-        """ Enable or disable alredy loaded simualtion buffer channel.
+        """ Enable or disable already loaded simualtion buffer channel.
 
         :param channel_number: Channel to activate simualtion buffer on.
         :type channel_number: str or int
@@ -1333,7 +1332,41 @@ class AnalyzerCmd():
         self._value_parser(expect_response=False, cmd="importpatterns",
                            p1=directory_path)
 
-    # ANALYZER: analyzer implementation not provided
+    # TODO: Test
+    def import_trigger_list(self, filepath: str, append: bool = False) -> None:
+        """ Import a trigger list file from local path. Append option decides if tigger list will be replaced or extended.
+
+        :param filepath: Local filepath
+        :type filepath: str
+        :param append: Decision to replace or extend already existing trigger list, defaults to False
+        :type append: bool, optional
+        """
+        p2_string = f"triggerlist {filepath}"
+
+        if append:
+            p2_string = p2_string + " -a"
+        self._value_parser(cmd="AppCmd",
+                           p1="import", p2=p2_string)
+
+    # TODO: Test
+    def import_operator_network(self, filepath: str) -> None:
+        """ Importm local operator network file. File has to be JSON.
+
+        :param filepath: Local filepath to operator network file
+        :type filepath: str
+        """
+        self._value_parser(cmd="AppCmd",
+                           p1="import", p2=f"opnet {filepath}")
+
+        # def export_operator_network(self):  ->None
+        # def import_project_archive(self):  ->None
+        # def export_trigger_list(self):  ->None
+        # def export_project_archive(self):  ->None
+        # def flash_preamp(self):  ->None
+        # def set_default_project(self):  ->None
+
+        # ANALYZER: analyzer implementation not provided
+
     @analyzer_functionality_warning_decorator
     def start_operator_results(self, mode: Union[str, bool] = "enable") -> None:
         # ANALYZER: analyzer implementation not provided
