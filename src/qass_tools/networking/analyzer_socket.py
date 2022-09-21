@@ -1040,51 +1040,30 @@ class AnalyzerCmd():
         else:
             self._value_parser(cmd="AppCmd", p1=param_one)
 
-    def set_preamp(self, **kwargs) -> None:
+    def set_preamp(self, channel=Channels.CHANNEL_1, chp=ChannelPorts.CHANNEL_PORT_1, preampport=PreampPorts.PREAMP_PORT_1,
+                   fft=True, signal=False, samplerate=Samplerates.SAMPLERATE_1600_kHz, fftoversampling=FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
+                   fftwindowing=FFTWindowing.FFT_WINDOWING_HANNING, fftlogarithmic=FFTLogarithmic.FFT_LOGARITHMIC_BASE_14, filter=True, gain=800, subport=0) -> None:
         """Method to set preamplifier and multiplexer settings.
 
-        By entering a new value as **kwargs, you are able to change default values, which will be sended.
         .. warning:: Range of params will not be checked.
         Default settings:
-        | Type                  | Keyword         | Value        |
-        | --------------------- | ----------------| ------------ |
-        | Channels        | int | channel         | Channel #1   |
-        | ChannelPorts    | int | chp             | Port 1       |
-        | PreampPorts     | int | preampport      | Preampport 1 |
-        | Boolean               | fft             | enabled      |
-        | Boolean               | signal          | disabled     |
-        | samplerate      | int | samplerate      | 1600 kHz     |
-        | FFTOversampling | int | fftoversampling | 8 times      |
-        | FFTWindowing    | int | fftwindowing    | Hanning      |
-        | FFTLogarithmic  | int | fftlogarithmic  | Base 14      |
-        | Boolean               | filter          | disabled     |
-        | Integer         | int | gain            | 800          |
-        | Integer         | int | subport         | 0            |
-
+        | Type                      | Keyword         | Value        |
+        | ------------------------- | --------------- | ------------ |
+        | Channels        | int     | channel         | Channel #1   |
+        | ChannelPorts    | int     | chp             | Port 1       |
+        | PreampPorts     | int     | preampport      | Preampport 1 |
+        | Checkbox        | Boolean | fft             | enabled      |
+        | Checkbox        | Boolean | signal          | disabled     |
+        | samplerate      | int     | samplerate      | 1600 kHz     |
+        | FFTOversampling | int     | fftoversampling | 8 times      |
+        | FFTWindowing    | int     | fftwindowing    | Hanning      |
+        | FFTLogarithmic  | int     | fftlogarithmic  | Base 14      |
+        | Checkbox        | Boolean | filter          | disabled     |
+        | Gain            | int     | gain            | 800          |
+        | Subport         | int     | subport         | 0            |
         """
-        # helper dict with default values
-        settings = {'cmd': "setpreamp",
-                    'channel': Channels.CHANNEL_1,
-                    'chp': ChannelPorts.CHANNEL_PORT_1,
-                    'preampport': PreampPorts.PREAMP_PORT_1,
-                    'fft': True,
-                    'signal': False,
-                    'samplerate': Samplerates.SAMPLERATE_1600_kHz,
-                    'fftoversampling': FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
-                    'fftwindowing': FFTWindowing.FFT_WINDOWING_HANNING,
-                    'fftlogarithmic': FFTLogarithmic.FFT_LOGARITHMIC_BASE_14,
-                    'filter': True,
-                    'gain': 800,
-                    'subport': 0
-                    }
-
-        for key in kwargs.keys():
-            if key in settings.keys():
-                settings[key] = kwargs[key]
-            else:
-                self.logger.error("Choosen Preamp setting is not exisiting.")
-                raise KeyError("Choosen Preamp setting is not exisiting.")
-        self._value_parser(**settings)
+        self._value_parser(cmd="setpreamp", channel=channel, chp=chp, preampport=preampport, fft=fft, signal=signal, samplerate=samplerate,
+                           fftoversampling=fftoversampling, fftwindowing=fftwindowing, fftlogarithmic=fftlogarithmic, filter=filter, gain=gain, subport=subport)
 
     def get_analyzer_versions(self) -> str:
         """Method to read out anlyzer version informations and return as string.

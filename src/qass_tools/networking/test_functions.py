@@ -7,6 +7,4 @@ def bla(response):
 
 
 with AnalyzerCmd("192.168.1.50", debug_mode=False) as opti:
-    opti.start_operator(
-        "Test_PY", "loop from 0 to - 1 simulation 2", user_callback=bla)
-    opti.get_heartbeat()
+    opti.set_preamp()
