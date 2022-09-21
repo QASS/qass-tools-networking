@@ -181,7 +181,7 @@ class SysSettingsClass(IntEnum):
 
 
 class MultiPreampInput(IntEnum):
-    """ Enums for Multi Input Preamps."""
+    """ Enums for Multi Input Preamps. The numeration starts on the uppest left input and goes rowse from left to right too the lowest input (right side)."""
     NONE_MULTI_INPUT = 999  # Just a flag, to not use any input values
     MULTI_INPUT_1 = 0
     MULTI_INPUT_2 = 1
@@ -778,15 +778,15 @@ class AnalyzerCmd():
                                p1="Preamp", p2=p2_string)
 
     # TODO: Test
-    def change_preamp_input(self, opti_port_number: int, preamp_input_number: int) -> None:
+    def change_preamp_input(self, opti_port_number: int, preamp_input_number=MultiPreampInput.MULTI_INPUT_2) -> None:
         """ Method changes which physical preamp input will be used for datastream output to optimizer.
 
         Only avaible for multi input preamps.
 
         :param opti_port_number: opti port number to adress
         :type opti_port_number: int
-        :param preamp_input_number: Switched input channel from preamp (0,1)
-        :type preamp_input_number: int
+        :param preamp_input_number: Switched input channel from preamp (target)
+        :type preamp_input_number: int or MultiPreampInput
         """
         self._value_parser(cmd="AppCmd", p1="Preamp",
                                p2=f"port {opti_port_number} switchinput {preamp_input_number}")
@@ -801,14 +801,15 @@ class AnalyzerCmd():
         | ------ | ------------------------------------ | --------------- |
         | input  | Input number for Multi Input Preamps | Defaults NONE   |
 
-        ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
-        it is counted from null and integer representation if PREAM_PORTS.PORT_1 equals zero. But this specfic function
-        will need a corrected number based on one. So this interface method automatically correct all parsed integers
-        by addding the value with one.
+
 
         :param port_number: Port number for frequency test
         :type port_number: int or PREAMP_PORTS
         """
+        # ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
+        # t is counted from null and integer representation if PREAM_PORTS.PORT_1 equals zero. But this specfic function
+        # will need a corrected number based on one. So this interface method automatically correct all parsed integers
+        # by addding the value with one.
         port_number += 1
         if kwargs.keys() == "input":
             input_num = kwargs.get("input")
