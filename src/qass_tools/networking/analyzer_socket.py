@@ -1151,43 +1151,23 @@ class AnalyzerCmd():
         elif self.translator[mode] == "false":
             self._monitoring_active = False
 
-    def calc_max_amp_per_band(self, **kwargs) -> np.ndarray:
-        """Method to calculate maximum amplitude per band. For futher information see default settings below.
+    def calc_max_amp_per_band(self, channel=Channels.CHANNEL_1, create_plot_buffer: bool = True, create_data_buffer: bool = False, amplitude_type=SysAmplitudesType.AMPLITUDE_DEFAULT) -> np.ndarray:
+        """ Method to calculate maximum amplitude per band.
 
-        By entering a new value as **kwargs, you are able to change default values, which will be sended.
-
-        Default settings:
-        | Type                   | Key | kwargs    | Default value | Action                   |
-        | ---------------------- | --------------- | ------------- | ------------------------ |
-        # 1    | Choose channel buffer    |
-        | int|Channels           | channel         | Channel
-        | bool                   | plot            | true          | Creates plot buffer      |
-        | bool                   | save            | false         | Creates buffer with data |
-        | int|SysAmplitudeTypes  | amplitudetype   | Default       | Calced amplitude type    |
-
-        .. warning:: Check supported datatypes and range manually, as a automatic overproof is not provided yet.
-        :param user_dict: Possibility to parse your own dictionary instead of editing the default one, defaults to None
-        :type user_dict: Dict, optional
-        :raises ValueError: Parsed key or related value is not supported.
+        :param channel: Datastream Channel, defaults to Channels.CHANNEL_1
+        :type channel: int or Channel, optional
+        :param create_plot_buffer: Creates a plot buffer in Analyzer software, defaults to True
+        :type create_plot_buffer: bool, optional
+        :param create_data_buffer: Creates a data buffer in Analyzer software, defaults to False
+        :type create_data_buffer: bool, optional
+        :param amplitude_type: Amplitude unit, defaults to SysAmplitudesType.AMPLITUDE_DEFAULT
+        :type amplitude_type: int or SysAmplitudeType, optional
+        :return: Calculated maximum amplitude values per band
+        :rtype: np.ndarray
         """
 
-        # command to build for analyzer
-        settings = {'cmd': "calcmaxamplitude", 'channel': Channels.CHANNEL_1,
-                    'plot': True,
-                    'save': False,
-                    'amplitudetype': SysAmplitudesType.AMPLITUDE_DEFAULT
-                    }
-        # Check for right kwargs keys
-        for key in kwargs.keys():
-            if key not in settings.keys():
-                self.logger.error(
-                    "Choosen settings key is not supported in this method.")
-                raise ValueError(
-                    "Choosen settings key is not supported in this method.")
-            settings.update(kwargs[key])
-            self.logger.info(
-                f"Updated settings to {kwargs.items()}")
-        response_dict = self._value_parser(**settings)
+        response_dict = self._value_parser(cmd="calcmaxamplitude", channel=channel,
+                                           plot=create_plot_buffer, save=create_data_buffer, amplitudetype=amplitude_type)
         # extract important information
         max_amp = response_dict.get("p1")
 
