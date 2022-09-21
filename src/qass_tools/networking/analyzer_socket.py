@@ -1434,10 +1434,18 @@ class AnalyzerCmd():
                            p1="exportprojectarchive", p2=p2_string)
 
     # TODO: Test
-    def flash_preamp(self) -> None:
-        pass
-    # TODO: Test
+    def flash_preamp_software(self, preampport: Union[int, PreampPorts], filepath: str) -> None:
+        """Flash preamp software by downloaded local file.
 
+        :param preampport: Preampport where the preamp which should be flashed is connected
+        :type preampport: int, PreampPorts
+        :param filepath: Absolute (!) path to hexfile
+        :type filepath: str
+        """
+        self._value_parser(cmd="PreampTool", expect_response=False,
+                           p1="FLASH", p2=f"{preampport} {filepath}")
+
+    # TODO: Test
     def set_default_project(self) -> None:
         pass
 

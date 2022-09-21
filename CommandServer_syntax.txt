@@ -657,3 +657,13 @@ p2: "triggerlist <filepath[str]>"
 
 Response: None
 Analyzer_socket wrapper: export_trigger_list()
+
+--------------- Flash preamp software
+cmd: 	"PreampTool"
+p1:	"FLASH"
+p2: "<preampport[int]> <filepath[str]>"
+
+"""fielpath should be absolute"""
+
+Response: None
+Analyzer_socket wrapper: flash_preamp_software()
