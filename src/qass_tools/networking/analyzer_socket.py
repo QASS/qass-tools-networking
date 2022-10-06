@@ -1445,12 +1445,28 @@ class AnalyzerCmd():
         # ..warning::Analyzer function is not null based. So this interface method automatically correct all parsed integers for channels
         # by addding the value with one.
         preampport += 1
-        self._value_parser(cmd="PreampTool", expect_response=False,
+        self._value_parser(cmd="PreampTool", expect_response=True,
                            p1="FLASH", p2=f"{preampport} {filepath}")
 
     # TODO: Test
-    def set_default_project(self) -> None:
-        pass
+    def set_default_project(self, comment: str = None) -> None:
+        """Set current active project as new default template.
+
+        :param comment: Comment to describe template, defaults to None
+        :type comment: str, optional
+        """
+        if comment:
+            self._value_parser(cmd="SaveProjectasDefault", expect_response=True,
+                               p1=comment)
+        else:
+            self._value_parser(cmd="SaveProjectasDefault",
+                               expect_response=True)
+
+    # TODO: Test
+    def remove_default_project(self) -> None:
+        """ Removes current project template."""
+        self._value_parser(cmd="SaveProjectasDefault", expect_response=True,
+                               p1="CLEAR")
 
     # ANALYZER: analyzer implementation not provided
     @analyzer_functionality_warning_decorator
