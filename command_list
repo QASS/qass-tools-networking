@@ -47,12 +47,11 @@
 * [ ] import_operators (**NOT TESTED**)
 * [ ] import_patterns(**NOT TESTED**)
 * [x] import_trigger_list
-* [ ] import_operator_network(**NOT TESTED**)
+* [x] import_operator_network
 * [x] import_project_archive
-* [ ] export_operators (**NOT TESTED**)
 * [ ] export_patterns(**NOT TESTED**)
 * [x] export_trigger_list
-* [ ] export_operator_network(**NOT TESTED**)
+* [x] export_operator_network
 * [x] export_project_archive
 * [ ] start_operator_results (**NOT TESTED**)
 * [ ] stop_operator_results (**NOT TESTED**)

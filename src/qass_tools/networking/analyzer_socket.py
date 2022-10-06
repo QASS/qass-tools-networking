@@ -1345,10 +1345,9 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                            p1="import", p2=p2_string)
 
-    # TODO: Test
     def import_operator_network(self, filepath: str) -> None:
-        """ Importm local operator network file. File has to be JSON.
-
+        """ Import local operator network file. Command runs as root import. Pay attention to 
+         ..warning:: The current operator network will be replaced.
         :param filepath: Local filepath to operator network file
         :type filepath: str
         """
@@ -1383,10 +1382,14 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd", expect_response=False,
                            p1="importprojectarchive", p2=p2_string)
 
-    # TODO: Test
-    def export_operator_network(self, filepath: str, export: str = "root") -> None:
-        """ Export operator network as JSON file. Exported can the current activated
-            ("root"), all ("all") or just the network template ("tempalte") by parsing the key to export. 
+    def export_operator_network(self, target_filepath: str, export: str = "root") -> None:
+        """ Exports operator network as JSON file. Export contains either current activated
+            (key:"root"), all (key:"all") or just the network template (key:"template") by parsing the key to export. 
+
+        | -- Key -- | ------------------ Definition -------------------- |
+        | root      | Exports current active operator network            |
+        | all       | Exports all avaible operator networks              |
+        | template  | Exports project specific operator network template |
 
         :param folderpath: Target file path
         :type folderpath: str
@@ -1394,35 +1397,33 @@ class AnalyzerCmd():
         :type export: str, optional
         """
         my_translator = {"root": "-r", "all": "-a", "template": "-t"}
-        self._value_parser(cmd="AppCmd", expect_response=False,
-                           p1="export", p2=f"opnet {filepath} {my_translator[export]}")
+        self._value_parser(cmd="AppCmd", expect_response=True,
+                           p1="export", p2=f"opnet {target_filepath} {my_translator[export]}")
 
-    # TODO: Test
-    def export_trigger_list(self, filepath: str) -> None:
-        """ Export current trigger list to path
+    def export_trigger_list(self, target_filepath: str) -> None:
+        """ Exports current trigger list to path. Target filepath should contain new file name.
 
-        :param filepath: Target file path
-        :type filepath: str
+        :param target_filepath: Target file path
+        :type target_filepath: str
         """
-        self._value_parser(cmd="AppCmd", expect_response=False,
-                           p1="export", p2=f"triggerlist {filepath}")
+        self._value_parser(cmd="AppCmd", expect_response=True,
+                           p1="export", p2=f"triggerlist {target_filepath}")
 
-    # TODO: Test
-    def export_project_archive(self, filepath_target: str, export_name: str, export_process: int = None, export_pengui: bool = True, keep_folder: bool = True) -> None:
-        """ Export current project
+    def export_project_archive(self, target_filepath: str, export_name: str, export_process: int = None, export_pengui: bool = True, keep_folder: bool = True) -> None:
+        """ Exports current active project to path as tar.gz file. This includes all patterns, trigger list and projects.
 
-        :param filepath_target: Target folder path
-        :type filepath_target: str
+        :param target_filepath: Target folder path
+        :type target_filepath: str
         :param export_name: Give export file a name
         :type export_name: str
-        :param export_process: Export a example process with measurement data, defaults to None
+        :param export_process: Exports an example process with measurement data, defaults to None
         :type export_process: int, optional
-        :param export_pengui: Export PenGUI, defaults to True
+        :param export_pengui: Exports PenGUI, defaults to True
         :type export_pengui: bool, optional
-        :param keep_folder: Keep folders of project archive, defaults to True
+        :param keep_folder: Preserves folder structure and exports this structure to target, defaults to True
         :type keep_folder: bool, optional
         """
-        p2_string = f"{filepath_target} {export_name}"
+        p2_string = f"{target_filepath} {export_name}"
         if export_process:
             p2_string = p2_string + f" --process {export_process}"
         if export_pengui:
@@ -1435,7 +1436,7 @@ class AnalyzerCmd():
 
     # TODO: Test
     def flash_preamp_software(self, preampport: Union[int, PreampPorts], filepath: str) -> None:
-        """Flash preamp software by downloaded hexfile. Path to 
+        """Flash preamp software by downloaded hexfile. Path should be absolute path.
 
         :param preampport: Preampport where the preamp which should be flashed is connected
         :type preampport: int, PreampPorts
@@ -1448,7 +1449,6 @@ class AnalyzerCmd():
         self._value_parser(cmd="PreampTool", expect_response=True,
                            p1="FLASH", p2=f"{preampport} {filepath}")
 
-    # TODO: Test
     def set_default_project(self, comment: str = None) -> None:
         """Set current active project as new default template.
 
@@ -1456,17 +1456,16 @@ class AnalyzerCmd():
         :type comment: str, optional
         """
         if comment:
-            self._value_parser(cmd="SaveProjectasDefault", expect_response=True,
-                               p1=comment)
+            self._value_parser(cmd="AppCmd", expect_response=True,
+                               p1="SaveProjectasDefault", p2=f"-c {comment}")
         else:
-            self._value_parser(cmd="SaveProjectasDefault",
-                               expect_response=True)
+            self._value_parser(cmd="AppCmd", expect_response=True,
+                               p1="SaveProjectasDefault")
 
-    # TODO: Test
     def remove_default_project(self) -> None:
         """ Removes current project template."""
-        self._value_parser(cmd="SaveProjectasDefault", expect_response=True,
-                               p1="CLEAR")
+        self._value_parser(cmd="AppCmd", expect_response=True,
+                               p1="SaveProjectasDefault", p2=f"-e")
 
     # ANALYZER: analyzer implementation not provided
     @analyzer_functionality_warning_decorator

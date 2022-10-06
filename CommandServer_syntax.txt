@@ -655,7 +655,7 @@ cmd: 	"AppCmd"
 p1:	"export"
 p2: "triggerlist <filepath[str]>"
 
-Response: None
+Response: standardized analyzer response and custom error messages
 Analyzer_socket wrapper: export_trigger_list()
 
 --------------- Flash preamp software
