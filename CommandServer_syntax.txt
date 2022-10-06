@@ -663,7 +663,14 @@ cmd: 	"PreampTool"
 p1:	"FLASH"
 p2: "<preampport[int]> <filepath[str]>"
 
-"""fielpath should be absolute"""
+"""filepath should be absolute"""
 
 Response: None
 Analyzer_socket wrapper: flash_preamp_software()
+
+----------- Set current project as default project 
+cmd: 	"AppCmd"
+p1:	"SaveProjectAsDefault"
+p2: completely optional:
+    "-c <comment[str]>"
+    "CLEAR" or "-e"

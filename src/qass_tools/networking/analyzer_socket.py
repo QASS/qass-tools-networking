@@ -895,7 +895,7 @@ class AnalyzerCmd():
                            p2=f"{process_number} {start_time}")
 
     def get_service_parameter(self, param_setting: str) -> str:
-        """Get settings out of Service Parameter (Configuration->Settings->Parameter)
+        """Get Values from Service Parameter (Configuration->Settings->Parameter)
         .. note:: Only avaible for user level 8 or higher!
 
         :param param_setting: Service parameter that should be read
@@ -908,7 +908,7 @@ class AnalyzerCmd():
         return settings.get("result")
 
     def set_service_parameter(self, param_setting: str, param_value: any) -> None:
-        """Set service parameter settings under Configuration->Settings->Parameter
+        """Set Parameter in Service Parameter (Configuration->Settings->Parameter)
         .. note:: Only avaible for user level 8 or higher!
 
         :param param_setting: Service parameter that should be set
@@ -1435,13 +1435,16 @@ class AnalyzerCmd():
 
     # TODO: Test
     def flash_preamp_software(self, preampport: Union[int, PreampPorts], filepath: str) -> None:
-        """Flash preamp software by downloaded local file.
+        """Flash preamp software by downloaded hexfile. Path to 
 
         :param preampport: Preampport where the preamp which should be flashed is connected
         :type preampport: int, PreampPorts
         :param filepath: Absolute (!) path to hexfile
         :type filepath: str
         """
+        # ..warning::Analyzer function is not null based. So this interface method automatically correct all parsed integers for channels
+        # by addding the value with one.
+        preampport += 1
         self._value_parser(cmd="PreampTool", expect_response=False,
                            p1="FLASH", p2=f"{preampport} {filepath}")
 
