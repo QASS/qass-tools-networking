@@ -692,11 +692,11 @@ class AnalyzerCmd():
             p2_string = f"channel {channel} path {file_path}"
         self._value_parser(cmd="AppCmd", p1="SimulationBuffer", p2=p2_string)
 
-    def set_simulation_buffer(self, channel_number: Union[str, int], mode: str) -> None:
+    def set_simulation_buffer(self, channel_number: Union[str, int, ChannelPorts], mode: str) -> None:
         """ Enable or disable already loaded simualtion buffer channel.
 
-        :param channel_number: Channel to activate simualtion buffer on.
-        :type channel_number: str or int
+        :param channel_number: Channel to activate simualtion buffer on. Beside normal input, key "all" is supported.
+        :type channel_number: str or int or ChannelPorts
         :param mode: If channel should be "enabled" or "disabled" as sim buffer. Check Translator dict for more keywords.
         :type mode: str
         """
@@ -708,11 +708,11 @@ class AnalyzerCmd():
             self._value_parser(cmd="AppCmd",
                                p1="SimulationBuffer", p2=f"channel {channel_number} {self.translator[mode]}")
 
-    def pulsetest_channel(self, channel_number: int, gain: int = 800, count: int = 1, delay: int = 0) -> None:
+    def pulsetest_channel(self, channel_number: Union[int, ChannelPorts], gain: int = 800, count: int = 1, delay: int = 0) -> None:
         """ External set of pulse test. Only avaible for exisiting ports and sensors.
 
         :param channel_number: Channel where pulsetest gets executed.
-        :type channel_number: int or Channel
+        :type channel_number: int or ChannelPorts
         :param gain: Used gain for pulsetest, defaults to 800
         :type gain: int, optional
         :param count: Used count for pulsetest, defaults to 1
@@ -737,19 +737,19 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
-    def pulsetest_port(self, port_number: int, gain: int = 800, count: int = 1, delay: int = 0, preamp_input=MultiPreampInput.NONE_MULTI_INPUT) -> None:
+    def pulsetest_port(self, port_number: Union[int, PreampPorts], gain: int = 800, count: int = 1, delay: int = 0, multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """External set of pulse test. Only avaible for exisiting ports and sensors.
 
         :param port_number: Port where pulsetest gets executed.
-        :type port_number: int or Channels
+        :type port_number: int or PreamPorts
         :param gain: Pulsetest gain in range(0,4096), defaults to 800
         :type gain: int
         :param count: Pulsetest count in range(0,200), defaults to 1
         :type count: int
         :param delay: Pulsetest delay in ms, defaults to 0
         :type delay: int
-        :param preamp_input: Input number for Multi Input Preamps, defaults to NONE
-        :type preamp_input: int or MultiPreampInputs
+        :param multi_preamp_input: Input number for Multi Input Preamps, defaults to NONE. Default case is useable for none MultiInput Premaps.
+        :type multi_preamp_input: int or MultiPreampInputs
         :raises ValueError: If gain is out of bounds: range(0,4096) | If count is out of bounds: range(0,200) | If delay is out of bounds: smaller zero
         """
         # ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
@@ -763,29 +763,30 @@ class AnalyzerCmd():
             self.logger.error("Params out of bounds")
             raise ValueError("Params out of bounds")
 
-        if preamp_input == MultiPreampInput.NONE_MULTI_INPUT:
+        if multi_preamp_input == MultiPreampInput.NONE_MULTI_INPUT:
             p2_string = f"channel {port_number} pulsetest {gain} {count} {delay}"
         else:
-            p2_string = f"channel {port_number} {preamp_input} pulsetest {gain} {count} {delay}"
+            p2_string = f"channel {port_number} {multi_preamp_input} pulsetest {gain} {count} {delay}"
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
     # TODO: Test
-    def change_preamp_input(self, opti_port_number: int, preamp_input_number=MultiPreampInput.MULTI_INPUT_2) -> None:
+    def change_preamp_input(self, opti_port_number: Union[int, PreampPorts], preamp_input_number: Union[int, MultiPreampInput] = MultiPreampInput.MULTI_INPUT_2) -> None:
         """ Method changes which physical preamp input will be used for datastream output to optimizer.
 
         Only avaible for multi input preamps.
 
         :param opti_port_number: opti port number to adress
-        :type opti_port_number: int
+        :type opti_port_number: int or PreampPorts
         :param preamp_input_number: Switched input channel from preamp (target), defaults to MULTI_INPUT_2
         :type preamp_input_number: int or MultiPreampInput
         """
         self._value_parser(cmd="AppCmd", p1="Preamp",
                                p2=f"port {opti_port_number} switchinput {preamp_input_number}")
-
+#p2=f"port {opti_port_number} switchinput {preamp_input_number}"
     # ANALYZER: no recognizable response
-    def frequency_test_port(self, port_number: int, preamp_input: MultiPreampInput.NONE_MULTI_INPUT) -> None:
+
+    def frequency_test_port(self, port_number: Union[int, PreampPorts], preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """Execute a frequency test for a specific port.
 
         :param port_number: Port number for frequency test
@@ -1188,7 +1189,8 @@ class AnalyzerCmd():
         """ Load last user project before a test project was loaded.
 
         .. warning:: To use this a test project must be loaded before!!!
-        .. note:: If no testproject was laoded beforehand, name_variable in analyzer software will be not addressed and
+        .. note:: 
+        If no testproject was laoded beforehand, name_variable in analyzer software will be not addressed and
         a new project without name!(="") will be created. Once a project like this exist, analyzer cannot perform this action again
         and without loading a test project beforehand, function will do nothing.
         """

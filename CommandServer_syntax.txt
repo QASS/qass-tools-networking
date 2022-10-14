@@ -502,11 +502,11 @@ p2: "port <port_number[int]> pulsetest <gain[int]> <count[int]> <delay[int]>"
 Response: standardized analyzer response
 Analyzer_socket wrapper: pulsetest_port()
 
-----------Change preamp input
+----------Change preamp input by multiinput preamps
 """only for multi input preamps"""
 cmd:"AppCmd"
 p1:	"Preamp"
-p2: "port <port_number[int]> switchinput <input>"
+p2: "port <port_number[int]> switchinput <input[int]>"
 
 Response: standardized analyzer response
 Analyzer_socket wrapper: change_preamp_input()
