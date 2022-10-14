@@ -673,6 +673,9 @@ class AnalyzerCmd():
     def load_simulation_buffer(self, file_path: str, channel: int, do_not_copy_meta_data=False) -> None:
         """Load and set local simualtion buffer for specific channel.
 
+        ..warning::
+        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+
         :param file_path: Local file path to buffer.
         :type file_path: str
         :param channel: Channel where simualtionbuffer gets laoded.
@@ -681,10 +684,7 @@ class AnalyzerCmd():
         :type do_not_copy_meta_data: bool, optional
         """
 
-        # ..warning::Analyzer function is not null based. Basically if you want to test the first Channel,
-        # syntax is counted from null and integer representation from Channels.Channel_1 equals zero. But this specfic function
-        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for channels
-        # by addding the value with one.
+        # AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         channel += 1
         if do_not_copy_meta_data:
             p2_string = f"channel {channel} nometa path {file_path}"
@@ -711,6 +711,9 @@ class AnalyzerCmd():
     def pulsetest_channel(self, channel_number: Union[int, ChannelPorts], gain: int = 800, count: int = 1, delay: int = 0) -> None:
         """ External set of pulse test. Only avaible for exisiting ports and sensors.
 
+        ..warning::
+        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+
         :param channel_number: Channel where pulsetest gets executed.
         :type channel_number: int or ChannelPorts
         :param gain: Used gain for pulsetest, defaults to 800
@@ -722,10 +725,7 @@ class AnalyzerCmd():
         :raises ValueError: If gain is out of bounds: range(0,4096) | If count is out of bounds: range(0,200) | If delay is out of bounds: smaller zero
         """
 
-        # ..warning::Analyzer function is not null based. Basically if you want to test the first Channel,
-        # syntax is counted from null and integer representation from Channels.Channel_1 equals zero. But this specfic function
-        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for channels
-        # by addding the value with one.
+        # AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         channel_number += 1
 
         # check params limits
@@ -740,6 +740,9 @@ class AnalyzerCmd():
     def pulsetest_port(self, port_number: Union[int, PreampPorts], gain: int = 800, count: int = 1, delay: int = 0, multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """External set of pulse test. Only avaible for exisiting ports and sensors.
 
+        ..warning::
+        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+
         :param port_number: Port where pulsetest gets executed.
         :type port_number: int or PreamPorts
         :param gain: Pulsetest gain in range(0,4096), defaults to 800
@@ -752,10 +755,7 @@ class AnalyzerCmd():
         :type multi_preamp_input: int or MultiPreampInputs
         :raises ValueError: If gain is out of bounds: range(0,4096) | If count is out of bounds: range(0,200) | If delay is out of bounds: smaller zero
         """
-        # ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
-        # syntax is counted from null and integer representation from PREAMP_PORTS.PORT_1 equals zero. But this specfic function
-        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for preampports
-        # by addding the value with one.
+        # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         port_number += 1
 
         # check params limits
@@ -764,9 +764,11 @@ class AnalyzerCmd():
             raise ValueError("Params out of bounds")
 
         if multi_preamp_input == MultiPreampInput.NONE_MULTI_INPUT:
-            p2_string = f"channel {port_number} pulsetest {gain} {count} {delay}"
+            p2_string = f"port {port_number} pulsetest {gain} {count} {delay}"
         else:
-            p2_string = f"channel {port_number} {multi_preamp_input} pulsetest {gain} {count} {delay}"
+            # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+            multi_preamp_input += 1
+            p2_string = f"port {port_number} {multi_preamp_input} pulsetest {gain} {count} {delay}"
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
@@ -775,55 +777,57 @@ class AnalyzerCmd():
         """ Method changes which physical preamp input will be used for datastream output to optimizer.
 
         Only avaible for multi input preamps.
+        ..warning::
+        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param opti_port_number: opti port number to adress
         :type opti_port_number: int or PreampPorts
         :param preamp_input_number: Switched input channel from preamp (target), defaults to MULTI_INPUT_2
         :type preamp_input_number: int or MultiPreampInput
         """
+        # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+        opti_port_number += 1
+        preamp_input_number += 1
         self._value_parser(cmd="AppCmd", p1="Preamp",
                                p2=f"port {opti_port_number} switchinput {preamp_input_number}")
 #p2=f"port {opti_port_number} switchinput {preamp_input_number}"
     # ANALYZER: no recognizable response
 
-    def frequency_test_port(self, port_number: Union[int, PreampPorts], preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
+    def frequency_test_port(self, port_number: Union[int, PreampPorts], multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """Execute a frequency test for a specific port.
+
+        ..warning::
+        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param port_number: Port number for frequency test
         :type port_number: int or PreampPorts
         :param preamp_input: Used Input
-        :type preamp_input: int or MultiPreampInput, defaults to NONE for no multi input preamp
+        :type preamp_input: int or MultiPreampInput, defaults to NONE_MULTI_INPUT for no multi input preamp
         """
 
-        # ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
-        # syntax is counted from null and integer representation from PREAMP_PORTS.PORT_1 equals zero. But this specfic function
-        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for preampports
-        # by addding the value with one.
+        # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         port_number += 1
-        if preamp_input == MultiPreampInput.NONE_MULTI_INPUT:
+        if multi_preamp_input == MultiPreampInput.NONE_MULTI_INPUT:
             self._value_parser(cmd="AppCmd", p1="Preamp",
                                p2=f"port {port_number} frqtest")
         else:
+            # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+            multi_preamp_input += 1
             self._value_parser(cmd="AppCmd", p1="Preamp",
-                               p2=f"port {port_number} input {preamp_input} frqtest")
+                               p2=f"port {port_number} input {multi_preamp_input} frqtest")
 
     # ANALYZER: no recognizable response
-    def frequency_test_channel(self, channel_number: int) -> None:
+    def frequency_test_channel(self, channel_number: Union[int, ChannelPorts]) -> None:
         """Execute a frequency test for a specific port. Analyzer  isn't resonsing in any way (not in a visual, acoustic
         or information way).
 
-        ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
-        it is counted from null and integer representation if CHANNELS.CHANNEL_1 equals zero. But this specfic function
-        will need a corrected number based on one. So this interface method automatically correct all parsed integers
-        by addding the value with one.
+        ..warning::
+        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param port_number: Channel number for frequency test
-        :type port_number: int or PREAMP_PORTS
+        :type port_number: int or ChannelPorts
         """
-        # ..warning::Analyzer function is not null based. Basically if you want to test the first Channel,
-        # syntax is counted from null and integer representation from Channels.Channel_1 equals zero. But this specfic function
-        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for channels
-        # by addding the value with one.
+        # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         channel_number += 1
         self._value_parser(cmd="AppCmd", p1="Preamp",
                            p2=f"channel {channel_number} frqtest")
