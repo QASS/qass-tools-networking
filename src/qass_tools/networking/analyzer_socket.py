@@ -306,7 +306,6 @@ class ReceiveThread(threading.Thread):
                 self.warn_none_registered_response(response)
 
     def run(self) -> None:
-        # BUG: if no signal is received, waits and after time raises exceptions
         """ Overriden run method of thread module will be executed as the thread starts.
 
         Method listens to socket in forever loop 'till kill_thread method is executed. Listens for small parts and sets messages together.
@@ -708,14 +707,14 @@ class AnalyzerCmd():
             self._value_parser(cmd="AppCmd",
                                p1="SimulationBuffer", p2=f"channel {channel_number} {self.translator[mode]}")
 
-    def pulsetest_channel(self, channel_number: Union[int, ChannelPorts], gain: int = 800, count: int = 1, delay: int = 0) -> None:
+    def pulsetest_channel(self, channel_number: Union[int, Channels], gain: int = 800, count: int = 1, delay: int = 0) -> None:
         """ External set of pulse test. Only avaible for exisiting ports and sensors.
 
         ..warning::
         AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param channel_number: Channel where pulsetest gets executed.
-        :type channel_number: int or ChannelPorts
+        :type channel_number: int or Channels
         :param gain: Used gain for pulsetest, defaults to 800
         :type gain: int, optional
         :param count: Used count for pulsetest, defaults to 1
@@ -744,7 +743,7 @@ class AnalyzerCmd():
         AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param port_number: Port where pulsetest gets executed.
-        :type port_number: int or PreamPorts
+        :type port_number: int or PreampPorts
         :param gain: Pulsetest gain in range(0,4096), defaults to 800
         :type gain: int
         :param count: Pulsetest count in range(0,200), defaults to 1
@@ -787,11 +786,9 @@ class AnalyzerCmd():
         """
         # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         opti_port_number += 1
-        preamp_input_number += 1
+        #preamp_input_number += 1
         self._value_parser(cmd="AppCmd", p1="Preamp",
                                p2=f"port {opti_port_number} switchinput {preamp_input_number}")
-#p2=f"port {opti_port_number} switchinput {preamp_input_number}"
-    # ANALYZER: no recognizable response
 
     def frequency_test_port(self, port_number: Union[int, PreampPorts], multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """Execute a frequency test for a specific port.
@@ -816,16 +813,15 @@ class AnalyzerCmd():
             self._value_parser(cmd="AppCmd", p1="Preamp",
                                p2=f"port {port_number} input {multi_preamp_input} frqtest")
 
-    # ANALYZER: no recognizable response
-    def frequency_test_channel(self, channel_number: Union[int, ChannelPorts]) -> None:
-        """Execute a frequency test for a specific port. Analyzer  isn't resonsing in any way (not in a visual, acoustic
+    def frequency_test_channel(self, channel_number: Union[int, Channels]) -> None:
+        """Execute a frequency test for a specific port. Analyzer isn't resonsing in any way (not in a visual, acoustic
         or information way).
 
         ..warning::
         AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param port_number: Channel number for frequency test
-        :type port_number: int or ChannelPorts
+        :type port_number: int or Channels
         """
         # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         channel_number += 1
@@ -1005,7 +1001,7 @@ class AnalyzerCmd():
         else:
             self.__recv_thread.register_callbacks(
                 "responsereportappvars", callback)
-        self._proc_report_count += 1
+        self._appvar_report_count += 1
         self.logger.info(
             f"Callback {callback} for AppVar report added")
 
@@ -1444,16 +1440,16 @@ class AnalyzerCmd():
     def flash_preamp_software(self, preampport: Union[int, PreampPorts], filepath: str) -> None:
         """Flash preamp software by downloaded hexfile. Path should be absolute path.
 
-        :param preampport: Preampport where the preamp which should be flashed is connected
-        :type preampport: int, PreampPorts
+        :param preampport: Connected Preamp
+        :type preampport: int or PreampPorts
         :param filepath: Absolute (!) path to hexfile
         :type filepath: str
         """
-        # ..warning::Analyzer function is not null based. So this interface method automatically correct all parsed integers for channels
-        # by addding the value with one.
         preampport += 1
-        self._value_parser(cmd="PreampTool", expect_response=True,
-                           p1="FLASH", p2=f"{preampport} {filepath}")
+        self._value_parser(cmd="appfunc", expect_response=False,
+                           p1="PreampTool", p2=f"flash {preampport} {filepath}")
+        # self._value_parser(cmd="PreampTool",
+        #                   p1=f"flash {preampport} {filepath}")
 
     def set_default_project(self, comment: str = None) -> None:
         """Set current active project as new default template.
@@ -1462,15 +1458,15 @@ class AnalyzerCmd():
         :type comment: str, optional
         """
         if comment:
-            self._value_parser(cmd="AppCmd", expect_response=True,
+            self._value_parser(cmd="AppCmd",
                                p1="SaveProjectasDefault", p2=f"-c {comment}")
         else:
-            self._value_parser(cmd="AppCmd", expect_response=True,
+            self._value_parser(cmd="AppCmd",
                                p1="SaveProjectasDefault")
 
     def remove_default_project(self) -> None:
         """ Removes current project template."""
-        self._value_parser(cmd="AppCmd", expect_response=True,
+        self._value_parser(cmd="AppCmd",
                                p1="SaveProjectasDefault", p2=f"-e")
 
     # ANALYZER: analyzer implementation not provided

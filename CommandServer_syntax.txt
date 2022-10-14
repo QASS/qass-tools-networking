@@ -659,9 +659,9 @@ Response: standardized analyzer response and custom error messages
 Analyzer_socket wrapper: export_trigger_list()
 
 --------------- Flash preamp software
-cmd: 	"PreampTool"
-p1:	"FLASH"
-p2: "<preampport[int]> <filepath[str]>"
+cmd: 	"appfunc"
+p1:	"PreampTool"
+p2: "FLASH <preampport[int]> <filepath[str]>"
 
 """hex-filepath should be absolute
     function is not null based"""
