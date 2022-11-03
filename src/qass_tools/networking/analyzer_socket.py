@@ -322,8 +322,12 @@ class ReceiveThread(threading.Thread):
             # if nothing is received socket runs into failstate (socket.timeout)
             except socket.timeout as e:
                 # in this case just continue while loop
-                timeout += 1
-                if timeout < 5:
+                #timeout += 1
+                # if timeout < 5:
+                #    continue
+                # else:
+                # TODO: keep alive signal
+                if len(self.__callbacks) == 0:
                     continue
                 else:
                     self.logger.error(
@@ -488,7 +492,7 @@ class AnalyzerCmd():
         """
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.s.settimeout(1)
+            self.s.settimeout(15)
             self.s.connect((self.ip, self.port))
             self.logger.info("Connected to optimizer")
         except socket.timeout:
