@@ -484,7 +484,7 @@ class AnalyzerCmd():
         Retry decorator will retry method funtionalities by occuring ConnectionError. Here set delay layes by 1 second and
         decorator will try again for four times before giving up.
 
-        :raises ConnectionError: Connection error sis raisen if no connection can be established.
+        :raises ConnectionError: Connection error is raisen if no connection can be established.
         """
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -771,7 +771,7 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
-    # TODO: Test
+    # ANALYZER: c++ bug, Peter will fix it
     def change_preamp_input(self, opti_port_number: Union[int, PreampPorts], preamp_input_number: Union[int, MultiPreampInput] = MultiPreampInput.MULTI_INPUT_2) -> None:
         """ Method changes which physical preamp input will be used for datastream output to optimizer.
 
@@ -786,9 +786,9 @@ class AnalyzerCmd():
         """
         # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         opti_port_number += 1
-        #preamp_input_number += 1
+        preamp_input_number += 1
         self._value_parser(cmd="AppCmd", p1="Preamp",
-                               p2=f"port {opti_port_number} switchinput {preamp_input_number}")
+                           p2=f"port {opti_port_number} switchinput {preamp_input_number}")
 
     def frequency_test_port(self, port_number: Union[int, PreampPorts], multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """Execute a frequency test for a specific port.
@@ -1795,6 +1795,7 @@ class AnalyzerCmd():
         # command ground structure
         command = {'cmd': "",
                    "msgid": self.msgid}
+
         # specify final command
         command.update(kwargs)
         # decide which recognition should be used, if possible use msgid
@@ -1802,6 +1803,8 @@ class AnalyzerCmd():
             recognition = self.msgid
         else:
             recognition = self._recognition_translator(command['cmd'])
+
+        # if response is expected:
         # register callback before sending
         if expect_response and user_callback == None:
             q = queue.Queue()
@@ -1810,10 +1813,11 @@ class AnalyzerCmd():
         elif expect_response:
             self.__recv_thread.register_callbacks(
                 recognition, user_callback)
-        # send command
+
+        # send command in any case
         self._send(command)
 
-        # receive response for not reports
+        # receive response if avaible and expected
         # reports are handled external
         if expect_response and user_callback == None:
             # get resonse out of queue
