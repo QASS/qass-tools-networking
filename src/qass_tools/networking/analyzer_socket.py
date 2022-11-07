@@ -1197,7 +1197,7 @@ class AnalyzerCmd():
         """
         return self._value_parser(cmd="getmaxmeasurepositions")
 
-    def get_preamp_hardware_info(self, preamp_port) -> str:
+    def get_preamp_info(self, preamp_port) -> str:
         """ Returns a string with hadware infos to preamplifier connected to parsed port
 
         :param preamp_port: Preamp port with connected preampifier
