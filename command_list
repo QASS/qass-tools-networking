@@ -10,12 +10,12 @@
 * [x] socket_ip
 * [x] socket_port
 * [x] set_area_view
-* [ ] load_area_view (AnalyzerSyntaxError)
+* [x] load_area_view
 * [x] set_simulation_buffer 
 * [x] load_simulation_buffer 
-* [ ] pulsetest_channel (**NOT TESTED**)
-* [ ] change_preamp_input (AnalyzerSyntaxError)
-* [ ] frequency_test_port (**NOT TESTED**)
+* [x] pulsetest_channel
+* [ ] change_preamp_input (source code bug, should be fixed in newestr analyzer version)
+* [x] frequency_test_port
 * [x] set_area_scale
 * [x] set_area_colour
 * [x] set_area_time_range
@@ -25,16 +25,16 @@
 * [x] set_appvar_appcmd
 * [x] get_app_var
 * [x] remove_appvar
-* [ ] add_appvar_report_callback (callback not called)
-* [ ] remove_appvar_report_callback (**NOT TESTED**)
-* [ ] send_AppCmd
+* [x] add_appvar_report_callback
+* [x] remove_appvar_report_callback
+* [x] send_AppCmd
 * [x] get_analyzer_versions
 * [x] get_heartbeat
-* [ ] measuring_mode ("monitor" stops after 2 seconds)
-* [ ] monitoring_mode (stops after 2 seconds)
+* [x] measuring_mode 
+* [x] monitoring_mode
 * [x] calcualte_max_amplitude_per_band (renamed)
 * [x] load_test_project
-* [ ] load_last_user_project (**NOT TESTED**)
+* [x] load_last_user_project
 * [x] get_measure_positions
 * [x] get_preamp_hardware_info
 * [ ] start_operator_function (**NOT TESTED**)

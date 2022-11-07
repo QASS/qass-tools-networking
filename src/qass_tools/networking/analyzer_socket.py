@@ -224,7 +224,7 @@ class ReceiveThread(threading.Thread):
         """ Warning is used when a not expected or not registered message comes in from analyzer. A warning is send out und the message will be looged."""
         new_message = "Not registered analyzer response:" + str(message)
         self.logger.warning(new_message)
-        warnings.warn(new_message)
+        # warnings.warn(new_message)
 
     def register_callbacks(self, recognition: Union[str, int], callback) -> None:
         """ Function to register incomming analyzer response by msg_id or cmd name.
@@ -284,14 +284,10 @@ class ReceiveThread(threading.Thread):
                 return
             # reports always use their cmd name as recognition
             elif response['cmd'] in self.__callbacks:
-                # reports alwys registered with cmd->only case we need tot est for mutiple callbacks
+                # reports alwys registered with cmd->only case we need to check for mutiple callbacks
                 length = len(self.__callbacks[response['cmd']])
-                if length > 1:
-                    # if mutiple callbacks apply response to all of them
-                    for idx in range(0, length):
-                        self.__callbacks[response['cmd']][idx](response)
-                else:
-                    self.__callbacks[response['cmd']][0](response)
+                for idx in range(0, length):
+                    self.__callbacks[response['cmd']][idx](response)
             # if no report there is only one entry--> [0] always uses right callback
             # case resid
             elif 'resid' in response:
@@ -301,7 +297,7 @@ class ReceiveThread(threading.Thread):
             elif 'msgid' in response:
                 if response['msgid'] in self.__callbacks:
                     self.__callbacks[response['msgid']][0](response)
-            # messages wich are not registered will be just logged
+            # incooming messages wich are not registered will be just logged as warning
             else:
                 self.warn_none_registered_response(response)
 
@@ -314,7 +310,7 @@ class ReceiveThread(threading.Thread):
         current_len = 0
         buffer = bytearray()
         READ_SIZE = 4
-        timeout = 0
+        #timeout = 0
         self.kill = False
         while not self.kill:
             try:
@@ -327,7 +323,7 @@ class ReceiveThread(threading.Thread):
                 #    continue
                 # else:
                 # TODO: keep alive signal
-                if len(self.__callbacks) == 0:
+                if len(self.__callbacks) != 0:
                     continue
                 else:
                     self.logger.error(
@@ -665,7 +661,7 @@ class AnalyzerCmd():
             cmd="AppCmd", p1="SaveAreaView", p2=template_num)
 
     def load_area_view(self, template_num: int) -> None:
-        """Load presaved area view template.
+        """Load presaved (!) area view template.
 
         :param template_num: Storage number to load.
         :type template_num: int
@@ -981,7 +977,7 @@ class AnalyzerCmd():
         :type callback: function
         """
         self.__recv_thread.deregister_callbacks(
-            "responsereportappvars", callback)
+            "responseappvars", callback)
         self._appvar_report_count -= 1
         self.logger.info(
             f"Callback {callback} for AppVar report removed")
@@ -1004,7 +1000,7 @@ class AnalyzerCmd():
                                p1="true")
         else:
             self.__recv_thread.register_callbacks(
-                "responsereportappvars", callback)
+                "responseappvars", callback)
         self._appvar_report_count += 1
         self.logger.info(
             f"Callback {callback} for AppVar report added")
@@ -1194,9 +1190,9 @@ class AnalyzerCmd():
 
         .. warning:: To use this a test project must be loaded before!!!
         .. note:: 
-        If no testproject was laoded beforehand, name_variable in analyzer software will be not addressed and
-        a new project without name!(="") will be created. Once a project like this exist, analyzer cannot perform this action again
-        and without loading a test project beforehand, function will do nothing.
+        If no testproject was loaded beforehand, <name_variable> in analyzer software will not be addressed and
+        a new project without name!(="") is going to be created. Once a project like this exist, analyzer cannot perform this again
+        and without loading a test project beforehand, function will do nothing (but parse any check).
         """
         self._value_parser(cmd="loaduserproject")
 
@@ -1312,19 +1308,6 @@ class AnalyzerCmd():
                 operator_name, user_callback)
         self._value_parser(expect_response=False, cmd="startoperator",
                            p1=operator_name, p2=operator_setting)
-
-    # ANALYZER: analyzer implementation not provided
-    @analyzer_functionality_warning_decorator
-    def import_operators(self, operator_fielpath: str, force_load: str) -> None:
-        """Import a local file on optimizer.
-        .. warning:: not implemented
-        :param operator_fielpath: Path to operator file that will be imported.
-        :type operator_fielpath: str
-        :param force_load: _description_
-        :type force_load: str
-        """
-        self._value_parser(expect_response=False, cmd="importoperators",
-                           p1=operator_fielpath, p2=force_load)
 
     # BUG: says okay but is not working
     def import_patterns(self, directory_path: str) -> None:
@@ -1745,15 +1728,19 @@ class AnalyzerCmd():
         """ Reset analyzer failure state and activates I/O ready by this."""
         self._value_parser(cmd="AppCmd", p1="ResetFailstate")
 
-    def _recognition_translator(self, cmd_recognition: str) -> str:
+    def _recognition_translator(self, cmd: str) -> str:
         """Private method to add sended cmd str "response".
 
-        :param cmd_recognition: cmd string which needs to be changend.
-        :type cmd_recognition: str
+        :param cmd: cmd string which needs to be changend.
+        :type cmd: str
         :return: cmd string which will be sended by analyzer as response.
         :rtype: str
         """
-        return "response" + cmd_recognition
+        if cmd == "reportappvars":
+            return "responseappvars"
+        else:
+            # case normal communication server command
+            return "response" + cmd
 
     def _check_response(self, response):
         """Private method to check received response for value under key="ok". If value is True, response is approved.
