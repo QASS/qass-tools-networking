@@ -66,6 +66,10 @@ Stable Release: 07.11.2022
 * [x] start_operator
 * [ ] start_operator_function (**NOT TESTED**)
 * [ ] start_operator_results (**NOT INCLUDED**)
+* [x] start_frequency_test_port (**renamed**)
+* [x] start_frequency_test_channel (**renamed**)
+* [x] start_pulsetest_channel (**renamed**)
+* [x] start_pulsetest_port (**renamed**)
 
 * [x] stop_measuring
 * [x] stop_sineGenerator
@@ -87,11 +91,6 @@ Stable Release: 07.11.2022
 * [x] export_trigger_list
 * [x] export_operator_network
 * [x] export_project_archive
-
-* [x] start_frequency_test_port (**renamed**)
-* [x] start_frequency_test_channel (**renamed**)
-* [x] start_pulsetest_channel (**renamed**)
-* [x] start_pulsetest_port (**renamed**)
 
 * [x] send_analyzer_to_sleep
 * [x] send_appcmd (**renamed**)
