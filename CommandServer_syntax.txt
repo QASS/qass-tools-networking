@@ -668,7 +668,7 @@ p2: "FLASH <preampport[int]> <filepath[str]>"
 """hex-filepath should be absolute
     function is not null based"""
 
-Response: standardized analyzer response
+Response: None
 Analyzer_socket wrapper: flash_preamp_software()
 
 ----------- Set current project as default project 

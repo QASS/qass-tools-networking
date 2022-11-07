@@ -1297,7 +1297,6 @@ class AnalyzerCmd():
         self._value_parser(expect_response=False, cmd="startoperator",
                            p1=operator_name, p2=operator_setting)
 
-    # BUG: says okay but is not working
     def import_patterns(self, directory_path: str) -> None:
         """Import all pattern files from a optimizer local directory.
 
@@ -1330,7 +1329,6 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                            p1="import", p2=f"opnet {filepath}")
 
-    # TODO: Ask Peter for overwrite param
     def import_project_archive(self, filepath: str, project_name: str, keep_original_process_nums: bool = False, overwrite: bool = False) -> None:
         """ Import a complete project archive file (tar.gz). 
 
@@ -1410,7 +1408,7 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd", expect_response=False,
                            p1="exportprojectarchive", p2=p2_string)
 
-    # TODO: Test
+    # TODO: Test in newest analyzer version
     def flash_preamp_software(self, preampport: Union[int, PreampPorts], filepath: str) -> None:
         """Flash preamp software by downloaded hexfile. Path should be absolute path.
 
@@ -1443,10 +1441,9 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                                p1="SaveProjectasDefault", p2=f"-e")
 
-    # ANALYZER: analyzer implementation not provided
+    # TODO: Test
     @analyzer_functionality_warning_decorator
     def start_operator_results(self, mode: Union[str, bool] = "enable") -> None:
-        # ANALYZER: analyzer implementation not provided
         """Sets enable flag to send ot operator results if avaible. Results will be sended separately
 
         :param mode: Enables start or stops by "disable", defaults to "enable"
@@ -1460,10 +1457,9 @@ class AnalyzerCmd():
         if self.translator[mode] == "false":
             self._operator_results_active = False
 
-    # ANALYZER: analyzer implementation not provided
+    # TODO: Test
     @analyzer_functionality_warning_decorator
     def stop_operator_results(self) -> None:
-        # ANALYZER: analyzer implementation not provided
         """Sets disable flag to send operator results if avaible."""
         self._value_parser(cmd="stopoperatorresults")
         self._operator_results_active = False
@@ -1649,8 +1645,7 @@ class AnalyzerCmd():
                                p1="false")
             self.logger.info("Report of process number stopped.")
 
-    # ANALYZER: analyzer implementation not provided
-    @analyzer_functionality_warning_decorator
+    # TODO: Test
     def start_script_function(self, function_name: str, function_param: any) -> None:
         """ General syntax to start script function. Response is dependant on called function.
 

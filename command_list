@@ -45,7 +45,7 @@
 * [x] set_comment_current_process
 * [x] start_operator
 * [ ] import_operators (**OLD -> USE import_operator_network**)
-* [ ] import_patterns(**NOT TESTED**)
+* [ ] import_patterns(source code bug, should be fixed in newest analyzer version)
 * [x] import_trigger_list
 * [x] import_operator_network
 * [x] import_project_archive
