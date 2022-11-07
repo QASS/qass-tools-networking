@@ -1,4 +1,6 @@
-Properties:
+# Supported Functionalties
+
+## Properties
 
 * get_socket_ip
 * get_socket_port
@@ -9,7 +11,7 @@ Properties:
 * get_operator_results_state
 * get_translator
 
-Commands
+## Commands
 
 * [x] set_preamp
 * [x] get_project_info
