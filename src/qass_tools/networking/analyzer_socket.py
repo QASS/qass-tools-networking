@@ -904,7 +904,7 @@ class AnalyzerCmd():
         self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value)
 
     def get_appvar(self, appvar_name: str) -> str:
-        """Get value of AppVar by name.
+        """Get AppVar value by name.
 
         :param app_var_name: Name of AppVar to adress.
         :type app_var_name: str
@@ -945,7 +945,8 @@ class AnalyzerCmd():
 
     def add_appvar_report_callback(self, callback) -> None:
         """Add callback function to report of AppVar. Everytime a AppVar changes, added callback functions will be executed. See networking_example.py for an example.
-        By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
+        By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function. Beside the executed callback, analyzer sends
+        state of all AppVars as information by every change.
 
         .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
         ..see also:: remove_appvar_report_callback
@@ -963,7 +964,7 @@ class AnalyzerCmd():
             f"Callback {callback} for AppVar report added")
 
     def get_process_number(self) -> int:
-        """ Returns current process number (active buffer)
+        """ Returns current process number (active buffer).
 
         :return: Process number of current selected process
         :rtype: int
@@ -982,7 +983,7 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="createloadproject", p1=project_name)
 
-    def send_AppCmd(self, param_one: str, param_two=None) -> None:
+    def send_AppCmd(self, param_one: str, param_two=None):
         """General method to send arbitrary AppCmd to analyzer.
         .. warning:: Developer function. No use without required knowledge.
         :param param_one: AppCmd
@@ -1034,7 +1035,7 @@ class AnalyzerCmd():
                            fftoversampling=fftoversampling, fftwindowing=fftwindowing, fftlogarithmic=fftlogarithmic, filter=filter, gain=gain, subport=subport)
 
     def get_analyzer_versions(self) -> str:
-        """Method to read out anlyzer version informations and return as string.
+        """Method to read out anlyzer version informations and return as string. Information are identical to in-software "about" button.
 
         :return: Informations out of info window in analyzer.
         :rtype: str
@@ -1048,7 +1049,7 @@ class AnalyzerCmd():
         return analyzer_info
 
     def get_project_info(self) -> Dict:
-        """Method to read out analyzer project informations as current used project ID/name or analyer version.
+        """Method to read out analyzer project informations as current used project ID/name or analyzer version.
 
         :return: Informations about current project.
         :rtype: Dict
@@ -1062,7 +1063,7 @@ class AnalyzerCmd():
         return project_info
 
     def get_heartbeat(self) -> bool:
-        """ Check if the little guy is still there.
+        """ Checks if the little guy is still there.
 
         :return: True if message comes back.
         :rtype: bool
@@ -1074,7 +1075,7 @@ class AnalyzerCmd():
             return True
 
     def measuring_mode(self, mode: Union[bool, str]) -> None:
-        """Start or stop a measurement. Additionally over mode-key there is the possibility to start monitoring mode.
+        """Start or stop a measurement. Additionally mode provides possibility to start monitoring mode.
 
         Short settings:
         | Measuring mode    | Key       |
@@ -1143,7 +1144,7 @@ class AnalyzerCmd():
         self._value_parser(cmd="loadtestproject")
 
     def load_last_user_project(self) -> None:
-        """ Load last user project before a test project was loaded.
+        """ Loads last user project before a test project was loaded.
 
         .. warning:: To use this a test project must be loaded before!!!
         .. note:: 
@@ -1161,13 +1162,13 @@ class AnalyzerCmd():
         """
         return self._value_parser(cmd="getmaxmeasurepositions")
 
-    def get_preamp_info(self, preamp_port) -> str:
-        """ Returns a string with hadware infos to preamplifier connected to parsed port
+    def get_preamp_info(self, preamp_port: Union[PreampPorts, int]) -> str:
+        """ Returns a string with serial number and firmware version of connected preamps.
 
-        :param preamp_port: Preamp port with connected preampifier
-        :type preamp_port: preamp_port or corresponding int value
+        :param preamp_port: Preamp port with connected preamp
+        :type preamp_port: int, PreampPorts
         :raises KeyError: Raises if parsed variable is no supported preamp port
-        :return: Hardware infos about preamplifier
+        :return: Serial number and firmware version
         :rtype: str
         """
         if preamp_port in PreampPorts or preamp_port in range(0, 8):
@@ -1183,7 +1184,7 @@ class AnalyzerCmd():
     def start_operator_function(self, mode: Union[str, bool] = "start") -> None:
         """Start operator functions.
 
-        :param mode: Function can start or end operator function by changing mode to a stopping key, defaults to "start". For more allowed keys look up translator dict
+        :param mode: Function can start or end operator function by changing mode to a stopping key, defaults to "start". For more allowed keys look up translator dict.
         :type mode: str, bool, optional
         """
         self._value_parser(cmd="startoperatorfunctionvalues",
