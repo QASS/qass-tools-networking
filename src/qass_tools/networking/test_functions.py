@@ -1,4 +1,5 @@
-from analyzer_socket import AnalyzerCmd, PreampPorts
+from turtle import clear
+from analyzer_socket import AnalyzerCmd, PreampPorts, MultiPreampInput, Channels
 from time import sleep
 
 
@@ -6,5 +7,6 @@ def bla(response):
     print("I did it")
 
 
-with AnalyzerCmd("192.168.1.233", debug_mode=False) as opti:
-    print(opti.get_preamp_hardware_info(PreampPorts.PREAMP_PORT_1))
+# 38
+with AnalyzerCmd("192.168.1.132", debug_mode=True) as opti:
+    opti.import_patterns("/home/Downloads/pattern_cr1")

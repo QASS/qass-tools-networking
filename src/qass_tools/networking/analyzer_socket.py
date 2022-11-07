@@ -4,7 +4,7 @@ import json
 import numpy as np
 import time
 from enum import Enum, IntEnum
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 import logging
 import sys
 import threading
@@ -181,7 +181,7 @@ class SysSettingsClass(IntEnum):
 
 
 class MultiPreampInput(IntEnum):
-    """ Enums for Multi Input Preamps. The numeration starts on the most upper left input and goes down from left to right too the lowest input (right side)."""
+    """ Enums for Multi Input Preamps. The numeration starts on the uppest left input and goes rowwise from left to right, too the lowest input (right side)."""
     NONE_MULTI_INPUT = 999  # Just a flag, to not use any input values
     MULTI_INPUT_1 = 0
     MULTI_INPUT_2 = 1
@@ -200,12 +200,12 @@ class ConnectionError(socket.error):
 
 
 class NoneRegistrationError(Exception):
-    """ Error raised if programm cannot find a registered callback for a command. When this exception occurs the programm will go into a failstate."""
+    """ Error is raised if programm cannot find a registered callback for a command. When this exception occurs, programm run into failstate."""
     pass
 
 
 class AnalyzerSyntaxError(Exception):
-    """ Error risen if analyzer sends a 'not okay' command back which means that sended command syntax is not supported."""
+    """ Error is raised if analyzer sends a 'not okay' command back which means that sended command syntax is not supported in this way."""
     pass
 
 
@@ -224,7 +224,7 @@ class ReceiveThread(threading.Thread):
         """ Warning is used when a not expected or not registered message comes in from analyzer. A warning is send out and the message will be logged."""
         new_message = "Not registered analyzer response:" + str(message)
         self.logger.warning(new_message)
-        warnings.warn(new_message)
+        # warnings.warn(new_message)
 
     def register_callbacks(self, recognition: Union[str, int], callback) -> None:
         """ Function to register incoming analyzer response by msg_id or cmd name.
@@ -284,14 +284,10 @@ class ReceiveThread(threading.Thread):
                 return
             # reports always use their cmd name as recognition
             elif response['cmd'] in self.__callbacks:
-                # reports alwys registered with cmd->only case we need tot est for mutiple callbacks
+                # reports alwys registered with cmd->only case we need to check for mutiple callbacks
                 length = len(self.__callbacks[response['cmd']])
-                if length > 1:
-                    # if mutiple callbacks apply response to all of them
-                    for idx in range(0, length):
-                        self.__callbacks[response['cmd']][idx](response)
-                else:
-                    self.__callbacks[response['cmd']][0](response)
+                for idx in range(0, length):
+                    self.__callbacks[response['cmd']][idx](response)
             # if no report there is only one entry--> [0] always uses right callback
             # case resid
             elif 'resid' in response:
@@ -301,12 +297,11 @@ class ReceiveThread(threading.Thread):
             elif 'msgid' in response:
                 if response['msgid'] in self.__callbacks:
                     self.__callbacks[response['msgid']][0](response)
-            # messages wich are not registered will be just logged
+            # incooming messages wich are not registered will be just logged as warning
             else:
                 self.warn_none_registered_response(response)
 
     def run(self) -> None:
-        # BUG: if no signal is received, change to mainthread
         """ Overriden run method of thread module will be executed as the thread starts.
 
         Method listens to socket in forever loop 'till kill_thread method is executed. Listens for small parts and puts messages together.
@@ -315,21 +310,18 @@ class ReceiveThread(threading.Thread):
         current_len = 0
         buffer = bytearray()
         READ_SIZE = 4
-        timeout = 0
         self.kill = False
         while not self.kill:
             try:
                 buffer.extend(self.s.recv(READ_SIZE))
-            # if nothing is received socket runs into failstate (socket.timeout)
+            # if nothing is received, socket runs into failstate (socket.timeout)
             except socket.timeout as e:
-                # in this case just continue while loop
-                timeout += 1
-                if timeout < 5:
-                    continue
-                else:
-                    self.logger.error(
-                        "No signal received altough signal is expected. Programm stopps.")
-                    raise e
+                # if len(self.__callbacks) != 0:
+                continue
+                # else:
+                #    self.logger.error(
+                #        "No signal received altough signal is expected. Programm stopps.")
+                #    raise e
             # catch other socket exception and crash
             except socket.error as e:
                 self.logger.error(e)
@@ -399,7 +391,6 @@ class AnalyzerCmd():
         self._sine_gen_active = False
         self._monitoring_active = False
         self._operator_functions_active = False
-        self._operator_results_active = False
 
         # short solution logger to sys.stdout
         msg_mode = logging.DEBUG if debug_mode else logging.INFO
@@ -427,44 +418,9 @@ class AnalyzerCmd():
         def inner(*args, **kwargs):
             result = func(*args, **kwargs)
             warnings.warn(
-                "Analyzer has no complete implementation for this yet.")
+                "Analyzer provides no complete implementation for this yet.")
             return result
         return inner
-
-    def value_exception(self, custom_msg=None):
-        def decorator(func):
-            @wraps(func)
-            def wrapper(*args, **kwargs):
-                try:
-                    return func(*args, **kwargs)
-                except:
-                    # define logger msg
-                    issue = f"{args} out of bounds.\n"
-                    if custom_msg:
-                        issue = issue+custom_msg
-                    self.logger.error(issue)
-                    raise
-            return wrapper
-        return decorator
-
-    def key_exception(self, custom_msg=None, kwargs_key=True):
-        def decorator(func):
-            @wraps(func)
-            def wrapper(*args, **kwargs):
-                try:
-                    return func(*args, **kwargs)
-                except:
-                    # define logger msg
-                    if kwargs_key:
-                        issue = f"Used keys: {kwargs} not supported.\n"
-                    else:
-                        issue = f"Used keys: {args} not supported.\n"
-                    if custom_msg:
-                        issue = issue+custom_msg
-                    self.logger.error(issue)
-                    raise
-            return wrapper
-        return decorator
 
     def _create_logger(self, level_mode):
         """Creates a logger which will print out to sys.stdout and log custom message and time, log level,
@@ -486,11 +442,11 @@ class AnalyzerCmd():
         Retry decorator will retry method calls if a ConnectionError occurs. Here set delay layes by 1 second and
         decorator will try again for four times before giving up.
 
-        :raises ConnectionError: Connection error sis raisen if no connection can be established.
+        :raises ConnectionError: Connection error is raisen if no connection can be established.
         """
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.s.settimeout(1)
+            self.s.settimeout(15)
             self.s.connect((self.ip, self.port))
             self.logger.info("Connected to optimizer")
         except socket.timeout:
@@ -519,9 +475,6 @@ class AnalyzerCmd():
         if self._operator_functions_active:
             self._value_parser(expect_response=False,
                                cmd="stoppoperatorfunctionvalues")
-        if self._operator_results_active:
-            self._value_parser(expect_response=False,
-                               cmd="stopoperatorresults")
 
         self.s.close()
         self.logger.info("Socket connection closed")
@@ -578,12 +531,12 @@ class AnalyzerCmd():
         return self._operator_functions_active
 
     @property
-    def get_operator_results_state(self):
-        """Property that gives out if operator results has been activated remotely.
+    def get_translator(self):
+        """ Returns supported keys from translator
 
-        :rtype: boolean
+        :rtype: List
         """
-        return self._operator_results_active
+        return self.translator.keys()
 
     def start_measuring(self) -> None:
         """Method sends a command to the connected analyzer to start a measuring process."""
@@ -663,7 +616,7 @@ class AnalyzerCmd():
             cmd="AppCmd", p1="SaveAreaView", p2=template_num)
 
     def load_area_view(self, template_num: int) -> None:
-        """Load saved area view template.
+        """Load presaved (!) area view template.
 
         :param template_num: Storage number to load.
         :type template_num: int
@@ -674,6 +627,9 @@ class AnalyzerCmd():
     def load_simulation_buffer(self, file_path: str, channel: int, do_not_copy_meta_data=False) -> None:
         """Load and set local simulation buffer for specific channel.
 
+        ..warning::
+        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+
         :param file_path: Local file path to buffer.
         :type file_path: str
         :param channel: Channel where simulationbuffer gets loaded.
@@ -682,10 +638,7 @@ class AnalyzerCmd():
         :type do_not_copy_meta_data: bool, optional
         """
 
-        # ..warning::Analyzer function is not null based. Basically if you want to test the first Channel,
-        # syntax is counted from null and integer representation from Channels.Channel_1 equals zero. But this specfic function
-        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for channels
-        # by addding the value with one.
+        # AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         channel += 1
         if do_not_copy_meta_data:
             p2_string = f"channel {channel} nometa path {file_path}"
@@ -693,14 +646,12 @@ class AnalyzerCmd():
             p2_string = f"channel {channel} path {file_path}"
         self._value_parser(cmd="AppCmd", p1="SimulationBuffer", p2=p2_string)
 
-    # BUG: Keyword all is not working
-    def set_simulation_buffer(self, channel_number: Union[str, int], mode: str) -> None:
-        """ Enable or disable already loaded simulation buffer channel.
+    def set_simulation_buffer(self, channel_number: Union[str, int, ChannelPorts], mode: str) -> None:
+        """ Enable or disable already loaded simualtion buffer channel.
 
-        :param channel_number: Channel to activate simulation buffer on.
-        :type channel_number: str or int
-        :param mode: If channel should be "enabled" or "disabled" to use simulation buffers. 
-            Check Translator dict for more keywords.
+        :param channel_number: Channel to activate simualtion buffer on. Beside normal input, key "all" is supported.
+        :type channel_number: str or int or ChannelPorts
+        :param mode: If channel should be "enabled" or "disabled" as sim buffer. Check Translator dict for more keywords.
         :type mode: str
         """
         if channel_number == "all":
@@ -711,11 +662,14 @@ class AnalyzerCmd():
             self._value_parser(cmd="AppCmd",
                                p1="SimulationBuffer", p2=f"channel {channel_number} {self.translator[mode]}")
 
-    def pulsetest_channel(self, channel_number: int, gain: int = 800, count: int = 1, delay: int = 0) -> None:
-        """ External set of pulse test. Only available for existing ports and sensors.
+    def start_pulsetest_channel(self, channel_number: Union[int, Channels], gain: int = 800, count: int = 1, delay: int = 0) -> None:
+        """ External set of pulse test. Only avaible for exisiting ports and sensors.
+
+        ..warning::
+        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param channel_number: Channel where pulsetest gets executed.
-        :type channel_number: int or Channel
+        :type channel_number: int or Channels
         :param gain: Used gain for pulsetest, defaults to 800
         :type gain: int, optional
         :param count: Used count for pulsetest, defaults to 1
@@ -725,10 +679,7 @@ class AnalyzerCmd():
         :raises ValueError: If gain is out of bounds: range(0,4096) | If count is out of bounds: range(0,200) | If delay is out of bounds: smaller zero
         """
 
-        # ..warning::Analyzer function is not null based. Basically if you want to test the first Channel,
-        # syntax is counted from null and integer representation from Channels.Channel_1 equals zero. But this specfic function
-        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for channels
-        # by addding the value with one.
+        # AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         channel_number += 1
 
         # check params limits
@@ -740,25 +691,25 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
-    def pulsetest_port(self, port_number: int, gain: int = 800, count: int = 1, delay: int = 0, preamp_input=MultiPreampInput.NONE_MULTI_INPUT) -> None:
-        """External set of pulse test. Only available for existing ports and sensors.
+    def start_pulsetest_port(self, port_number: Union[int, PreampPorts], gain: int = 800, count: int = 1, delay: int = 0, multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
+        """External set of pulse test. Only avaible for exisiting ports and sensors.
+
+        ..warning::
+        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param port_number: Port where pulsetest gets executed.
-        :type port_number: int or Channels
+        :type port_number: int or PreampPorts
         :param gain: Pulsetest gain in range(0,4096), defaults to 800
         :type gain: int
         :param count: Pulsetest count in range(0,200), defaults to 1
         :type count: int
         :param delay: Pulsetest delay in ms, defaults to 0
         :type delay: int
-        :param preamp_input: Input number for Multi Input Preamps, defaults to None
-        :type preamp_input: int or MultiPreampInputs
+        :param multi_preamp_input: Input number for Multi Input Preamps, defaults to NONE. Default case is useable for none MultiInput Premaps.
+        :type multi_preamp_input: int or MultiPreampInputs
         :raises ValueError: If gain is out of bounds: range(0,4096) | If count is out of bounds: range(0,200) | If delay is out of bounds: smaller zero
         """
-        # ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
-        # syntax is counted from null and integer representation from PREAMP_PORTS.PORT_1 equals zero. But this specfic function
-        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for preampports
-        # by addding the value with one.
+        # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         port_number += 1
 
         # check params limits
@@ -766,68 +717,68 @@ class AnalyzerCmd():
             self.logger.error("Params out of bounds")
             raise ValueError("Params out of bounds")
 
-        if preamp_input == MultiPreampInput.NONE_MULTI_INPUT:
-            p2_string = f"channel {port_number} pulsetest {gain} {count} {delay}"
+        if multi_preamp_input == MultiPreampInput.NONE_MULTI_INPUT:
+            p2_string = f"port {port_number} pulsetest {gain} {count} {delay}"
         else:
-            p2_string = f"channel {port_number} {preamp_input} pulsetest {gain} {count} {delay}"
+            # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+            multi_preamp_input += 1
+            p2_string = f"port {port_number} {multi_preamp_input} pulsetest {gain} {count} {delay}"
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
-    # TODO: Test
-    def change_preamp_input(self, opti_port_number: int, preamp_input_number=MultiPreampInput.MULTI_INPUT_2) -> None:
+    # ANALYZER: c++ bug, Peter will fix it
+    def change_preamp_input(self, opti_port_number: Union[int, PreampPorts], preamp_input_number: Union[int, MultiPreampInput] = MultiPreampInput.MULTI_INPUT_2) -> None:
         """ Method changes which physical preamp input will be used for datastream output to optimizer.
 
-        Only available for multi input preamps.
+        Only avaible for multi input preamps.
+        ..warning::
+        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param opti_port_number: opti port number to adress
-        :type opti_port_number: int
-        :param preamp_input_number: Switched input channel from preamp (target), 
-            defaults to MultiPreampInput.MULTI_INPUT_2
+        :type opti_port_number: int or PreampPorts
+        :param preamp_input_number: Switched input channel from preamp (target), defaults to MULTI_INPUT_2
         :type preamp_input_number: int or MultiPreampInput
         """
+        # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+        opti_port_number += 1
+        preamp_input_number += 1
         self._value_parser(cmd="AppCmd", p1="Preamp",
-                               p2=f"port {opti_port_number} switchinput {preamp_input_number}")
+                           p2=f"port {opti_port_number} switchinput {preamp_input_number}")
 
-    # ANALYZER: no recognizable response
-    def frequency_test_port(self, port_number: int, preamp_input: MultiPreampInput.NONE_MULTI_INPUT) -> None:
+    def start_frequency_test_port(self, port_number: Union[int, PreampPorts], multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """Execute a frequency test for a specific port.
+
+        ..warning::
+        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param port_number: Port number for frequency test
         :type port_number: int or PreampPorts
         :param preamp_input: Used Input
-        :type preamp_input: int or MultiPreampInput, defaults to NONE for no multi input preamp
+        :type preamp_input: int or MultiPreampInput, defaults to NONE_MULTI_INPUT for no multi input preamp
         """
 
-        # ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
-        # syntax is counted from null and integer representation from PREAMP_PORTS.PORT_1 equals zero. But this specfic function
-        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for preampports
-        # by addding the value with one.
+        # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         port_number += 1
-        if preamp_input == MultiPreampInput.NONE_MULTI_INPUT:
+        if multi_preamp_input == MultiPreampInput.NONE_MULTI_INPUT:
             self._value_parser(cmd="AppCmd", p1="Preamp",
                                p2=f"port {port_number} frqtest")
         else:
+            # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+            multi_preamp_input += 1
             self._value_parser(cmd="AppCmd", p1="Preamp",
-                               p2=f"port {port_number} input {preamp_input} frqtest")
+                               p2=f"port {port_number} input {multi_preamp_input} frqtest")
 
-    # ANALYZER: no recognizable response
-    def frequency_test_channel(self, channel_number: int) -> None:
-        """Execute a frequency test for a specific port. 
-        Analyzer  isn't responding in any way (not in a visual,
-        acoustic or information way).
+    def start_frequency_test_channel(self, channel_number: Union[int, Channels]) -> None:
+        """Execute a frequency test for a specific port. Analyzer isn't resonsing in any way (not in a visual, acoustic
+        or information way).
 
-        ..warning::Analyzer function is not null based. Basically if you want to test the first Preamp Port,
-        it is counted from null and integer representation if CHANNELS.CHANNEL_1 equals zero. But this specfic function
-        will need a corrected number based on one. So this interface method automatically correct all parsed integers
-        by addding the value with one.
+        ..warning::
+        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param port_number: Channel number for frequency test
-        :type port_number: int or PREAMP_PORTS
+        :type port_number: int or Channels
         """
-        # ..warning::Analyzer function is not null based. Basically if you want to test the first Channel,
-        # syntax is counted from null and integer representation from Channels.Channel_1 equals zero. But this specfic function
-        # will need a corrected number based on one. So this interface method automatically correct all parsed integers for channels
-        # by addding the value with one.
+        # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         channel_number += 1
         self._value_parser(cmd="AppCmd", p1="Preamp",
                            p2=f"channel {channel_number} frqtest")
@@ -900,8 +851,8 @@ class AnalyzerCmd():
                            p2=f"{process_number} {start_time}")
 
     def get_service_parameter(self, param_setting: str) -> str:
-        """Get settings out of Service Parameter (Configuration->Settings->Parameter)
-        .. note:: Only available for user level 8 or higher!
+        """Get Values from Service Parameter (Configuration->Settings->Parameter)
+        .. note:: Only avaible for user level 8 or higher!
 
         :param param_setting: Service parameter that should be read
         :type param_setting: str
@@ -913,8 +864,8 @@ class AnalyzerCmd():
         return settings.get("result")
 
     def set_service_parameter(self, param_setting: str, param_value: any) -> None:
-        """Set service parameter settings under Configuration->Settings->Parameter
-        .. note:: Only available for user level 8 or higher!
+        """Set Parameter in Service Parameter (Configuration->Settings->Parameter)
+        .. note:: Only avaible for user level 8 or higher!
 
         :param param_setting: Service parameter that should be set
         :type param_setting: str
@@ -947,11 +898,10 @@ class AnalyzerCmd():
         :param app_var_value: Value of AppVar. The type can be every datatype supported by python (e.g. float, int, str, json, ...).
         :type app_var_value: any
         """
-
         self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value)
 
-    def get_app_var(self, appvar_name: str) -> str:
-        """Get value of AppVar by name.
+    def get_appvar(self, appvar_name: str) -> str:
+        """Get AppVar value by name.
 
         :param app_var_name: Name of AppVar to adress.
         :type app_var_name: str
@@ -972,7 +922,7 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="clearappvar", p1=appvar_name)
 
-    def remove_appvar_report_callback(self, callback):
+    def remove_appvar_report_callback(self, callback) -> None:
         """Removes specific callback function from AppVar report callback list.
         By removing all callbacks the report function will be automatically stopped.
 
@@ -981,7 +931,7 @@ class AnalyzerCmd():
         :type callback: function
         """
         self.__recv_thread.deregister_callbacks(
-            "responsereportappvars", callback)
+            "responseappvars", callback)
         self._appvar_report_count -= 1
         self.logger.info(
             f"Callback {callback} for AppVar report removed")
@@ -990,9 +940,10 @@ class AnalyzerCmd():
                                p1="false")
             self.logger.info("Report of AppVar stopped.")
 
-    def add_appvar_report_callback(self, callback):
-        """Add callback function to report of AppVar. Everytime an AppVar changes, added callback functions will be executed. See networking_example.py for an example.
-        By adding first callback the report start automatically and will be stopped by removing all callbacks due to remove function.
+    def add_appvar_report_callback(self, callback) -> None:
+        """Add callback function to report of AppVar. Everytime a AppVar changes, added callback functions will be executed. See networking_example.py for an example.
+        By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function. Beside the executed callback, analyzer sends
+        state of all AppVars as information by every change.
 
         .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
         ..see also:: remove_appvar_report_callback
@@ -1004,13 +955,13 @@ class AnalyzerCmd():
                                p1="true")
         else:
             self.__recv_thread.register_callbacks(
-                "responsereportappvars", callback)
-        self._proc_report_count += 1
+                "responseappvars", callback)
+        self._appvar_report_count += 1
         self.logger.info(
             f"Callback {callback} for AppVar report added")
 
     def get_process_number(self) -> int:
-        """ Returns current process number (active buffer)
+        """ Returns current process number (active buffer).
 
         :return: Process number of selected process
         :rtype: int
@@ -1029,7 +980,7 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="createloadproject", p1=project_name)
 
-    def send_AppCmd(self, param_one: str, param_two=None) -> None:
+    def send_appcmd(self, param_one: str, param_two=None):
         """General method to send arbitrary AppCmd to analyzer.
         .. warning:: Developer function. Do not use without prior knowledge about AppCmds!
         :param param_one: AppCmd
@@ -1081,7 +1032,7 @@ class AnalyzerCmd():
                            fftoversampling=fftoversampling, fftwindowing=fftwindowing, fftlogarithmic=fftlogarithmic, filter=filter, gain=gain, subport=subport)
 
     def get_analyzer_versions(self) -> str:
-        """Method to read out analyzer version information and return them as a string.
+        """Method to read out anlyzer version informations and return as string. Information are identical to in-software "about" button.
 
         :return: Information out of info window in analyzer.
         :rtype: str
@@ -1095,7 +1046,7 @@ class AnalyzerCmd():
         return analyzer_info
 
     def get_project_info(self) -> Dict:
-        """Method to read out analyzer project information as current used project ID/name or analyzer version.
+        """Method to read out analyzer project informations as current used project ID/name or analyzer version.
 
         :return: Information about current project.
         :rtype: Dict
@@ -1109,7 +1060,7 @@ class AnalyzerCmd():
         return project_info
 
     def get_heartbeat(self) -> bool:
-        """ Check if the little guy is still there.
+        """ Checks if the little guy is still there.
 
         :return: True if message comes back.
         :rtype: bool
@@ -1120,8 +1071,8 @@ class AnalyzerCmd():
             self.logger.info("No worries. I'm still alive.")
             return True
 
-    def measuring_mode(self, mode: Union[bool, str]) -> None:
-        """Start or stop a measurement. Additionally over mode-key there is the possibility to start monitoring mode.
+    def set_measuring_mode(self, mode: Union[bool, str]) -> None:
+        """Start or stop a measurement. Additionally mode provides possibility to start monitoring mode.
 
         Short settings:
         | Measuring mode    | Key       |
@@ -1143,7 +1094,7 @@ class AnalyzerCmd():
         elif self.translator[mode] == "monitor":
             self._monitoring_active = True
 
-    def monitoring_mode(self, mode: Union[bool, str]) -> None:
+    def set_monitoring_mode(self, mode: Union[bool, str]) -> None:
         """Start or stop monitoring modus.
 
         Short settings:
@@ -1163,8 +1114,8 @@ class AnalyzerCmd():
         elif self.translator[mode] == "false":
             self._monitoring_active = False
 
-    def calculate_max_amplitude_per_band(self, channel=Channels.CHANNEL_1, create_plot_buffer: bool = True, create_data_buffer: bool = False, amplitude_type=SysAmplitudesType.AMPLITUDE_DEFAULT) -> np.ndarray:
-        """ Method to calculate maximum amplitude per band.
+    def get_max_amp_per_band(self, channel=Channels.CHANNEL_1, create_plot_buffer: bool = True, create_data_buffer: bool = False, amplitude_type=SysAmplitudesType.AMPLITUDE_DEFAULT) -> np.ndarray:
+        """ Method to return maximum amplitude per band of current active buffer.
 
         :param channel: Datastream Channel, defaults to Channels.CHANNEL_1
         :type channel: int or Channel, optional
@@ -1190,12 +1141,13 @@ class AnalyzerCmd():
         self._value_parser(cmd="loadtestproject")
 
     def load_last_user_project(self) -> None:
-        """ Load last user project before a test project was loaded.
+        """ Loads last user project before a test project was loaded.
 
-        .. warning:: To use this a test project must be loaded first!
-        .. note:: If no testproject was loaded beforehand, name_variable in analyzer software will be not addressed and
-        a new project without name!(="") will be created. Once a project like this exists, the Analyzer cannot perform this action again
-        and without loading a test project beforehand, the function will do nothing.
+        .. warning:: To use this a test project must be loaded before!!!
+        .. note:: 
+        If no testproject was loaded beforehand, <name_variable> in analyzer software will not be addressed and
+        a new project without name!(="") is going to be created. Once a project like this exist, analyzer cannot perform this again
+        and without loading a test project beforehand, function will do nothing (but parse any check).
         """
         self._value_parser(cmd="loaduserproject")
 
@@ -1207,13 +1159,13 @@ class AnalyzerCmd():
         """
         return self._value_parser(cmd="getmaxmeasurepositions")
 
-    def get_preamp_hardware_info(self, preamp_port) -> str:
-        """ Returns a string with hardware infos of the preamplifier connected to the provided port
+    def get_preamp_info(self, preamp_port: Union[PreampPorts, int]) -> str:
+        """ Returns a string with serial number and firmware version of connected preamps.
 
-        :param preamp_port: Preamp port with connected preampifier
-        :type preamp_port: preamp_port or corresponding int value
-        :raises KeyError: Raises if parsed variable is not a supported preamp port
-        :return: Hardware infos about preamplifier
+        :param preamp_port: Preamp port with connected preamp
+        :type preamp_port: int, PreampPorts
+        :raises KeyError: Raises if parsed variable is no supported preamp port
+        :return: Serial number and firmware version
         :rtype: str
         """
         if preamp_port in PreampPorts or preamp_port in range(0, 8):
@@ -1226,15 +1178,11 @@ class AnalyzerCmd():
             raise KeyError(
                 "Choosen preampport is not an analyzer system preamp port.")
 
-    # ANALYZER: analyzer implementation not provided
-    @analyzer_functionality_warning_decorator
     def start_operator_function(self, mode: Union[str, bool] = "start") -> None:
-        # ANALYZER: analyzer implementation not provided
         """Start operator functions.
 
-        :param mode: Function can start or stop the operator by changing the mode to a stopping key,
-            defaults to "start". For more allowed keys look up translator dict
-        :type mode: str, bool], optional
+        :param mode: Function can start or end operator function by changing mode to a stopping key, defaults to "start". For more allowed keys look up translator dict.
+        :type mode: str, bool, optional
         """
         self._value_parser(cmd="startoperatorfunctionvalues",
                            p1=self.translator[mode])
@@ -1244,8 +1192,6 @@ class AnalyzerCmd():
         elif self.translator[mode] == "false":
             self._operator_functions_active = False
 
-    # ANALYZER: analyzer implementation not provided
-    @analyzer_functionality_warning_decorator
     def stop_operator_function(self) -> None:
         """Stop of running operator function."""
         self._value_parser(cmd="stoppoperatorfunctionvalues")
@@ -1285,17 +1231,16 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="setpendingcomment", p1=comment)
 
-    def set_comment_current_process(self, comment: str) -> None:
-        # TODO: kill
-        """ Sets comment for current process.
+    # def set_comment_current_process(self, comment: str) -> None:
+     #   """ Sets comment for current activatet process.
 
-        Similar to set_proces_comment but as JSON communication Server command.
-        Comment is saved in the database using the process.comment attribute
-
-        :param comment: Process comment to set
-        :type comment: str
-        """
-        self._value_parser(cmd="setcomment", p1=comment, quiet=False)
+#        Similair to set_proces_comment but as JSON communication Server command.
+ #       Comment is saved in database under process.comment
+#
+ #       :param comment: Process comment to set
+ #       :type comment: str
+ #      """
+ #       self._value_parser(cmd="setcomment", p1=comment, quiet=False)
 
     def start_operator(self, operator_name: str, operator_setting: str, user_callback=None) -> None:
         """Manual start of existing operator by name. By adding a callback function,
@@ -1317,23 +1262,8 @@ class AnalyzerCmd():
         self._value_parser(expect_response=False, cmd="startoperator",
                            p1=operator_name, p2=operator_setting)
 
-    # ANALYZER: analyzer implementation not provided
-    @analyzer_functionality_warning_decorator
-    def import_operators(self, operator_fielpath: str, force_load: str) -> None:
-        """Import a local file on optimizer.
-        .. warning:: not implemented
-        :param operator_fielpath: Path to operator file that will be imported.
-        :type operator_fielpath: str
-        :param force_load: _description_
-        :type force_load: str
-        """
-        self._value_parser(expect_response=False, cmd="importoperators",
-                           p1=operator_fielpath, p2=force_load)
-
-    # BUG: says okay but is not working
     def import_patterns(self, directory_path: str) -> None:
-        # ANALYZER: analyzer implementation not provided
-        """Import all pattern files from a local directory of the optimizer.
+        """Import all pattern files from a optimizer local directory.
 
         :param directory_path: Directory path to patterns that will be imported.
         :type directory_path: str
@@ -1341,30 +1271,156 @@ class AnalyzerCmd():
         self._value_parser(expect_response=False, cmd="importpatterns",
                            p1=directory_path)
 
-    # ANALYZER: analyzer implementation not provided
+    def import_trigger_list(self, filepath: str, append: bool = False) -> None:
+        """ Import a trigger list file from local path. Append option decides already exisitng triggers will be set active or not.
+        :param filepath: Local filepath
+        :type filepath: str
+        :param append: Decision to set already existing trigger list active or passive by extending, defaults to False
+        :type append: bool, optional
+        """
+        p2_string = f"triggerlist {filepath}"
+
+        if append:
+            p2_string = p2_string + " -a"
+        self._value_parser(cmd="AppCmd",
+                           p1="import", p2=p2_string)
+
+    def import_operator_network(self, filepath: str) -> None:
+        """ Import local operator network file. Command runs as root import. Pay attention to 
+         ..warning:: The current operator network will be replaced.
+        :param filepath: Local filepath to operator network file
+        :type filepath: str
+        """
+        self._value_parser(cmd="AppCmd",
+                           p1="import", p2=f"opnet {filepath}")
+
+    def import_project_archive(self, filepath: str, project_name: str, keep_original_process_nums: bool = False, overwrite: bool = False) -> None:
+        """ Import a complete project archive file (tar.gz). 
+
+        .. warning:: if keep_original_process_nums is set_ process before the imported one. As an example if 
+        process 17000 has been exported, this flag will create 16999 empty processes before.
+
+        .. warning:: if overwrite is activated this will be overwrite and delete current activated project
+
+        :param filepath: Local filepath to archive file
+        :type filepath: str
+        :param project_name: Name of the now imported project
+        :type project_name: str
+        :param original_nums: Keeps the original process number, defaults to False
+        :type original_nums: bool, optional
+        :param overwrite: Overwrites current active project, defaults to False
+        :type overwrite: bool, optional
+        """
+        p2_string = f"{filepath} {project_name}"
+        if keep_original_process_nums:
+            p2_string = p2_string + " --originalnums"
+        if overwrite:
+            p2_string = p2_string + " --overwrite"
+
+        self._value_parser(cmd="AppCmd", expect_response=False,
+                           p1="importprojectarchive", p2=p2_string)
+
+    def export_operator_network(self, target_filepath: str, export: str = "root") -> None:
+        """ Exports operator network as JSON file. Export contains either current activated
+            (key:"root"), all (key:"all") or just the network template (key:"template") by parsing the key to export. 
+
+        | -- Key -- | ------------------ Definition -------------------- |
+        | root      | Exports current active operator network            |
+        | all       | Exports all avaible operator networks              |
+        | template  | Exports project specific operator network template |
+
+        :param folderpath: Target file path
+        :type folderpath: str
+        :param export: Decided what from operator will be exported. Current activated("root"), all operators or the template, defaults to "root"
+        :type export: str, optional
+        """
+        my_translator = {"root": "-r", "all": "-a", "template": "-t"}
+        self._value_parser(cmd="AppCmd", expect_response=True,
+                           p1="export", p2=f"opnet {target_filepath} {my_translator[export]}")
+
+    def export_trigger_list(self, target_filepath: str) -> None:
+        """ Exports current trigger list to path. Target filepath should contain new file name.
+
+        :param target_filepath: Target file path
+        :type target_filepath: str
+        """
+        self._value_parser(cmd="AppCmd", expect_response=True,
+                           p1="export", p2=f"triggerlist {target_filepath}")
+
+    def export_project_archive(self, target_filepath: str, export_name: str, export_process: int = None, export_pengui: bool = True, keep_folder: bool = True) -> None:
+        """ Exports current active project to path as tar.gz file. This includes all patterns, trigger list and projects.
+
+        :param target_filepath: Target folder path
+        :type target_filepath: str
+        :param export_name: Give export file a name
+        :type export_name: str
+        :param export_process: Exports an example process with measurement data, defaults to None
+        :type export_process: int, optional
+        :param export_pengui: Exports PenGUI, defaults to True
+        :type export_pengui: bool, optional
+        :param keep_folder: Preserves folder structure and exports this structure to target, defaults to True
+        :type keep_folder: bool, optional
+        """
+        p2_string = f"{target_filepath} {export_name}"
+        if export_process:
+            p2_string = p2_string + f" --process {export_process}"
+        if export_pengui:
+            p2_string = p2_string + " --pengui"
+        if keep_folder:
+            p2_string = p2_string + " --keepfolder"
+
+        self._value_parser(cmd="AppCmd", expect_response=False,
+                           p1="exportprojectarchive", p2=p2_string)
+
+    # TODO: Test in newest analyzer version
+    def flash_preamp_firmware(self, preampport: Union[int, PreampPorts], filepath: str) -> None:
+        """Flash preamp firmware by downloaded hexfile. Path should be absolute path.
+
+        :param preampport: Connected Preamp
+        :type preampport: int or PreampPorts
+        :param filepath: Absolute (!) path to hexfile
+        :type filepath: str
+        """
+        preampport += 1
+        self._value_parser(cmd="appfunc", expect_response=False,
+                           p1="PreampTool", p2=f"flash {preampport} {filepath}")
+        # self._value_parser(cmd="PreampTool",
+        #                   p1=f"flash {preampport} {filepath}")
+
+    def set_default_project(self, comment: str = None) -> None:
+        """Set current active project as new default template.
+
+        :param comment: Comment to describe template, defaults to None
+        :type comment: str, optional
+        """
+        if comment:
+            self._value_parser(cmd="AppCmd",
+                               p1="SaveProjectasDefault", p2=f"-c {comment}")
+        else:
+            self._value_parser(cmd="AppCmd",
+                               p1="SaveProjectasDefault")
+
+    def remove_default_project(self) -> None:
+        """ Removes current project template."""
+        self._value_parser(cmd="AppCmd",
+                               p1="SaveProjectasDefault", p2=f"-e")
+
+    # TODO: Test
     @analyzer_functionality_warning_decorator
     def start_operator_results(self, mode: Union[str, bool] = "enable") -> None:
-        # ANALYZER: analyzer implementation not provided
-        """Sets enable flag to send to operator results if available. Results will be sent separately
+        """Sets enable flag to send ot operator results if avaible. Results will be sended separately
 
         :param mode: Enables start or stops by "disable", defaults to "enable"
         :type mode: str, optional
         """
         self._value_parser(cmd="startoperatorresults",
                            p1=self.translator[mode])
-        # just flags for exit method of context manager
-        if self.translator[mode] == "true":
-            self._operator_results_active = True
-        if self.translator[mode] == "false":
-            self._operator_results_active = False
 
-    # ANALYZER: analyzer implementation not provided
+    # TODO: Test
     @analyzer_functionality_warning_decorator
     def stop_operator_results(self) -> None:
-        # ANALYZER: analyzer implementation not provided
-        """Sets disable flag to send operator results if available."""
+        """Sets operator results to stop."""
         self._value_parser(cmd="stopoperatorresults")
-        self._operator_results_active = False
 
     def get_io_input(self) -> int:
         """Current set I/O input register as integer appearance (converted from hex).
@@ -1547,8 +1603,7 @@ class AnalyzerCmd():
                                p1="false")
             self.logger.info("Report of process number stopped.")
 
-    # ANALYZER: analyzer implementation not provided
-    @analyzer_functionality_warning_decorator
+    # TODO: Test
     def start_script_function(self, function_name: str, function_param: any) -> None:
         """ General syntax to start script function. Response is depending on called function.
 
@@ -1563,7 +1618,7 @@ class AnalyzerCmd():
         return self._value_parser(cmd="appfunc",
                                   p1=function_name, p2=function_param)
 
-    def human_confirmation(self, process_IO=False, **kwargs) -> None:
+    def set_human_confirmation(self, process_IO=False, **kwargs) -> None:
         """ Send human confiramtion over current process. Score and comment can be parsed over kwargs.
 
         |------------------ kwargs ----------------|
@@ -1612,16 +1667,22 @@ class AnalyzerCmd():
     def reset_failstate(self) -> None:
         """ Reset Analyzer failure state and activates I/O ready by this."""
         self._value_parser(cmd="AppCmd", p1="ResetFailstate")
+    # TODO: profibus
+    # TODO: profibus report
 
-    def _recognition_translator(self, cmd_recognition: str) -> str:
-        """Private method to add sent cmd str "response".
+    def _recognition_translator(self, cmd: str) -> str:
+        """Private method to add sended cmd str "response".
 
-        :param cmd_recognition: cmd string which needs to be changend.
-        :type cmd_recognition: str
+        :param cmd: cmd string which needs to be changend.
+        :type cmd: str
         :return: cmd string which will be sended by analyzer as response.
         :rtype: str
         """
-        return "response" + cmd_recognition
+        if cmd == "reportappvars":
+            return "responseappvars"
+        else:
+            # case normal communication server command
+            return "response" + cmd
 
     def _check_response(self, response):
         """Private method to check received response for value under key="ok". If value is True, response is approved.
@@ -1667,6 +1728,7 @@ class AnalyzerCmd():
         # command ground structure
         command = {'cmd': "",
                    "msgid": self.msgid}
+
         # specify final command
         command.update(kwargs)
         # decide which recognition should be used, if possible use msgid
@@ -1674,6 +1736,8 @@ class AnalyzerCmd():
             recognition = self.msgid
         else:
             recognition = self._recognition_translator(command['cmd'])
+
+        # if response is expected:
         # register callback before sending
         if expect_response and user_callback == None:
             q = queue.Queue()
@@ -1682,10 +1746,11 @@ class AnalyzerCmd():
         elif expect_response:
             self.__recv_thread.register_callbacks(
                 recognition, user_callback)
-        # send command
+
+        # send command in any case
         self._send(command)
 
-        # receive response for not reports
+        # receive response if avaible and expected
         # reports are handled external
         if expect_response and user_callback == None:
             # get resonse out of queue

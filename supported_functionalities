@@ -1,0 +1,118 @@
+# Supported Functionalities
+
+Stable Release: 07.11.2022
+
+## Enums
+
+* Amplitudes
+* Channels
+* ChannelPorts
+* PreampPorts
+* Samplerates
+* FFTOversampling
+* FFTWindowing
+* FFTlogarithmic
+* SysAmplitudesTypes
+* AreaViews
+* SysSettingsClass
+* MultiPreampInput
+
+## Properties
+
+* get_socket_ip
+* get_socket_port
+* get_measuring_state
+* get_monitoring_state
+* get_sine_gen_state
+* get_operator_functions_state
+* get_operator_results_state
+* get_translator
+
+## Commands
+
+* [x] set_preamp
+* [x] set_process_comment
+* [x] set_service_parameter
+* [x] set_area_view
+* [x] set_simulation_buffer
+* [x] set_area_scale
+* [x] set_area_colour
+* [x] set_area_time_range
+* [x] set_appvar
+* [x] set_measuring_mode (**renamed**)
+* [x] set_monitoring_mode (**renamed**)
+* [x] set_serial_number
+* [x] set_serial_number_pending_process
+* [x] set_comment_pending_process
+* [x] set_comment_current_process
+* [x] set_default_project
+* [x] set_simulated_io_input
+* [x] set_human_confirmation
+
+* [x] get_project_info
+* [x] get_process_number
+* [x] get_service_parameter
+* [x] get_appvar (**renamed**)
+* [x] get_analyzer_versions
+* [x] get_heartbeat
+* [x] get_max_amp_per_band (**renamed**)
+* [x] get_measure_positions
+* [x] get_preamp_info (**renamed**)
+* [x] get_io_input
+* [x] get_io_output
+
+* [x] start_measuring
+* [x] start_sineGenerator
+* [x] start_operator
+* [ ] start_operator_function (**NOT TESTED**)
+* [ ] start_operator_results (**NOT INCLUDED**)
+* [x] start_frequency_test_port (**renamed**)
+* [x] start_frequency_test_channel (**renamed**)
+* [x] start_pulsetest_channel (**renamed**)
+* [x] start_pulsetest_port (**renamed**)
+
+* [x] stop_measuring
+* [x] stop_sineGenerator
+* [ ] stop_operator_function (**NOT TESTED**)
+* [ ] stop_operator_results (**NOT INCLUDED**)
+
+* [x] load_area_view
+* [x] load_simulation_buffer
+* [x] load_process
+* [x] load_test_project
+* [x] load_last_user_project
+
+* [ ] import_operators (**OLD -> USE import_operator_network**)
+* [ ] import_patterns(source code bug, should be fixed in newest analyzer version)
+* [x] import_trigger_list
+* [x] import_operator_network
+* [x] import_project_archive
+
+* [x] export_trigger_list
+* [x] export_operator_network
+* [x] export_project_archive
+
+* [x] send_analyzer_to_sleep
+* [x] send_appcmd (**renamed**)
+
+* [x] remove_appvar
+* [x] remove_appvar_report_callback
+* [x] remove_io_report_callback
+* [x] remove_process_number_report_callback
+
+* [x] add_appvar_report_callback
+* [x] add_io_report_callback
+* [x] add_process_number_report_callback
+
+* [x] write_to_database
+* [x] write_backup
+
+* [x] reset_failstate
+
+* [x] create_project
+
+* [x] save_area_view
+
+* [ ] change_preamp_input (source code bug, should be fixed in newest analyzer version)
+
+* [x] flash_preamp_firmware (source code bug, should be fixed in newest analyzer version)

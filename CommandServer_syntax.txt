@@ -12,7 +12,6 @@ Response: alles
 Analyzer_socket wrapper: get_analyzer_version()
 
 ---------------Get current project infos
-cmd: 	"getinfo"
 
 Response: project_name, project_info, analyzer_version
 Analyzer_socket wrapper: get_project_info()
@@ -99,7 +98,7 @@ p1:	<mode>  """ true 	start measuring
 		        monitor	start monitoring
             """
 Response: standardized analyzer response
-Analyzer_socket wrapper: run_measuring_mode()
+Analyzer_socket wrapper: set_measuring_mode()
 
 ---------------Start Monitoring
 cmd: 	"startmonitoring"
@@ -107,7 +106,7 @@ p1:	<mode>  """true 	start monitoring
 		       false	stop monitoring
             """
 Response: standardized analyzer response
-Analyzer_socket wrapper: run_monitoring_mode()
+Analyzer_socket wrapper: set_monitoring_mode()
 
 ---------------Calculate maximum Aplitude per Band
 cmd: 		"calcmaxamplitude"
@@ -119,7 +118,7 @@ save:		<boolean_if_save>[boolean], by default false
 amplitudetype:	<sys_amplitude_type>[int], by default 0
 
 Response: calced values as string
-Analyzer_socket wrapper: calc_max_amp_per_band()
+Analyzer_socket wrapper: cget_max_amp_per_band()
 
 ---------------Load predefined test project
 cmd: 	"loadtestproject"
@@ -144,14 +143,14 @@ cmd: 	"getpreampinfo"
 p1:	<Port>[int]
 
 Response:  standardized analyzer response + hardware info. "t:2023;sn:980;s:1;"
-Analyzer_socket wrapper: get_preamp_settings()
+Analyzer_socket wrapper: get_preamp_info()
 
 
 ---------------Read maximum measure positions
 cmd: 	"getmaxmeasurepositions"
 
 Response:  standardized analyzer response + all measurepositions
-Analyzer_socket wrapper: get_max__measure_positions()
+Analyzer_socket wrapper: get_measure_positions()
 
 ---------------External start of operator function values
 cmd: 	"startoperatorfunctionvalues"
@@ -254,7 +253,7 @@ p2:	<function_param[any]
 Response: script function result
 Analyzer_socket wrapper: start_script_function()
 
---------------- Set measure simluation buffer
+--------------- Set measure simulation buffer
 """ calls AppCmd --> see corresponding AppCmd"""
 
 cmd: 	simulationbuffer
@@ -304,21 +303,21 @@ p1:	<io_to_set>[hexa]
         ...
     """
 Response: standardized analyzer response
-Analyzer_socket wrapper: set_simulated_io_output()
+Analyzer_socket wrapper: set_simulated_io_intput()
 
 --------------- Switch I/O register report on/off
 cmd: 	"reportio"
 p1:	<enabel[str]> 	"""to enable p1 = "true", else is disable """
 
 Response: standardized analyzer response and reports events
-Analyzer_socket wrapper: set_io_report()
+Analyzer_socket wrapper: add_io_report_callback()/remove_io_report_callback()
 
 --------------- Switch process number report on/Off
 cmd: 	"reportprocessnumber"
 p1:	<enabel[str]> 	""" to enable p1 = "true", else is disable """
 
 Response: standardized analyzer response and reports events
-Analyzer_socket wrapper: set_process_number_report()
+Analyzer_socket wrapper: add_process_number_report_callback()/remove_process_number_report_callback()
 
 --------------- Captured received picture-
 cmd: 	"capturedpic"
@@ -328,29 +327,31 @@ v:	<remote_path[str]>
 
 
 Response: biggest analyzer response
-Analyzer_socket wrapper: set_process_number_report()
+Analyzer_socket wrapper: TODO
 
 
 --------------- Set profibus message via communication server
-cmd: 	"capturedpic"
+cmd: 	
 p1:	<profibus_msg>
 
 Response: standardized analyzer response
-Analyzer_socket wrapper: set_profibus_msg()
+Analyzer_socket wrapper: TODO
 
 --------------- Switch profibus report on/Off
 cmd: 	"reportprofibus"
 p1:	<enabel[boolean]>
 
 Response: standardized analyzer response and reports events
-Analyzer_socket wrapper: set_process_number_report()
+Analyzer_socket wrapper: TODO
 
 --------------- Set Human confirmation
 cmd: 	"confirmation" or "humancofirmation"
 p1:	<enabel[boolean]>
 
 Response: standardized analyzer response and reports events
-Analyzer_socket wrapper: set_process_number_report()
+Analyzer_socket wrapper: set_human_confirmation()
+
+
 
 *********************************************
 AppCommands Commands
@@ -439,7 +440,7 @@ p2: "channel <channel[int]> file <filepath[str]>"
 
 """..warning:: channel is 1 based here"""
 Response: standardized analyzer response
-Analyzer_socket wrapper: load_simualtion_buffer()
+Analyzer_socket wrapper: load_simulation_buffer()
 
 ---------------Set all simulation buffer ports active
 cmd: 	"AppCmd"
@@ -484,7 +485,7 @@ p2: "channel <channel[int]> pulsetest <gain[int]> <count[int]> <delay[int]>"
     ..warning:: Channel here doesn't count from 0! Why though?!
 """
 Response: standardized analyzer response
-Analyzer_socket wrapper: pulsetest_channel()
+Analyzer_socket wrapper: start_pulsetest_channel()
 
 ---------------Pulsetest port
 cmd: 	"AppCmd"
@@ -500,13 +501,13 @@ p2: "port <port_number[int]> pulsetest <gain[int]> <count[int]> <delay[int]>"
     ..warning:: Port here doesn't count from 0! Why though?!
 """
 Response: standardized analyzer response
-Analyzer_socket wrapper: pulsetest_port()
+Analyzer_socket wrapper: start_pulsetest_port()
 
-----------Change preamp input
+----------Change preamp input by multiinput preamps
 """only for multi input preamps"""
 cmd:"AppCmd"
 p1:	"Preamp"
-p2: "port <port_number[int]> switchinput <input>"
+p2: "port <port_number[int]> switchinput <input[int]>"
 
 Response: standardized analyzer response
 Analyzer_socket wrapper: change_preamp_input()
@@ -591,3 +592,91 @@ p1:	"writeBackup"
 
 Response: standardized analyzer response
 Analyzer_socket wrapper: write_backup()
+
+--------------- Import trigger list
+cmd: 	"AppCmd"
+p1:	"import"
+p2: "triggerlist <filepath[str]> # sets existing trigger inactive
+p2: "triggerlist <filepath[str] -a> # extend  existing trigger list
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: import_trigger_list()
+
+--------------- Import operator network (JSON file)
+cmd: 	"AppCmd"
+p1:	"import"
+p2: "opnet <filepath[str]>"
+
+Response: standardized analyzer response
+Analyzer_socket wrapper: import_operator_network()
+
+--------------- Import project archive (tar.gz)
+cmd: 	"AppCmd"
+p1:	"importprojectarchive"
+p2:
+    base structure:     "<filepath[str]> <project_name[str]>"
+    options to append:  " --originalnums"
+                        " --overwrite"
+"""
+if --original_nums is parsed, the original process number from the example process that will also be exported,
+will be kept. there will be as much as needed empty processes created for all process before the imported one.
+As an example if process 17000 has been exported, this flag will create 16999 empty processes before.
+
+--overwrite will overwrite current activated project
+"""
+Response: None
+Analyzer_socket wrapper: import_project_archive()
+
+--------------- Export project archive (into tar.gz)
+cmd: 	"AppCmd"
+p1:	"exportprojectarchive"
+p2: 
+    base structure:     "<target_folder_filepath[str]> <export_name[str]>"
+    options to append:  " --process <process_num[int]>" # example process with data to export with
+                        " --pengui" # export pengui
+                        " --keepfolder" # keep local folder structure alive
+
+Response: None
+Analyzer_socket wrapper: export_project_archive()
+
+--------------- Export operator network
+cmd: 	"AppCmd"
+p1:	"export"
+p2: 
+    base structure:     "opnet <filepath[str]>"
+    options to append:  " -a" # export all operators
+                        " -r" # export root operator (current active)
+                        " -t" # export tempalte operator
+
+Response: None
+Analyzer_socket wrapper: export_operator_network()
+
+--------------- Export trigger list
+cmd: 	"AppCmd"
+p1:	"export"
+p2: "triggerlist <filepath[str]>"
+
+Response: standardized analyzer response and custom error messages
+Analyzer_socket wrapper: export_trigger_list()
+
+--------------- Flash preamp software
+cmd: 	"appfunc"
+p1:	"PreampTool"
+p2: "FLASH <preampport[int]> <filepath[str]>"
+
+"""hex-filepath should be absolute
+    function is not null based"""
+
+Response: None
+Analyzer_socket wrapper: flash_preamp_software()
+
+----------- Set current project as default project 
+cmd: 	"AppCmd"
+p1:	"SaveProjectAsDefault"
+p2: completely optional:
+    "-c <comment[str]>" # Additional comment
+    "CLEAR" or "-e"     # Remove current default template
+
+Response: None
+Analyzer_socket wrapper: set_default_project()
+                         remove_default_project()
