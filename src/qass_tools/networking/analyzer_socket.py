@@ -181,7 +181,7 @@ class SysSettingsClass(IntEnum):
 
 
 class MultiPreampInput(IntEnum):
-    """ Enums for Multi Input Preamps. The numeration starts on the uppest left input and goes rowse from left to right too the lowest input (right side)."""
+    """ Enums for Multi Input Preamps. The numeration starts on the uppest left input and goes rowwise from left to right, too the lowest input (right side)."""
     NONE_MULTI_INPUT = 999  # Just a flag, to not use any input values
     MULTI_INPUT_1 = 0
     MULTI_INPUT_2 = 1
@@ -200,12 +200,12 @@ class ConnectionError(socket.error):
 
 
 class NoneRegistrationError(Exception):
-    """ Error raised if programm cannot find a registered callback for a command. When this exception occurs prgramm run into failstate."""
+    """ Error is raised if programm cannot find a registered callback for a command. When this exception occurs, programm run into failstate."""
     pass
 
 
 class AnalyzerSyntaxError(Exception):
-    """ Error risen if analyzer sends a 'not okay' command back which means that sended command syntax is not supported."""
+    """ Error is raised if analyzer sends a 'not okay' command back which means that sended command syntax is not supported in this way."""
     pass
 
 
@@ -418,44 +418,9 @@ class AnalyzerCmd():
         def inner(*args, **kwargs):
             result = func(*args, **kwargs)
             warnings.warn(
-                "Analyzer has no complete implementation for this yet.")
+                "Analyzer provides no complete implementation for this yet.")
             return result
         return inner
-
-    def value_exception(self, custom_msg=None):
-        def decorator(func):
-            @wraps(func)
-            def wrapper(*args, **kwargs):
-                try:
-                    return func(*args, **kwargs)
-                except:
-                    # define logger msg
-                    issue = f"{args} out of bounds.\n"
-                    if custom_msg:
-                        issue = issue+custom_msg
-                    self.logger.error(issue)
-                    raise
-            return wrapper
-        return decorator
-
-    def key_exception(self, custom_msg=None, kwargs_key=True):
-        def decorator(func):
-            @wraps(func)
-            def wrapper(*args, **kwargs):
-                try:
-                    return func(*args, **kwargs)
-                except:
-                    # define logger msg
-                    if kwargs_key:
-                        issue = f"Used keys: {kwargs} not supported.\n"
-                    else:
-                        issue = f"Used keys: {args} not supported.\n"
-                    if custom_msg:
-                        issue = issue+custom_msg
-                    self.logger.error(issue)
-                    raise
-            return wrapper
-        return decorator
 
     def _create_logger(self, level_mode):
         """Creates a logger which will print out to sys.stdout and log custom message and time, log level,
@@ -936,10 +901,9 @@ class AnalyzerCmd():
         :param app_var_value: Value of AppVar. As value can be choosed any datatyp supported by python (e.g. float, int, str, json, ...).
         :type app_var_value: any
         """
-
         self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value)
 
-    def get_app_var(self, appvar_name: str) -> str:
+    def get_appvar(self, appvar_name: str) -> str:
         """Get value of AppVar by name.
 
         :param app_var_name: Name of AppVar to adress.
@@ -961,7 +925,7 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="clearappvar", p1=appvar_name)
 
-    def remove_appvar_report_callback(self, callback):
+    def remove_appvar_report_callback(self, callback) -> None:
         """Removes specific callback function from AppVar report callback list.
         By removing all callbacks the report function will be automatically stopped.
 
@@ -979,7 +943,7 @@ class AnalyzerCmd():
                                p1="false")
             self.logger.info("Report of AppVar stopped.")
 
-    def add_appvar_report_callback(self, callback):
+    def add_appvar_report_callback(self, callback) -> None:
         """Add callback function to report of AppVar. Everytime a AppVar changes, added callback functions will be executed. See networking_example.py for an example.
         By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
 
