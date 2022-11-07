@@ -1,3 +1,16 @@
+Properties:
+
+* get_socket_ip
+* get_socket_port
+* get_measuring_state
+* get_monitoring_state
+* get_sine_gen_state
+* get_operator_functions_state
+* get_operator_results_state
+* get_translator
+
+Commands
+
 * [x] set_preamp
 * [x] get_project_info
 * [x] get_process_number
@@ -11,8 +24,8 @@
 * [x] socket_port
 * [x] set_area_view
 * [x] load_area_view
-* [x] set_simulation_buffer 
-* [x] load_simulation_buffer 
+* [x] set_simulation_buffer
+* [x] load_simulation_buffer
 * [x] pulsetest_channel
 * [ ] change_preamp_input (source code bug, should be fixed in newest analyzer version)
 * [x] frequency_test_port
@@ -30,7 +43,7 @@
 * [x] send_AppCmd
 * [x] get_analyzer_versions
 * [x] get_heartbeat
-* [x] measuring_mode 
+* [x] measuring_mode
 * [x] monitoring_mode
 * [x] calcualte_max_amplitude_per_band (renamed)
 * [x] load_test_project
@@ -39,7 +52,7 @@
 * [x] get_preamp_hardware_info
 * [ ] start_operator_function (**NOT TESTED**)
 * [ ] stop_operator_function (**NOT TESTED**)
-* [x] set_serial_number 
+* [x] set_serial_number
 * [x] set_serial_number_pending_process
 * [x] set_comment_pending_process
 * [x] set_comment_current_process

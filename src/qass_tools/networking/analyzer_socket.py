@@ -4,7 +4,7 @@ import json
 import numpy as np
 import time
 from enum import Enum, IntEnum
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 import logging
 import sys
 import threading
@@ -390,7 +390,6 @@ class AnalyzerCmd():
         self._sine_gen_active = False
         self._monitoring_active = False
         self._operator_functions_active = False
-        self._operator_results_active = False
 
         # short solution logger to sys.stdout
         msg_mode = logging.DEBUG if debug_mode else logging.INFO
@@ -475,9 +474,6 @@ class AnalyzerCmd():
         if self._operator_functions_active:
             self._value_parser(expect_response=False,
                                cmd="stoppoperatorfunctionvalues")
-        if self._operator_results_active:
-            self._value_parser(expect_response=False,
-                               cmd="stopoperatorresults")
 
         self.s.close()
         self.logger.info("Socket connection closed")
@@ -534,12 +530,12 @@ class AnalyzerCmd():
         return self._operator_functions_active
 
     @property
-    def get_operator_results_state(self):
-        """Property that gives out if operator results has been activated remotely.
+    def get_translator(self):
+        """ Returns supported keys from translator
 
-        :rtype: boolean
+        :rtype: List
         """
-        return self._operator_results_active
+        return self.translator.keys()
 
     def start_measuring(self) -> None:
         """Method sends a command to the connected analyzer to start a maesuring process."""
@@ -1416,18 +1412,12 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="startoperatorresults",
                            p1=self.translator[mode])
-        # just flags for exit method of context manager
-        if self.translator[mode] == "true":
-            self._operator_results_active = True
-        if self.translator[mode] == "false":
-            self._operator_results_active = False
 
     # TODO: Test
     @analyzer_functionality_warning_decorator
     def stop_operator_results(self) -> None:
-        """Sets disable flag to send operator results if avaible."""
+        """Sets operator results to stop."""
         self._value_parser(cmd="stopoperatorresults")
-        self._operator_results_active = False
 
     def get_io_input(self) -> int:
         """Current set I/O input register as integer appearance (converted from hex).
