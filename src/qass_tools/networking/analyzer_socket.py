@@ -310,25 +310,18 @@ class ReceiveThread(threading.Thread):
         current_len = 0
         buffer = bytearray()
         READ_SIZE = 4
-        #timeout = 0
         self.kill = False
         while not self.kill:
             try:
                 buffer.extend(self.s.recv(READ_SIZE))
-            # if nothing is received socket runs into failstate (socket.timeout)
+            # if nothing is received, socket runs into failstate (socket.timeout)
             except socket.timeout as e:
-                # in this case just continue while loop
-                #timeout += 1
-                # if timeout < 5:
-                #    continue
+                # if len(self.__callbacks) != 0:
+                continue
                 # else:
-                # TODO: keep alive signal
-                if len(self.__callbacks) != 0:
-                    continue
-                else:
-                    self.logger.error(
-                        "No signal received altough signal is expected. Programm stopps.")
-                    raise e
+                #    self.logger.error(
+                #        "No signal received altough signal is expected. Programm stopps.")
+                #    raise e
             # catch other socket exception and crash
             except socket.error as e:
                 self.logger.error(e)
@@ -1223,14 +1216,11 @@ class AnalyzerCmd():
             raise KeyError(
                 "Choosen preampport is not a analyzer system preamp port.")
 
-    # ANALYZER: analyzer implementation not provided
-    @analyzer_functionality_warning_decorator
     def start_operator_function(self, mode: Union[str, bool] = "start") -> None:
-        # ANALYZER: analyzer implementation not provided
         """Start operator functions.
 
         :param mode: Function can start or end operator function by changing mode to a stopping key, defaults to "start". For more allowed keys look up translator dict
-        :type mode: str, bool], optional
+        :type mode: str, bool, optional
         """
         self._value_parser(cmd="startoperatorfunctionvalues",
                            p1=self.translator[mode])
@@ -1240,8 +1230,6 @@ class AnalyzerCmd():
         elif self.translator[mode] == "false":
             self._operator_functions_active = False
 
-    # ANALYZER: analyzer implementation not provided
-    @analyzer_functionality_warning_decorator
     def stop_operator_function(self) -> None:
         """Stop of running operator function."""
         self._value_parser(cmd="stoppoperatorfunctionvalues")
@@ -1311,7 +1299,6 @@ class AnalyzerCmd():
 
     # BUG: says okay but is not working
     def import_patterns(self, directory_path: str) -> None:
-        # ANALYZER: analyzer implementation not provided
         """Import all pattern files from a optimizer local directory.
 
         :param directory_path: Directory path to patterns that will be imported.

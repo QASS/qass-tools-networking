@@ -14,7 +14,7 @@
 * [x] set_simulation_buffer 
 * [x] load_simulation_buffer 
 * [x] pulsetest_channel
-* [ ] change_preamp_input (source code bug, should be fixed in newestr analyzer version)
+* [ ] change_preamp_input (source code bug, should be fixed in newest analyzer version)
 * [x] frequency_test_port
 * [x] set_area_scale
 * [x] set_area_colour
@@ -44,7 +44,7 @@
 * [x] set_comment_pending_process
 * [x] set_comment_current_process
 * [x] start_operator
-* [ ] import_operators (**NOT TESTED**)
+* [ ] import_operators (**OLD -> USE import_operator_network**)
 * [ ] import_patterns(**NOT TESTED**)
 * [x] import_trigger_list
 * [x] import_operator_network
@@ -53,7 +53,7 @@
 * [x] export_trigger_list
 * [x] export_operator_network
 * [x] export_project_archive
-* [ ] start_operator_results (**NOT TESTED**)
-* [ ] stop_operator_results (**NOT TESTED**)
+* [ ] start_operator_results (**NOT INCLUDED**)
+* [ ] stop_operator_results (**NOT INCLUDED**)
 * [x] get_io_input
 * [x] get_io_output
