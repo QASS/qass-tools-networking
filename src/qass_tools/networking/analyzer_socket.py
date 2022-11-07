@@ -661,7 +661,7 @@ class AnalyzerCmd():
             self._value_parser(cmd="AppCmd",
                                p1="SimulationBuffer", p2=f"channel {channel_number} {self.translator[mode]}")
 
-    def pulsetest_channel(self, channel_number: Union[int, Channels], gain: int = 800, count: int = 1, delay: int = 0) -> None:
+    def start_pulsetest_channel(self, channel_number: Union[int, Channels], gain: int = 800, count: int = 1, delay: int = 0) -> None:
         """ External set of pulse test. Only avaible for exisiting ports and sensors.
 
         ..warning::
@@ -690,7 +690,7 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
-    def pulsetest_port(self, port_number: Union[int, PreampPorts], gain: int = 800, count: int = 1, delay: int = 0, multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
+    def start_pulsetest_port(self, port_number: Union[int, PreampPorts], gain: int = 800, count: int = 1, delay: int = 0, multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """External set of pulse test. Only avaible for exisiting ports and sensors.
 
         ..warning::
@@ -744,7 +744,7 @@ class AnalyzerCmd():
         self._value_parser(cmd="AppCmd", p1="Preamp",
                            p2=f"port {opti_port_number} switchinput {preamp_input_number}")
 
-    def frequency_test_port(self, port_number: Union[int, PreampPorts], multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
+    def start_frequency_test_port(self, port_number: Union[int, PreampPorts], multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """Execute a frequency test for a specific port.
 
         ..warning::
@@ -767,7 +767,7 @@ class AnalyzerCmd():
             self._value_parser(cmd="AppCmd", p1="Preamp",
                                p2=f"port {port_number} input {multi_preamp_input} frqtest")
 
-    def frequency_test_channel(self, channel_number: Union[int, Channels]) -> None:
+    def start_frequency_test_channel(self, channel_number: Union[int, Channels]) -> None:
         """Execute a frequency test for a specific port. Analyzer isn't resonsing in any way (not in a visual, acoustic
         or information way).
 
@@ -979,7 +979,7 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="createloadproject", p1=project_name)
 
-    def send_AppCmd(self, param_one: str, param_two=None):
+    def send_appcmd(self, param_one: str, param_two=None):
         """General method to send arbitrary AppCmd to analyzer.
         .. warning:: Developer function. No use without required knowledge.
         :param param_one: AppCmd
@@ -1070,7 +1070,7 @@ class AnalyzerCmd():
             self.logger.info("No worries. I'm still alive.")
             return True
 
-    def measuring_mode(self, mode: Union[bool, str]) -> None:
+    def set_measuring_mode(self, mode: Union[bool, str]) -> None:
         """Start or stop a measurement. Additionally mode provides possibility to start monitoring mode.
 
         Short settings:
@@ -1093,7 +1093,7 @@ class AnalyzerCmd():
         elif self.translator[mode] == "monitor":
             self._monitoring_active = True
 
-    def monitoring_mode(self, mode: Union[bool, str]) -> None:
+    def set_monitoring_mode(self, mode: Union[bool, str]) -> None:
         """Start or stop monitoring modus.
 
         Short settings:
@@ -1113,8 +1113,8 @@ class AnalyzerCmd():
         elif self.translator[mode] == "false":
             self._monitoring_active = False
 
-    def calculate_max_amplitude_per_band(self, channel=Channels.CHANNEL_1, create_plot_buffer: bool = True, create_data_buffer: bool = False, amplitude_type=SysAmplitudesType.AMPLITUDE_DEFAULT) -> np.ndarray:
-        """ Method to calculate maximum amplitude per band.
+    def get_max_amp_per_band(self, channel=Channels.CHANNEL_1, create_plot_buffer: bool = True, create_data_buffer: bool = False, amplitude_type=SysAmplitudesType.AMPLITUDE_DEFAULT) -> np.ndarray:
+        """ Method to return maximum amplitude per band of current active buffer.
 
         :param channel: Datastream Channel, defaults to Channels.CHANNEL_1
         :type channel: int or Channel, optional
@@ -1230,17 +1230,16 @@ class AnalyzerCmd():
         """
         self._value_parser(cmd="setpendingcomment", p1=comment)
 
-    def set_comment_current_process(self, comment: str) -> None:
-        # TODO: kill
-        """ Sets comment for current activatet process.
+    # def set_comment_current_process(self, comment: str) -> None:
+     #   """ Sets comment for current activatet process.
 
-        Similair to set_proces_comment but as JSON communication Server command.
-        Comment is saved in database under process.comment
-
-        :param comment: Process comment to set
-        :type comment: str
-        """
-        self._value_parser(cmd="setcomment", p1=comment, quiet=False)
+#        Similair to set_proces_comment but as JSON communication Server command.
+ #       Comment is saved in database under process.comment
+#
+ #       :param comment: Process comment to set
+ #       :type comment: str
+ #      """
+ #       self._value_parser(cmd="setcomment", p1=comment, quiet=False)
 
     def start_operator(self, operator_name: str, operator_setting: str, user_callback=None) -> None:
         """Manual start of existing operator by name. By adding a callback function, software will execute callback when operator finish.
@@ -1293,8 +1292,7 @@ class AnalyzerCmd():
     def import_project_archive(self, filepath: str, project_name: str, keep_original_process_nums: bool = False, overwrite: bool = False) -> None:
         """ Import a complete project archive file (tar.gz). 
 
-        .. warning:: if keep_original_process_nums is activated and the original process number will be kept, there will be
-        as much as needed empty processes created for all process before the imported one. As an example if 
+        .. warning:: if keep_original_process_nums is set_ process before the imported one. As an example if 
         process 17000 has been exported, this flag will create 16999 empty processes before.
 
         .. warning:: if overwrite is activated this will be overwrite and delete current activated project
@@ -1370,8 +1368,8 @@ class AnalyzerCmd():
                            p1="exportprojectarchive", p2=p2_string)
 
     # TODO: Test in newest analyzer version
-    def flash_preamp_software(self, preampport: Union[int, PreampPorts], filepath: str) -> None:
-        """Flash preamp software by downloaded hexfile. Path should be absolute path.
+    def flash_preamp_firmware(self, preampport: Union[int, PreampPorts], filepath: str) -> None:
+        """Flash preamp firmware by downloaded hexfile. Path should be absolute path.
 
         :param preampport: Connected Preamp
         :type preampport: int or PreampPorts
@@ -1615,7 +1613,7 @@ class AnalyzerCmd():
         return self._value_parser(cmd="appfunc",
                                   p1=function_name, p2=function_param)
 
-    def human_confirmation(self, process_IO=False, **kwargs) -> None:
+    def set_human_confirmation(self, process_IO=False, **kwargs) -> None:
         """ Send human confiramtion over current process. Score and comment can be parsed over kwargs.
 
         |------------------ kwargs ----------------|
@@ -1664,6 +1662,8 @@ class AnalyzerCmd():
     def reset_failstate(self) -> None:
         """ Reset analyzer failure state and activates I/O ready by this."""
         self._value_parser(cmd="AppCmd", p1="ResetFailstate")
+    # TODO: profibus
+    # TODO: profibus report
 
     def _recognition_translator(self, cmd: str) -> str:
         """Private method to add sended cmd str "response".
