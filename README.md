@@ -17,7 +17,7 @@ pip install --user --no-deps -e .
 from qass.tools import networking
 ```
 
-or
+or to directly address analyzer_socket:
 
 ```py
 from qass.tools.networking.analyzer_socket import AnalyzerCmd 
