@@ -1,5 +1,5 @@
 import time
-from qass_tools.networking.analyzer_socket import AnalyzerCmd, Channels, Amplitudes, PreampPorts
+from qass.tools.networking.analyzer_socket import AnalyzerCmd, Channels, Amplitudes, PreampPorts
 
 ######## Example 1 ############
 """ Simple example how to intialize a socket connection to the optimizer and have access to analyzer functions."""
