@@ -10,7 +10,7 @@ This package provides tools to work remote with the Analyzer4D Software and buil
 If you run into a bug or compatibility problems please contact ewiebelitz@qass.net or okowollik@qass.net.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 6
    :caption: Remote Control and Supervising
    
    analyzer_socket
