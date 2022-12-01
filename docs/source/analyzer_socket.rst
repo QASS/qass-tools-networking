@@ -19,13 +19,15 @@ In the example we build a remote connection (TCP) to an Analyzer4D software and 
 
 
 AnalyzerRemote
-******
+**************
 .. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerRemote
         :members:
 
 
 Analyzer Helper Classes
-******
+***********************
+.. autoclass:: qass.tools.networking.analyzer_socket.Amplitudes
+        :members:
 
 .. autoclass:: qass.tools.networking.analyzer_socket.Amplitudes
         :members:
