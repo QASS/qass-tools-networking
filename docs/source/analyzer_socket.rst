@@ -6,17 +6,66 @@ It can be used to monitor running processes or start measure protocols on remote
 
 Example
 *******
-In the example we provide the path to a buffer file to the :class:`Buffer` class and use the with-statement to open it to read the process number.
-
+In the example we build a remote connection (TCP) to an Analyzer4D software and send a command to start a measuring.
 .. code-block:: python
     :linenos:
 
-     from qass.tools.analyzer.buffer_parser import Buffer
+     from qass.tools.networking.analyzer_socket import AnalyzerRemote
+     ip_address = "111.111.1.111"
+     with AnalyzerRemote(ip_address) as opti:
+        opti.start_measuring()
 
-     buffer_file = "path/to/my/buffer_file"
-     with Buffer(buffer_file) as buff:
-        print(buff.process)
 
-
-Buffer
+AnalyzerRemote
 ******
+.. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerRemote
+        :members:
+
+
+Analyzer Helper Classes
+******
+
+.. autoclass:: qass.tools.networking.analyzer_socket.Amplitudes
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.Channels
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.ChannelsPorts
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.PreampPorts
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.Samplerates
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.FFTOversampling
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.FFTWindowing
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.FFTLogarithmic
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.SysAmplitudesType
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.AreaViews
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.SysSettingsClass
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.MultiPreampInput
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.ConnectionError
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.NoneRegistrationError
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerSyntaxError
+        :members:
