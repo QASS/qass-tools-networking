@@ -179,7 +179,7 @@ class SysSettingsClass(IntEnum):
 
 
 class MultiPreampInput(IntEnum):
-    """ Enums for Multi Input Preamps. The numeration starts on the uppest left input and goes rowwise from left to right, too the lowest input (right side)."""
+    """ Enums for Multi Input Preamps. The numeration starts on the uppest left input and goes rowise from left to right, too the lowest input (right side)."""
     NONE_MULTI_INPUT = 999  # Just a flag, to not use any input values
     MULTI_INPUT_1 = 0
     MULTI_INPUT_2 = 1
@@ -625,7 +625,7 @@ class AnalyzerRemote():
     def load_simulation_buffer(self, file_path: str, channel: int, do_not_copy_meta_data=False) -> None:
         """Load and set local simulation buffer for specific channel.
 
-        ..warning:: AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+        .. warning:: AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param file_path: Local file path to buffer.
         :type file_path: str
@@ -662,8 +662,7 @@ class AnalyzerRemote():
     def start_pulsetest_channel(self, channel_number: Union[int, Channels], gain: int = 800, count: int = 1, delay: int = 0) -> None:
         """ External set of pulse test. Only avaible for exisiting ports and sensors.
 
-        ..warning::
-        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+        .. warning:: AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param channel_number: Channel where pulsetest gets executed.
         :type channel_number: int or Channels
@@ -691,7 +690,7 @@ class AnalyzerRemote():
     def start_pulsetest_port(self, port_number: Union[int, PreampPorts], gain: int = 800, count: int = 1, delay: int = 0, multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """External set of pulse test. Only avaible for exisiting ports and sensors.
 
-        ..warning:: AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+        .. warning:: AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param port_number: Port where pulsetest gets executed.
         :type port_number: int or PreampPorts
@@ -727,8 +726,8 @@ class AnalyzerRemote():
         """ Method changes which physical preamp input will be used for datastream output to optimizer.
 
         Only avaible for multi input preamps.
-        ..warning::
-        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+
+        .. warning:: AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param opti_port_number: opti port number to adress
         :type opti_port_number: int or PreampPorts
@@ -744,8 +743,7 @@ class AnalyzerRemote():
     def start_frequency_test_port(self, port_number: Union[int, PreampPorts], multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """Execute a frequency test for a specific port.
 
-        ..warning::
-        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+        .. warning:: AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param port_number: Port number for frequency test
         :type port_number: int or PreampPorts
@@ -768,8 +766,7 @@ class AnalyzerRemote():
         """Execute a frequency test for a specific port. Analyzer isn't resonsing in any way (not in a visual, acoustic
         or information way).
 
-        ..warning::
-        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+        .. warning:: AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param port_number: Channel number for frequency test
         :type port_number: int or Channels
@@ -783,8 +780,7 @@ class AnalyzerRemote():
         """ Set scale of each view area. Available for splitted analyzer view and single view.
         In case of single view area_number equals one.
 
-        Scale should be in range(10,1001)
-        Area number should be in range(1,5), but is limited to current activated area views.
+        Scale should be in range(10,1001) | Area number should be in range(1,5), but is limited to current activated area views.
 
         :param area_number: Which area should be addressed
         :type area_number: int
@@ -804,8 +800,7 @@ class AnalyzerRemote():
     def set_area_colour(self, area_number: int, colour_scale: int = 200) -> None:
         """Set the colour scale for area view. Only available in area
 
-        Colour scale should be in range(10,401)
-        Area should be in range(1,5)
+        Colour scale should be in range(10,401) | Area should be in range(1,5)
 
         :param area_number: Which area should be addressed
         :type area_number: int
@@ -919,10 +914,9 @@ class AnalyzerRemote():
         self._value_parser(cmd="clearappvar", p1=appvar_name)
 
     def remove_appvar_report_callback(self, callback) -> None:
-        """Removes specific callback function from AppVar report callback list.
+        """ Removes specific callback function from AppVar report callback list.
         By removing all callbacks the report function will be automatically stopped.
 
-        ..see also:: add_appvar_report_callback
         :param callback: Callback function that should be removed from AppVar report functionalities.
         :type callback: function
         """
@@ -937,12 +931,12 @@ class AnalyzerRemote():
             self.logger.info("Report of AppVar stopped.")
 
     def add_appvar_report_callback(self, callback) -> None:
-        """Add callback function to report of AppVar. Everytime a AppVar changes, added callback functions will be executed. See networking_example.py for an example.
+        """ Add callback function to report of AppVar. Everytime a AppVar changes, added callback functions will be executed. See networking_example.py for an example.
         By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function. Beside the executed callback, analyzer sends
         state of all AppVars as information by every change.
 
         .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
-        ..see also:: remove_appvar_report_callback
+
         :param callback: Added callback function when report happens.
         :type callback: function
         """
@@ -1072,12 +1066,18 @@ class AnalyzerRemote():
     def set_measuring_mode(self, mode: Union[bool, str]) -> None:
         """Start or stop a measurement. Additionally mode provides possibility to start monitoring mode.
 
-        Short settings:
-        | Measuring mode    | Key       |
-        | ----------------- | --------- |
-        | start monitoring  | "monitor" |
-        | start measurement | "true"    |
-        | stop measurement  | "false"   |
+        .. list-table:: Keywords on one look
+            :widths: 15 25
+            :header-rows: 1
+
+            * - Key
+              - Measuring mode
+            * - monitor
+              - Start monitoring
+            * - true
+              - Start measurement
+            * - false
+              - Stop measurement
 
         :param mode: Choosen measuring mode out of table above.
         :type mode: str, bool
@@ -1095,11 +1095,16 @@ class AnalyzerRemote():
     def set_monitoring_mode(self, mode: Union[bool, str]) -> None:
         """Start or stop monitoring modus.
 
-        Short settings:
-        | Measuring mode    | Key       |
-        | ----------------- | --------- |
-        | Start monitoring  | "true"    |
-        | Stop monitoring   | "false"   |
+        .. list-table:: Keywords on one look
+            :widths: 15 25
+            :header-rows: 1
+
+            * - Key
+              - Measuring mode
+            * - true
+              - Start monitoring
+            * - false
+              - Stop monitoring
 
         :param mode: Switch between start monitoring ("true") or stop monitoring  ("false"). For supported keys see translator.
         :type mode: str, bool
@@ -1142,8 +1147,8 @@ class AnalyzerRemote():
         """ Loads last user project before a test project was loaded.
 
         .. warning:: To use this a test project must be loaded before!!!
-        .. note:: 
-        If no testproject was loaded beforehand, <name_variable> in analyzer software will not be addressed and
+
+        .. note:: If no testproject was loaded beforehand, <name_variable> in analyzer software will not be addressed and
         a new project without name!(="") is going to be created. Once a project like this exist, analyzer cannot perform this again
         and without loading a test project beforehand, function will do nothing (but parse any check).
         """
@@ -1271,9 +1276,10 @@ class AnalyzerRemote():
 
     def import_trigger_list(self, filepath: str, append: bool = False) -> None:
         """ Import a trigger list file from local path. Append option decides already exisitng triggers will be set active or not.
+
         :param filepath: Local filepath
         :type filepath: str
-        :param append: Decision to set already existing trigger list active or passive by extending, defaults to False
+        :param append: Decision to set already existing trigger list active or passive by extending, defaults to False.
         :type append: bool, optional
         """
         p2_string = f"triggerlist {filepath}"
@@ -1284,8 +1290,10 @@ class AnalyzerRemote():
                            p1="import", p2=p2_string)
 
     def import_operator_network(self, filepath: str) -> None:
-        """ Import local operator network file. Command runs as root import. Pay attention to 
-         ..warning:: The current operator network will be replaced.
+        """ Import local operator network file. Command runs as root import.
+
+        .. warning:: The current operator network will be replaced.
+
         :param filepath: Local filepath to operator network file
         :type filepath: str
         """
@@ -1295,10 +1303,9 @@ class AnalyzerRemote():
     def import_project_archive(self, filepath: str, project_name: str, keep_original_process_nums: bool = False, overwrite: bool = False) -> None:
         """ Import a complete project archive file (tar.gz). 
 
-        .. warning:: if keep_original_process_nums is set_ process before the imported one. As an example if 
-        process 17000 has been exported, this flag will create 16999 empty processes before.
+        .. warning:: If keep_original_process_nums is set, the proces structure will be kept like before the import. As an example if process 17000 has been exported, this flag will create 16999 empty processes before.
 
-        .. warning:: if overwrite is activated this will be overwrite and delete current activated project
+        .. warning:: If overwrite is activated this will be overwrite and delete current activated project.
 
         :param filepath: Local filepath to archive file
         :type filepath: str
@@ -1322,10 +1329,18 @@ class AnalyzerRemote():
         """ Exports operator network as JSON file. Export contains either current activated
         (key:"root"), all (key:"all") or just the network template (key:"template") by parsing the key to export. 
 
-        | -- Key -- | ------------------ Definition -------------------- |
-        | root      | Exports current active operator network            |
-        | all       | Exports all avaible operator networks              |
-        | template  | Exports project specific operator network template |
+        .. list-table:: Keywords on one look
+            :widths: 15 25
+            :header-rows: 1
+
+            * - Key
+              - Definition
+            * - root
+              - Exports current active operator network
+            * - all
+              - Exports all avaible operator networks
+            * - template
+              - Exports project specific operator network template
 
         :param folderpath: Target file path
         :type folderpath: str
@@ -1372,7 +1387,7 @@ class AnalyzerRemote():
 
     # TODO: Test in newest analyzer version
     def flash_preamp_firmware(self, preampport: Union[int, PreampPorts], filepath: str) -> None:
-        """Flash preamp firmware by downloaded hexfile. Path should be absolute path.
+        """ Flash preamp firmware by downloaded hexfile. Path should be absolute path.
 
         :param preampport: Connected Preamp
         :type preampport: int or PreampPorts
@@ -1386,7 +1401,7 @@ class AnalyzerRemote():
         #                   p1=f"flash {preampport} {filepath}")
 
     def set_default_project(self, comment: str = None) -> None:
-        """Set current active project as new default template.
+        """ Set current active project as new default template.
 
         :param comment: Comment to describe template, defaults to None
         :type comment: str, optional
@@ -1406,7 +1421,7 @@ class AnalyzerRemote():
     # TODO: Test
     @analyzer_functionality_warning_decorator
     def start_operator_results(self, mode: Union[str, bool] = "enable") -> None:
-        """Sets enable flag to send ot operator results if avaible. Results will be sended separately
+        """ Sets enable flag to send ot operator results if avaible. Results will be sended separately
 
         :param mode: Enables start or stops by "disable", defaults to "enable"
         :type mode: str, optional
@@ -1417,11 +1432,11 @@ class AnalyzerRemote():
     # TODO: Test
     @analyzer_functionality_warning_decorator
     def stop_operator_results(self) -> None:
-        """Sets operator results to stop."""
+        """ Sets operator results to stop."""
         self._value_parser(cmd="stopoperatorresults")
 
     def get_io_input(self) -> int:
-        """Current set I/O input register as integer appearance (converted from hex).
+        """ Current set I/O input register as integer appearance (converted from hex).
 
         :return: I/O input register as integer appearance
         :rtype: int
@@ -1430,7 +1445,7 @@ class AnalyzerRemote():
         return val.get("result")
 
     def get_io_output(self) -> int:
-        """Returns set I/O output register as integer appearance of hexa state.
+        """ Returns set I/O output register as integer appearance of hexa state.
 
         :return: Set I/O output
         :rtype: int
@@ -1484,49 +1499,51 @@ class AnalyzerRemote():
         First 8 digits are first I/O input register
         Second 8 digits are second I/O input register
         Give in all inputs as strings only!
+
         .. list-table:: I/O Input possibilities
-            :widths: 50 25
+            :widths: 25 25
             :header-rows: 1
-        * - Binary Representation
-          - Hexadecimal Representation
-        * - "00000000 00000000"
-          - "0xf0000"
-        * - "10000000 00000000"
-          - "0xf0001"
-        * - "01000000 00000000"
-          - "0xf0002"
-        * - "11000000 00000000"
-          - "0xf0003"
-        * - "00100000 00000000"
-          - "0xf0004"
-        * - "10100000 00000000"
-          - "0xf0005"
-        * - "01100000 00000000"
-          - "0xf0006"
-        * - "11100000 00000000"
-          - "0xf0007"
-        * - "00010000 00000000"
-          - "0xf0008"
-        * - "10010000 00000000"
-          - "0xf0009"
-        * - "01010000 00000000"
-          - "0xf000A"
-        * - "11010000 00000000"
-          - "0xf000B"
-        * - "00110000 00000000"
-          - "0xf000C"
-        * - "10110000 00000000"
-          - "0xf000D"
-        * - "01110000 00000000"
-          - "0xf000E"
-        * - "11110000 00000000"
-          - "0xf000F"
-        * - ...
-          - ...
-        * - "10001000 00000000"
-          - "0xf0011"
-        * - ...
-          - ...
+
+            * - Binary Representation
+              - Hexadecimal Representation
+            * - "00000000 00000000"
+              - "0xf0000"
+            * - "10000000 00000000"
+              - "0xf0001"
+            * - "01000000 00000000"
+              - "0xf0002"
+            * - "11000000 00000000"
+              - "0xf0003"
+            * - "00100000 00000000"
+              - "0xf0004"
+            * - "10100000 00000000"
+              - "0xf0005"
+            * - "01100000 00000000"
+              - "0xf0006"
+            * - "11100000 00000000"
+              - "0xf0007"
+            * - "00010000 00000000"
+              - "0xf0008"
+            * - "10010000 00000000"
+              - "0xf0009"
+            * - "01010000 00000000"
+              - "0xf000A"
+            * - "11010000 00000000"
+              - "0xf000B"
+            * - "00110000 00000000"
+              - "0xf000C"
+            * - "10110000 00000000"
+              - "0xf000D"
+            * - "01110000 00000000"
+              - "0xf000E"
+            * - "11110000 00000000"
+              - "0xf000F"
+            * - ...
+              - ...
+            * - "10001000 00000000"
+              - "0xf0011"
+            * - ...
+              - ...
 
         :param io: Combination of bits set to I/O input register (one and two), defaults to "0xf0000". For further information see extended summary.
         :type io: str
@@ -1560,7 +1577,7 @@ class AnalyzerRemote():
         By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
 
         .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
-        ..see also:: remove_io_report_callback
+
         :param callback: Added callback function when report happens.
         :type callback: function
         """
@@ -1573,10 +1590,8 @@ class AnalyzerRemote():
         self.logger.info(f"Callback {callback} for I/O report added")
 
     def remove_io_report_callback(self, callback) -> None:
-        """Removes specific callback function from I/O report callback list.
-        By removing all callbacks the report function will be automatically stopped.
+        """ Removes specific callback function from I/O report callback list. By removing all callbacks the report function will be automatically stopped.
 
-        ..see also:: add_io_report_callback
         :param callback: Callback function that should be removed from I/O report functionalities.
         :type callback: function
         """
@@ -1590,11 +1605,10 @@ class AnalyzerRemote():
             self.logger.info("I/O report stopped")
 
     def add_process_number_report_callback(self, callback) -> None:
-        """Add callback function to report of process number. Everytime the process number changes, added callback functions will be executed. See networking_example.py for an example.
-        By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
+        """ Add callback function to report of process number. Everytime the process number changes, added callback functions will be executed. See networking_example.py for an example. By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
 
         .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
-        ..see also:: remove_process_number_report_callback
+
         :param callback: Added callback function when report happens.
         :type callback: function
         """
@@ -1609,10 +1623,8 @@ class AnalyzerRemote():
             f"Callback {callback} for process number report added")
 
     def remove_process_number_report_callback(self, callback) -> None:
-        """Removes specific callback function from process number report callback list.
-        By removing all callbacks the report function will be automatically stopped.
+        """ Removes specific callback function from process number report callback list. By removing all callbacks the report function will be automatically stopped.
 
-        ..see also:: add_io_report_callback
         :param callback: Callback function that should be removed from process number report functionalities.
         :type callback: function
         """
@@ -1631,6 +1643,7 @@ class AnalyzerRemote():
         """ General syntax to start script function. Response is depending on called function.
 
         .. warning:: Service function, should not be used without prior kmowledge about remote scripts
+
         :param function_name: Name of script function
         :type function_name: str
         :param function_param: Passed param to script function
@@ -1644,9 +1657,16 @@ class AnalyzerRemote():
     def set_human_confirmation(self, process_IO=False, **kwargs) -> None:
         """ Send human confiramtion over current process. Score and comment can be parsed over kwargs.
 
-        |------------------ kwargs ----------------|
-        | comment | Human comment for confirmation |
-        | score   | Score value for confirmation   |
+        .. list-table:: Possible keyword arguments
+            :widths: 15 25
+            :header-rows: 1
+
+            * - Key
+              - Definition
+            * - comment
+              - Human comment for confirmation
+            * - score
+              - Score value for confirmation
 
         :param process_IO: Confirmation if current process is IO or NIO, defaults to False
         :type process_IO: bool
@@ -1694,7 +1714,7 @@ class AnalyzerRemote():
     # TODO: profibus report
 
     def _recognition_translator(self, cmd: str) -> str:
-        """Private method to add sended cmd str "response".
+        """ Private method to add sended cmd str "response".
 
         :param cmd: cmd string which needs to be changend.
         :type cmd: str
@@ -1736,7 +1756,7 @@ class AnalyzerRemote():
         self.s.sendall(cmd_str)
 
     def _value_parser(self, expect_response=True, user_callback=None, **kwargs) -> Dict:
-        """Function to coordinate sending parsed command settings and take back answer from receiver thread.
+        """ Function to coordinate sending parsed command settings and take back answer from receiver thread.
 
         By kwargs specification of each command will be set.
 
@@ -1786,6 +1806,15 @@ class AnalyzerRemote():
 
 
 class AnalyzerCmd(AnalyzerRemote):
+    """ Depricated class naming. Inherit from normal class.
+
+    .. deprecated:: 1.1
+    Use AnalyzerRemote class instead.
+
+    :param AnalyzerRemote: Inherited class
+    :type AnalyzerRemote: class
+    """
+
     def __init__(self, ip: str, port=17000, debug_mode=False):
         super().__init__(ip, port, debug_mode)
         warnings.warn(
