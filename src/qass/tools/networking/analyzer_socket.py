@@ -356,7 +356,7 @@ class ReceiveThread(threading.Thread):
         self.join()
 
 
-class AnalyzerCmd():
+class AnalyzerRemote():
     """ Class provides methods for external analyzer control (system operator independant) over a TCP socket."""
 
     def __init__(self, ip: str, port=17000, debug_mode=False):
@@ -370,9 +370,9 @@ class AnalyzerCmd():
         :type debug_mode: bool
 
         ::Example::
-            analyzer = AnalyzerCmd(ip="192.168.2.67", port=17000)
-            analyzer = AnalyzerCmd(ip="192.168.2.67")
-            analyzer = AnalyzerCmd("192.168.2.67")
+            analyzer = AnalyzerRemote(ip="192.168.2.67", port=17000)
+            analyzer = AnalyzerRemote(ip="192.168.2.67")
+            analyzer = AnalyzerRemote("192.168.2.67")
         """
         # helper
         self.ip = ip
@@ -401,8 +401,8 @@ class AnalyzerCmd():
         via TCP and returns an instance of the class. Additionally a second thread (called receiving thread) will be started.
         This thread will run until __exit__ method will kill recieve thread.
 
-        :return: Instance of AnalyzerCmd class
-        :rtype: AnalyzerCmd object
+        :return: Instance of AnalyzerRemote class
+        :rtype: AnalyzerRemote object
         """
         # connect to socket
         self._connecting_analyzer()

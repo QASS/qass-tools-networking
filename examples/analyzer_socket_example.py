@@ -1,9 +1,9 @@
 import time
-from qass.tools.networking.analyzer_socket import AnalyzerCmd, Channels, Amplitudes, PreampPorts
+from qass.tools.networking.analyzer_socket import AnalyzerRemote, Channels, Amplitudes, PreampPorts
 
 ######## Example 1 ############
 """ Simple example how to intialize a socket connection to the optimizer and have access to analyzer functions."""
-with AnalyzerCmd(ip="192.168.2.67") as opti:
+with AnalyzerRemote(ip="192.168.2.67") as opti:
     opti.set_preamp(channel=Channels.CHANNEL_1)
     info = opti.get_project_info()
     print(info)
@@ -21,7 +21,7 @@ with AnalyzerCmd(ip="192.168.2.67") as opti:
 
 ######## Example 2 ############
 """ Example two shows an easy way to debug system in case you need some more detailed information how to process incomming responses"""
-with AnalyzerCmd(ip="192.168.2.67", debug_mode=True) as opti:
+with AnalyzerRemote(ip="192.168.2.67", debug_mode=True) as opti:
     info = opti.get_project_info()
     print(info)
 
@@ -39,7 +39,7 @@ def own_callback_example(result):
         print("I/O state changed")
 
 
-with AnalyzerCmd(ip="192.168.2.67") as opti:
+with AnalyzerRemote(ip="192.168.2.67") as opti:
     # Start report
     opti.add_io_report_callback(own_callback_example)
     # Do something
@@ -50,7 +50,7 @@ with AnalyzerCmd(ip="192.168.2.67") as opti:
 
 ######## Example 4 ############
 """ Possible first start for optimizer script"""
-with AnalyzerCmd(ip="192.168.2.67") as opti:
+with AnalyzerRemote(ip="192.168.2.67") as opti:
     project_dict = opti.get_project_info()
     current_state = opti.get_service_parameter("pFPGAVersion")
     if current_state is not 2:
