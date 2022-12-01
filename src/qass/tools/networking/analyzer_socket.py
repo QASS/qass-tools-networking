@@ -545,8 +545,8 @@ class AnalyzerRemote():
         """Method to start sine wave generation with custom frequency and amplitude settings.
 
         .. warning:: Sine generator has to be already switched on!
-        .. note::Note that you should consider that the sine generator needs a couple µs to start
-        .. note::Reminder: Frequency range is limited by used sine generator
+        .. note:: Note that you should consider that the sine generator needs a couple µs to start
+        .. note:: Reminder: Frequency range is limited by used sine generator
 
         :param frequency: Used frequency to generate sine wave with in Hz.
         :type frequency: int
@@ -625,8 +625,7 @@ class AnalyzerRemote():
     def load_simulation_buffer(self, file_path: str, channel: int, do_not_copy_meta_data=False) -> None:
         """Load and set local simulation buffer for specific channel.
 
-        ..warning::
-        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+        ..warning:: AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param file_path: Local file path to buffer.
         :type file_path: str
@@ -692,8 +691,7 @@ class AnalyzerRemote():
     def start_pulsetest_port(self, port_number: Union[int, PreampPorts], gain: int = 800, count: int = 1, delay: int = 0, multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT) -> None:
         """External set of pulse test. Only avaible for exisiting ports and sensors.
 
-        ..warning::
-        AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
+        ..warning:: AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
 
         :param port_number: Port where pulsetest gets executed.
         :type port_number: int or PreampPorts
@@ -980,7 +978,9 @@ class AnalyzerRemote():
 
     def send_appcmd(self, param_one: str, param_two=None):
         """General method to send arbitrary AppCmd to analyzer.
+
         .. warning:: Developer function. Do not use without prior knowledge about AppCmds!
+
         :param param_one: AppCmd
         :type param_one: str
         :param param_two: If needed second parameter to specify params used in AppCmd, defaults to None
@@ -1242,7 +1242,7 @@ class AnalyzerRemote():
 
     def start_operator(self, operator_name: str, operator_setting: str, user_callback=None) -> None:
         """Manual start of existing operator by name. By adding a callback function,
-            software will execute callback when operator finish.
+        software will execute callback when operator finish.
 
         .. note:: Every callback needs an argument for passed response, whether it is used or not. 
 
@@ -1320,7 +1320,7 @@ class AnalyzerRemote():
 
     def export_operator_network(self, target_filepath: str, export: str = "root") -> None:
         """ Exports operator network as JSON file. Export contains either current activated
-            (key:"root"), all (key:"all") or just the network template (key:"template") by parsing the key to export. 
+        (key:"root"), all (key:"all") or just the network template (key:"template") by parsing the key to export. 
 
         | -- Key -- | ------------------ Definition -------------------- |
         | root      | Exports current active operator network            |
@@ -1440,6 +1440,7 @@ class AnalyzerRemote():
 
     def _shift_binary(self, original_bin: str) -> str:
         """Helper method to convert incoming binary to least significant digit on the right side
+
         :param original_bin: Incoming binary
         :type original_bin: str
         :return: Shifted binary
@@ -1483,25 +1484,49 @@ class AnalyzerRemote():
         First 8 digits are first I/O input register
         Second 8 digits are second I/O input register
         Give in all inputs as strings only!
-        "00000000 00000000" = "0xf0000"
-        "10000000 00000000" = "0xf0001"
-        "01000000 00000000" = "0xf0002"
-        "11000000 00000000" = "0xf0003"
-        "00100000 00000000" = "0xf0004"
-        "10100000 00000000" = "0xf0005"
-        "01100000 00000000" = "0xf0006"
-        "11100000 00000000" = "0xf0007"
-        "00010000 00000000" = "0xf0008"
-        "10010000 00000000" = "0xf0009"
-        "01010000 00000000" = "0xf000A"
-        "11010000 00000000" = "0xf000B"
-        "00110000 00000000" = "0xf000C"
-        "10110000 00000000" = "0xf000D"
-        "01110000 00000000" = "0xf000E"
-        "11110000 00000000" = "0xf000F"
-
-        "10001000 00000000" = "0xf0011"
-        ...
+        .. list-table:: I/O Input possibilities
+            :widths: 50 25
+            :header-rows: 1
+        * - Binary Representation
+          - Hexadecimal Representation
+        * - "00000000 00000000"
+          - "0xf0000"
+        * - "10000000 00000000"
+          - "0xf0001"
+        * - "01000000 00000000"
+          - "0xf0002"
+        * - "11000000 00000000"
+          - "0xf0003"
+        * - "00100000 00000000"
+          - "0xf0004"
+        * - "10100000 00000000"
+          - "0xf0005"
+        * - "01100000 00000000"
+          - "0xf0006"
+        * - "11100000 00000000"
+          - "0xf0007"
+        * - "00010000 00000000"
+          - "0xf0008"
+        * - "10010000 00000000"
+          - "0xf0009"
+        * - "01010000 00000000"
+          - "0xf000A"
+        * - "11010000 00000000"
+          - "0xf000B"
+        * - "00110000 00000000"
+          - "0xf000C"
+        * - "10110000 00000000"
+          - "0xf000D"
+        * - "01110000 00000000"
+          - "0xf000E"
+        * - "11110000 00000000"
+          - "0xf000F"
+        * - ...
+          - ...
+        * - "10001000 00000000"
+          - "0xf0011"
+        * - ...
+          - ...
 
         :param io: Combination of bits set to I/O input register (one and two), defaults to "0xf0000". For further information see extended summary.
         :type io: str
