@@ -13,6 +13,7 @@ from collections import defaultdict
 from retry import retry
 from functools import wraps
 import warnings
+from deprecated import deprecated
 
 
 class Amplitudes(Enum):
@@ -1761,15 +1762,8 @@ class AnalyzerRemote():
             self._check_response(analyzer_response)
             return analyzer_response
 
-
-AnalyzerCmd = AnalyzerRemote
-
-
 class AnalyzerCmd(AnalyzerRemote):
     def __init__(self, ip: str, port=17000, debug_mode=False):
         super().__init__(ip, port, debug_mode)
-        self.depricated_warning()
-
-    def depricated_warning(self):
-        warn.warnings(
-            f"Class Name AnalyzerCmd is depricated. Please use AnalyzerRemote!")
+        warnings.warn(
+            f"Class Name AnalyzerCmd is deprecated. Please use AnalyzerRemote!")
