@@ -1,4 +1,3 @@
-from distutils.log import warn
 import socket
 import json
 import numpy as np
@@ -11,9 +10,7 @@ import threading
 import queue
 from collections import defaultdict
 from retry import retry
-from functools import wraps
 import warnings
-from deprecated import deprecated
 
 
 class Amplitudes(Enum):
@@ -1761,6 +1758,7 @@ class AnalyzerRemote():
             # check response for failure
             self._check_response(analyzer_response)
             return analyzer_response
+
 
 class AnalyzerCmd(AnalyzerRemote):
     def __init__(self, ip: str, port=17000, debug_mode=False):
