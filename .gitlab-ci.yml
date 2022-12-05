@@ -1,6 +1,7 @@
+image: python:3.6
+
 build-package:
   stage: deploy
-  image: python:3.6
   script:
     - touch /tmp/.pypirc
     - cat $PYPIRC > /tmp/.pypirc
@@ -8,5 +9,19 @@ build-package:
     - pip install twine
     - python3 -m build
     - python3 -m twine upload --repository gitlab dist/* --config-file /tmp/.pypirc
+  only:
+    - tags
+
+pages:
+  stage: deploy
+  script:
+    - pip install sphinx
+    - pip install sphinx_rtd_theme numpy retry
+    - pip install --no-deps .
+    - mkdir ./docs/source/_static
+    - sphinx-build -b html ./docs/source public
+  artifacts:
+    paths:
+      - public
   only:
     - tags
