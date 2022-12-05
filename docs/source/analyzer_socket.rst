@@ -112,9 +112,6 @@ Analyzer Helper Classes
 .. autoclass:: qass.tools.networking.analyzer_socket.Amplitudes
         :members:
 
-.. autoclass:: qass.tools.networking.analyzer_socket.Amplitudes
-        :members:
-
 .. autoclass:: qass.tools.networking.analyzer_socket.Channels
         :members:
 

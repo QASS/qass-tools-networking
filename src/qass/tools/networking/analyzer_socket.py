@@ -1573,7 +1573,7 @@ class AnalyzerRemote():
                            p1=io_hexa)
 
     def add_io_report_callback(self, callback) -> None:
-        """Add callback function to report of I/O register. Everytime I/O register changes, added callback functions will be executed. See networking_example.py for an example.
+        """Adds callback function to report of I/O register. Everytime I/O register changes, added callback functions will be executed. See networking_example.py for an example.
         By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
 
         .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
@@ -1605,7 +1605,7 @@ class AnalyzerRemote():
             self.logger.info("I/O report stopped")
 
     def add_process_number_report_callback(self, callback) -> None:
-        """ Add callback function to report of process number. Everytime the process number changes, added callback functions will be executed. See networking_example.py for an example. By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
+        """ Adds callback function to report of process number. Everytime the process number changes, added callback functions will be executed. See networking_example.py for an example. By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
 
         .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
 
@@ -1714,7 +1714,7 @@ class AnalyzerRemote():
     # TODO: profibus report
 
     def _recognition_translator(self, cmd: str) -> str:
-        """ Private method to add sended cmd str "response".
+        """ Private method to add "response" to already sended cmd str for later recognition.
 
         :param cmd: cmd string which needs to be changend.
         :type cmd: str
