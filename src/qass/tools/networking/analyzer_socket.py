@@ -1163,12 +1163,12 @@ class AnalyzerRemote():
         return self._value_parser(cmd="getmaxmeasurepositions")
 
     def get_preamp_info(self, preamp_port: Union[PreampPorts, int]) -> str:
-        """ Returns a string with serial number and firmware version of connected preamps.
+        """ Returns a string with serial number, firmware version and S-Value of connected preamp.
 
         :param preamp_port: Preamp port with connected preamp
         :type preamp_port: int, PreampPorts
         :raises KeyError: Raises if parsed variable is no supported preamp port
-        :return: Serial number and firmware version
+        :return: Serial number, firmware version and S-value
         :rtype: str
         """
         if preamp_port in PreampPorts or preamp_port in range(0, 8):
@@ -1622,7 +1622,39 @@ class AnalyzerRemote():
         self.logger.info(
             f"Callback {callback} for process number report added")
 
-    def set_io_ouput(self, io_line: str, state: bool) -> None:
+    def set_io_ouput(self, io_line: int, state: bool) -> None:
+        """ Sets single I/O ouput line. As parameter only line number of third I/O line is required.
+
+        .. warning:: Changing output line 3.1 - 3.3 is not possible. 
+
+        .. list-table:: I/O Output possibilities
+            :widths: 25 25
+            :header-rows: 1
+
+            * - I/O line
+              - parameter
+            * - 3.1
+              - 1
+            * - 3.2
+              - 2
+            * - 3.3
+              - 3
+            * - 3.4
+              - 4
+            * - 3.5
+              - 5
+            * - 3.6
+              - 6
+            * - 3.7
+              - 7
+            * - 3.8
+              - 8
+
+        :param io_line: Line number in range(1,8)
+        :type io_line: int
+        :param state: Set Line high or low
+        :type state: bool
+        """
         self._value_parser(expect_response=True,
                            cmd="appcmd", p1="setioout", p2=f"{io_line} {state}")
 
@@ -1823,7 +1855,3 @@ class AnalyzerCmd(AnalyzerRemote):
         super().__init__(ip, port, debug_mode)
         warnings.warn(
             f"Class Name AnalyzerCmd is deprecated. Please use AnalyzerRemote!")
-
-
-with AnalyzerRemote("192.168.3.241") as opti:
-    opti.set_io_ouput("2", True)
