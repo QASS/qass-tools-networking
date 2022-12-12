@@ -1622,6 +1622,10 @@ class AnalyzerRemote():
         self.logger.info(
             f"Callback {callback} for process number report added")
 
+    def set_io_ouput(self, io_line: str, state: bool) -> None:
+        self._value_parser(expect_response=True,
+                           cmd="appcmd", p1="setioout", p2=f"{io_line} {state}")
+
     def remove_process_number_report_callback(self, callback) -> None:
         """ Removes specific callback function from process number report callback list. By removing all callbacks the report function will be automatically stopped.
 
@@ -1819,3 +1823,7 @@ class AnalyzerCmd(AnalyzerRemote):
         super().__init__(ip, port, debug_mode)
         warnings.warn(
             f"Class Name AnalyzerCmd is deprecated. Please use AnalyzerRemote!")
+
+
+with AnalyzerRemote("192.168.3.241") as opti:
+    opti.set_io_ouput("2", True)
