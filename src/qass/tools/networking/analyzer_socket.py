@@ -449,9 +449,11 @@ class AnalyzerRemote():
             self.logger.info("Connected to optimizer")
         except socket.timeout:
             raise ConnectionError(self.ip, self.port)
-
         except socket.error:
             raise ConnectionError(self.ip, self.port)
+        except KeyboardInterrupt as e:
+            print(e)
+            self.__exit__(exc_type=e)
 
     def __exit__(self, exc_type, exc_value, traceback):
         """ If contextmanager is left, another two seconds will be waited before private function is called on the receiving thread
@@ -989,9 +991,9 @@ class AnalyzerRemote():
         else:
             self._value_parser(cmd="AppCmd", p1=param_one)
 
-    def set_preamp(self, channel=Channels.CHANNEL_1, chp=ChannelPorts.CHANNEL_PORT_1, preampport=PreampPorts.PREAMP_PORT_1,
-                   fft=True, signal=False, samplerate=Samplerates.SAMPLERATE_1600_kHz, fftoversampling=FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
-                   fftwindowing=FFTWindowing.FFT_WINDOWING_HANNING, fftlogarithmic=FFTLogarithmic.FFT_LOGARITHMIC_BASE_14, filter=True, gain=800, subport=0) -> None:
+    def set_multiplexer(self, channel=Channels.CHANNEL_1, chp=ChannelPorts.CHANNEL_PORT_1, preampport=PreampPorts.PREAMP_PORT_1,
+                        fft=True, signal=False, samplerate=Samplerates.SAMPLERATE_1600_kHz, fftoversampling=FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
+                        fftwindowing=FFTWindowing.FFT_WINDOWING_HANNING, fftlogarithmic=FFTLogarithmic.FFT_LOGARITHMIC_BASE_14, filter=True, gain=800, subport=0) -> None:
         """ Method to set preamplifier and multiplexer settings.
         .. warning:: Range of params will not be checked.
 
@@ -1131,7 +1133,7 @@ class AnalyzerRemote():
         :return: Calculated maximum amplitude values per band
         :rtype: np.ndarray
         """
-
+        print("create_plot_buffer:", create_plot_buffer)
         response_dict = self._value_parser(cmd="calcmaxamplitude", channel=channel,
                                            plot=create_plot_buffer, save=create_data_buffer, amplitudetype=amplitude_type)
         # extract important information
