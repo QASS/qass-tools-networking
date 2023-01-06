@@ -449,9 +449,11 @@ class AnalyzerRemote():
             self.logger.info("Connected to optimizer")
         except socket.timeout:
             raise ConnectionError(self.ip, self.port)
-
         except socket.error:
             raise ConnectionError(self.ip, self.port)
+        except KeyboardInterrupt as e:
+            print(e)
+            self.__exit__(exc_type=e)
 
     def __exit__(self, exc_type, exc_value, traceback):
         """ If contextmanager is left, another two seconds will be waited before private function is called on the receiving thread
@@ -989,9 +991,9 @@ class AnalyzerRemote():
         else:
             self._value_parser(cmd="AppCmd", p1=param_one)
 
-    def set_preamp(self, channel=Channels.CHANNEL_1, chp=ChannelPorts.CHANNEL_PORT_1, preampport=PreampPorts.PREAMP_PORT_1,
-                   fft=True, signal=False, samplerate=Samplerates.SAMPLERATE_1600_kHz, fftoversampling=FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
-                   fftwindowing=FFTWindowing.FFT_WINDOWING_HANNING, fftlogarithmic=FFTLogarithmic.FFT_LOGARITHMIC_BASE_14, filter=True, gain=800, subport=0) -> None:
+    def set_multiplexer(self, channel=Channels.CHANNEL_1, chp=ChannelPorts.CHANNEL_PORT_1, preampport=PreampPorts.PREAMP_PORT_1,
+                        fft=True, signal=False, samplerate=Samplerates.SAMPLERATE_1600_kHz, fftoversampling=FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
+                        fftwindowing=FFTWindowing.FFT_WINDOWING_HANNING, fftlogarithmic=FFTLogarithmic.FFT_LOGARITHMIC_BASE_14, filter=True, gain=800, subport=0) -> None:
         """ Method to set preamplifier and multiplexer settings.
         .. warning:: Range of params will not be checked.
 
@@ -1131,7 +1133,7 @@ class AnalyzerRemote():
         :return: Calculated maximum amplitude values per band
         :rtype: np.ndarray
         """
-
+        print("create_plot_buffer:", create_plot_buffer)
         response_dict = self._value_parser(cmd="calcmaxamplitude", channel=channel,
                                            plot=create_plot_buffer, save=create_data_buffer, amplitudetype=amplitude_type)
         # extract important information
@@ -1163,12 +1165,12 @@ class AnalyzerRemote():
         return self._value_parser(cmd="getmaxmeasurepositions")
 
     def get_preamp_info(self, preamp_port: Union[PreampPorts, int]) -> str:
-        """ Returns a string with serial number and firmware version of connected preamps.
+        """ Returns a string with serial number, firmware version and S-Value of connected preamp.
 
         :param preamp_port: Preamp port with connected preamp
         :type preamp_port: int, PreampPorts
         :raises KeyError: Raises if parsed variable is no supported preamp port
-        :return: Serial number and firmware version
+        :return: Serial number, firmware version and S-value
         :rtype: str
         """
         if preamp_port in PreampPorts or preamp_port in range(0, 8):
@@ -1621,6 +1623,42 @@ class AnalyzerRemote():
         self._proc_report_count += 1
         self.logger.info(
             f"Callback {callback} for process number report added")
+
+    def set_io_ouput(self, io_line: int, state: bool) -> None:
+        """ Sets single I/O ouput line. As parameter only line number of third I/O line is required.
+
+        .. warning:: Changing output line 3.1 - 3.3 is not possible. 
+
+        .. list-table:: I/O Output possibilities
+            :widths: 25 25
+            :header-rows: 1
+
+            * - I/O line
+              - parameter
+            * - 3.1
+              - 1
+            * - 3.2
+              - 2
+            * - 3.3
+              - 3
+            * - 3.4
+              - 4
+            * - 3.5
+              - 5
+            * - 3.6
+              - 6
+            * - 3.7
+              - 7
+            * - 3.8
+              - 8
+
+        :param io_line: Line number in range(1,8)
+        :type io_line: int
+        :param state: Set Line high or low
+        :type state: bool
+        """
+        self._value_parser(expect_response=True,
+                           cmd="appcmd", p1="setioout", p2=f"{io_line} {state}")
 
     def remove_process_number_report_callback(self, callback) -> None:
         """ Removes specific callback function from process number report callback list. By removing all callbacks the report function will be automatically stopped.
