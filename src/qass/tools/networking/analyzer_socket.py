@@ -81,7 +81,7 @@ class PreampPorts(IntEnum):
     PREAMP_PORT_8 = 7
 
 
-class Samplerates(IntEnum):
+class Samplerates16Bit(IntEnum):
     """Available selection box choices for used samplerate in multiplexer configuration"""
     SAMPLERATE_100_MHz = 0
     SAMPLERATE_50_MHz = 1
@@ -94,6 +94,37 @@ class Samplerates(IntEnum):
     SAMPLERATE_400_kHz = 8
     SAMPLERATE_200_kHz = 9
     SAMPLERATE_100_kHz = 10
+
+
+class ExactSamplerates16Bit(IntEnum):
+    """Available exact samplerates in Hz with 16 Bit ADC.
+
+    .. warning:: These values are just for calculations and cannot be used within AnalyzerRemote functions"""
+    SAMPLERATE_100_MHz = 100000e3
+    SAMPLERATE_50_MHz = 50000e3
+    SAMPLERATE_25_MHz = 25000e3
+    SAMPLERATE_12_MHz = 12500e3
+    SAMPLERATE_6_MHz = 6250e3
+    SAMPLERATE_3_MHz = 3125e3
+    SAMPLERATE_1600_kHz = 1562.5e3
+    SAMPLERATE_800_kHz = 781.25e3
+    SAMPLERATE_400_kHz = 390.63e3
+    SAMPLERATE_200_kHz = 195.31e3
+    SAMPLERATE_100_kHz = 97.66e3
+
+
+class ExactSamplerates24Bit(IntEnum):
+    """Available exact samplerates in Hz with 24 Bit ADC.
+
+    .. warning:: These values are just for calculations and cannot be used within AnalyzerRemote functions"""
+    SAMPLERATE_4_MHz = 4000e3
+    SAMPLERATE_2_MHz = 2000e3
+    SAMPLERATE_1_MHz = 1000e3
+    SAMPLERATE_500_kHz = 500e3
+    SAMPLERATE_250_kHz = 250e3
+    SAMPLERATE_125_kHz = 125e3
+    SAMPLERATE_60_kHz = 160.5e3
+    SAMPLERATE_30_kHz = 30.25e3
 
 
 class FFTOversampling(IntEnum):
