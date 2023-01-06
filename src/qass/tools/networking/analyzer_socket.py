@@ -1024,7 +1024,7 @@ class AnalyzerRemote():
 
     def set_multiplexer(self, channel=Channels.CHANNEL_1, chp=ChannelPorts.CHANNEL_PORT_1, preampport=PreampPorts.PREAMP_PORT_1,
                         fft=True, signal=False, samplerate=Samplerates16Bit.SAMPLERATE_1600_kHz, fftoversampling=FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
-                        fftwindowing=FFTWindowing.FFT_WINDOWING_HANNING, fftlogarithmic=FFTLogarithmic.FFT_LOGARITHMIC_BASE_14, filter=True, gain=800, subport=0) -> None:
+                        fftwindowing=FFTWindowing.FFT_WINDOWING_HANNING, fftlogarithmic=FFTLogarithmic.FFT_LOGARITHMIC_BASE_14, filter=True, gain=800, subport=-1) -> None:
         """ Method to set preamplifier and multiplexer settings.
         .. warning:: Range of params will not be checked.
 
@@ -1050,7 +1050,7 @@ class AnalyzerRemote():
         :type filter: bool, optional
         :param gain: Gain of Preamp, defaults to 800
         :type gain: int, optional
-        :param subport: Desired Subport (Dropdown), defaults to 0
+        :param subport: Desired Subport (Dropdown). Should only be used with MultiinputPreamps!, defaults to -1
         :type subport: int, optional
         """
         self._value_parser(cmd="setpreamp", expect_response=False, channel=channel, chp=chp, preampport=preampport, fft=fft, signal=signal, samplerate=samplerate,
@@ -1150,23 +1150,22 @@ class AnalyzerRemote():
         elif self.translator[mode] == "false":
             self._monitoring_active = False
 
-    def get_max_amp_per_band(self, channel=Channels.CHANNEL_1, create_plot_buffer: bool = True, create_data_buffer: bool = False, amplitude_type=SysAmplitudesType.AMPLITUDE_DEFAULT) -> np.ndarray:
+    def get_max_amp_per_band(self, channel=Channels.CHANNEL_1, create_plot_buffer: bool = True, save_plot_buffer: bool = False, amplitude_type=SysAmplitudesType.AMPLITUDE_DEFAULT) -> np.ndarray:
         """ Method to return maximum amplitude per band of current active buffer.
 
         :param channel: Datastream Channel, defaults to Channels.CHANNEL_1
         :type channel: int or Channel, optional
-        :param create_plot_buffer: Creates a plot buffer in the Analyzer software, defaults to True
+        :param create_plot_buffer: Creates a temporary plot buffer in the Analyzer software, defaults to True
         :type create_plot_buffer: bool, optional
-        :param create_data_buffer: Creates a data buffer in the Analyzer software, defaults to False
-        :type create_data_buffer: bool, optional
+        :param save_plot_buffer: Option to save plot buffer, defaults to False
+        :type save_plot_buffer: bool, optional
         :param amplitude_type: Amplitude unit, defaults to SysAmplitudesType.AMPLITUDE_DEFAULT
         :type amplitude_type: int or SysAmplitudeType, optional
         :return: Calculated maximum amplitude values per band
         :rtype: np.ndarray
         """
-        print("create_plot_buffer:", create_plot_buffer)
         response_dict = self._value_parser(cmd="calcmaxamplitude", channel=channel,
-                                           plot=create_plot_buffer, save=create_data_buffer, amplitudetype=amplitude_type)
+                                           plot=create_plot_buffer, save=save_plot_buffer, amplitudetype=amplitude_type)
         # extract important information
         max_amp = response_dict.get("p1")
 
