@@ -121,7 +121,13 @@ Analyzer Helper Classes
 .. autoclass:: qass.tools.networking.analyzer_socket.PreampPorts
         :members:
 
-.. autoclass:: qass.tools.networking.analyzer_socket.Samplerates
+.. autoclass:: qass.tools.networking.analyzer_socket.Samplerates16Bit
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.ExactSamplerates16Bit
+        :members:
+
+.. autoclass:: qass.tools.networking.analyzer_socket.ExactSamplerates24Bit
         :members:
 
 .. autoclass:: qass.tools.networking.analyzer_socket.FFTOversampling

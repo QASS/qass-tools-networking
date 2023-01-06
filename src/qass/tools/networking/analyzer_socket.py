@@ -1023,7 +1023,7 @@ class AnalyzerRemote():
             self._value_parser(cmd="AppCmd", p1=param_one)
 
     def set_multiplexer(self, channel=Channels.CHANNEL_1, chp=ChannelPorts.CHANNEL_PORT_1, preampport=PreampPorts.PREAMP_PORT_1,
-                        fft=True, signal=False, samplerate=Samplerates.SAMPLERATE_1600_kHz, fftoversampling=FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
+                        fft=True, signal=False, samplerate=Samplerates16Bit.SAMPLERATE_1600_kHz, fftoversampling=FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
                         fftwindowing=FFTWindowing.FFT_WINDOWING_HANNING, fftlogarithmic=FFTLogarithmic.FFT_LOGARITHMIC_BASE_14, filter=True, gain=800, subport=0) -> None:
         """ Method to set preamplifier and multiplexer settings.
         .. warning:: Range of params will not be checked.
@@ -1038,8 +1038,8 @@ class AnalyzerRemote():
         :type fft: bool, optional
         :param signal: Checkbox if signal buffer should be recorded, defaults to False
         :type signal: bool, optional
-        :param samplerate: Desired samplerate (Dropdown) defaults to Samplerates.SAMPLERATE_1600_kHz
-        :type samplerate: int or Samplerates, optional
+        :param samplerate: Desired samplerate (Dropdown) defaults to Samplerates16Bit.SAMPLERATE_1600_kHz
+        :type samplerate: int or Samplerates16Bit, optional
         :param fftoversampling: Desired FFTOversampling (Dropdown), defaults to FFTOversampling.FFT_OVERSAMPLING_8_TIMES
         :type fftoversampling: int or FFTOversampling, optional
         :param fftwindowing: Desired FFTOversampling (Dropdown), defaults to FFTWindowing.FFT_WINDOWING_HANNING
