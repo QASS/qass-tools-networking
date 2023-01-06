@@ -1194,19 +1194,27 @@ class AnalyzerRemote():
         """
         return self._value_parser(cmd="getmaxmeasurepositions")
 
-    def get_preamp_info(self, preamp_port: Union[PreampPorts, int]) -> str:
+    def get_preamp_info(self, preamp_port: Union[PreampPorts, int]) -> tuple:
         """ Returns a string with serial number, firmware version and S-Value of connected preamp.
 
         :param preamp_port: Preamp port with connected preamp
         :type preamp_port: int, PreampPorts
         :raises KeyError: Raises if parsed variable is no supported preamp port
-        :return: Serial number, firmware version and S-value
-        :rtype: str
+        :return: Serial number, firmware version and S-value as tuple
+        :rtype: tuple
         """
         if preamp_port in PreampPorts or preamp_port in range(0, 8):
             preamp_hardware_info = self._value_parser(
                 cmd="getpreampinfo", p1=preamp_port)
-            return preamp_hardware_info.get('p1')
+            preamp_hardware_info = preamp_hardware_info.get('p1')
+            serial_ring, serial_num, s_value, __ = preamp_hardware_info.split(
+                ";")
+            serial_ring_idx = serial_ring.find(":")
+            serial_num_idx = serial_num.find(":")
+            s_value_idx = s_value.find(":")
+            preamp = {
+                "serial_ring": serial_ring[serial_ring_idx+1:], "serial_number": serial_num[serial_num_idx+1:], "S-value": s_value[s_value_idx+1:]}
+            return preamp
         else:
             self.logger.error(
                 "Choosen preampport is not an analyzer system preamp port.")
