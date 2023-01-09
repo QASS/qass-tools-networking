@@ -1213,7 +1213,7 @@ class AnalyzerRemote():
             serial_num_idx = serial_num.find(":")
             s_value_idx = s_value.find(":")
             preamp = {
-                "serial_ring": serial_ring[serial_ring_idx+1:], "serial_number": serial_num[serial_num_idx+1:], "S-value": s_value[s_value_idx+1:]}
+                "serial_type": serial_ring[serial_ring_idx+1:], "serial_number": serial_num[serial_num_idx+1:], "S-value": s_value[s_value_idx+1:]}
             return preamp
         else:
             self.logger.error(
