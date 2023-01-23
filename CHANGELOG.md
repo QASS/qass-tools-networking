@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file simultaneously to inplemented Git pipelines.
 
-## [3.0.0] - 2023-01-25
+## [2.0.0] - 2023-01-23
 
 ### Added
 
