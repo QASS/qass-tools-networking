@@ -31,12 +31,6 @@ New Features
 
 .. automethod:: qass.tools.networking.analyzer_socket.AnalyzerRemote.set_io_ouput
 
-* Custom role ``AnalyzerVersion`` now avaible as sphinx supported docstring type
-  
-  Example:
-  ```
-  :AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
-  ```
 
 Fixes
 -----
@@ -50,6 +44,23 @@ Fixes
 * Fix automatic set of MultiPreampInput after use of function. ``Subport`` keyword is now set to `-1` by default:
   
   .. automethod:: qass.tools.networking.analyzer_socket.AnalyzerRemote.set_multiplexer
+
+2.0.1
+"""""
+:Date: January 23, 2023
+
+:AnalyzerVersion: ``QASS optimizer4D sysV11b (2022-05-18)``
+
+New Features
+------------
+* Custom role ``AnalyzerVersion`` now avaible as sphinx supported docstring type
+  
+  Example:
+  ```
+  :AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
+  ```
+
+* Changelog
 
 Unreleased
 """"""""""
