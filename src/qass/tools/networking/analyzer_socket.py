@@ -1023,9 +1023,10 @@ class AnalyzerRemote():
             self._value_parser(cmd="AppCmd", p1=param_one)
 
     def set_multiplexer(self, channel=Channels.CHANNEL_1, chp=ChannelPorts.CHANNEL_PORT_1, preampport=PreampPorts.PREAMP_PORT_1,
-                        fft=True, signal=False, samplerate=Samplerates.SAMPLERATE_1600_kHz, fftoversampling=FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
-                        fftwindowing=FFTWindowing.FFT_WINDOWING_HANNING, fftlogarithmic=FFTLogarithmic.FFT_LOGARITHMIC_BASE_14, filter=True, gain=800, subport=0) -> None:
+                        fft=True, signal=False, samplerate=Samplerates16Bit.SAMPLERATE_1600_kHz, fftoversampling=FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
+                        fftwindowing=FFTWindowing.FFT_WINDOWING_HANNING, fftlogarithmic=FFTLogarithmic.FFT_LOGARITHMIC_BASE_14, filter=True, gain=800, subport=-1) -> None:
         """ Method to set preamplifier and multiplexer settings.
+
         .. warning:: Range of params will not be checked.
 
         :param channel: Desired channel (Dropdown), defaults to Channels.CHANNEL_1
@@ -1038,8 +1039,8 @@ class AnalyzerRemote():
         :type fft: bool, optional
         :param signal: Checkbox if signal buffer should be recorded, defaults to False
         :type signal: bool, optional
-        :param samplerate: Desired samplerate (Dropdown) defaults to Samplerates.SAMPLERATE_1600_kHz
-        :type samplerate: int or Samplerates, optional
+        :param samplerate: Desired samplerate (Dropdown) defaults to Samplerates16Bit.SAMPLERATE_1600_kHz
+        :type samplerate: int or Samplerates16Bit, optional
         :param fftoversampling: Desired FFTOversampling (Dropdown), defaults to FFTOversampling.FFT_OVERSAMPLING_8_TIMES
         :type fftoversampling: int or FFTOversampling, optional
         :param fftwindowing: Desired FFTOversampling (Dropdown), defaults to FFTWindowing.FFT_WINDOWING_HANNING
@@ -1050,7 +1051,7 @@ class AnalyzerRemote():
         :type filter: bool, optional
         :param gain: Gain of Preamp, defaults to 800
         :type gain: int, optional
-        :param subport: Desired Subport (Dropdown), defaults to 0
+        :param subport: Desired Subport (Dropdown). Should only be used with MultiinputPreamps!, defaults to -1
         :type subport: int, optional
         """
         self._value_parser(cmd="setpreamp", expect_response=False, channel=channel, chp=chp, preampport=preampport, fft=fft, signal=signal, samplerate=samplerate,
@@ -1150,23 +1151,22 @@ class AnalyzerRemote():
         elif self.translator[mode] == "false":
             self._monitoring_active = False
 
-    def get_max_amp_per_band(self, channel=Channels.CHANNEL_1, create_plot_buffer: bool = True, create_data_buffer: bool = False, amplitude_type=SysAmplitudesType.AMPLITUDE_DEFAULT) -> np.ndarray:
+    def get_max_amp_per_band(self, channel=Channels.CHANNEL_1, create_plot_buffer: bool = True, save_plot_buffer: bool = False, amplitude_type=SysAmplitudesType.AMPLITUDE_DEFAULT) -> np.ndarray:
         """ Method to return maximum amplitude per band of current active buffer.
 
         :param channel: Datastream Channel, defaults to Channels.CHANNEL_1
         :type channel: int or Channel, optional
-        :param create_plot_buffer: Creates a plot buffer in the Analyzer software, defaults to True
+        :param create_plot_buffer: Creates a temporary plot buffer in the Analyzer software, defaults to True
         :type create_plot_buffer: bool, optional
-        :param create_data_buffer: Creates a data buffer in the Analyzer software, defaults to False
-        :type create_data_buffer: bool, optional
+        :param save_plot_buffer: Option to save plot buffer, defaults to False
+        :type save_plot_buffer: bool, optional
         :param amplitude_type: Amplitude unit, defaults to SysAmplitudesType.AMPLITUDE_DEFAULT
         :type amplitude_type: int or SysAmplitudeType, optional
         :return: Calculated maximum amplitude values per band
         :rtype: np.ndarray
         """
-        print("create_plot_buffer:", create_plot_buffer)
         response_dict = self._value_parser(cmd="calcmaxamplitude", channel=channel,
-                                           plot=create_plot_buffer, save=create_data_buffer, amplitudetype=amplitude_type)
+                                           plot=create_plot_buffer, save=save_plot_buffer, amplitudetype=amplitude_type)
         # extract important information
         max_amp = response_dict.get("p1")
 
@@ -1195,19 +1195,27 @@ class AnalyzerRemote():
         """
         return self._value_parser(cmd="getmaxmeasurepositions")
 
-    def get_preamp_info(self, preamp_port: Union[PreampPorts, int]) -> str:
+    def get_preamp_info(self, preamp_port: Union[PreampPorts, int]) -> Dict:
         """ Returns a string with serial number, firmware version and S-Value of connected preamp.
 
         :param preamp_port: Preamp port with connected preamp
         :type preamp_port: int, PreampPorts
         :raises KeyError: Raises if parsed variable is no supported preamp port
-        :return: Serial number, firmware version and S-value
-        :rtype: str
+        :return: Serial number, firmware version and S-value as tuple. Keywords are: "serial_type", "serial_number", "S-value"
+        :rtype: tuple
         """
         if preamp_port in PreampPorts or preamp_port in range(0, 8):
             preamp_hardware_info = self._value_parser(
                 cmd="getpreampinfo", p1=preamp_port)
-            return preamp_hardware_info.get('p1')
+            preamp_hardware_info = preamp_hardware_info.get('p1')
+            serial_ring, serial_num, s_value, __ = preamp_hardware_info.split(
+                ";")
+            serial_ring_idx = serial_ring.find(":")
+            serial_num_idx = serial_num.find(":")
+            s_value_idx = s_value.find(":")
+            preamp = {
+                "serial_type": serial_ring[serial_ring_idx+1:], "serial_number": serial_num[serial_num_idx+1:], "S-value": s_value[s_value_idx+1:]}
+            return preamp
         else:
             self.logger.error(
                 "Choosen preampport is not an analyzer system preamp port.")
