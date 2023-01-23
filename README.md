@@ -22,4 +22,5 @@ or to directly address analyzer_socket:
 ```py
 from qass.tools.networking.analyzer_socket import AnalyzerCmd 
 ```
-For more information please see http://developers.gitlab_pages.qass.net/qass_tools/qass_tools_networking
+
+For more information please see <http://developers.gitlab_pages.qass.net/qass_tools/qass_tools_networking>
