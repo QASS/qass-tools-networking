@@ -1201,7 +1201,7 @@ class AnalyzerRemote():
         :param preamp_port: Preamp port with connected preamp
         :type preamp_port: int, PreampPorts
         :raises KeyError: Raises if parsed variable is no supported preamp port
-        :return: Serial number, firmware version and S-value as tuple. Keywords are: "serial_type", "serial_number", "S-value"
+        :return: Serial number, firmware version and S-value parsed in dictionary. Keywords are: "serial_type", "serial_number", "S-value"
         :rtype: tuple
         """
         if preamp_port in PreampPorts or preamp_port in range(0, 8):
