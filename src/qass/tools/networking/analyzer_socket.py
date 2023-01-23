@@ -1026,6 +1026,7 @@ class AnalyzerRemote():
                         fft=True, signal=False, samplerate=Samplerates16Bit.SAMPLERATE_1600_kHz, fftoversampling=FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
                         fftwindowing=FFTWindowing.FFT_WINDOWING_HANNING, fftlogarithmic=FFTLogarithmic.FFT_LOGARITHMIC_BASE_14, filter=True, gain=800, subport=-1) -> None:
         """ Method to set preamplifier and multiplexer settings.
+
         .. warning:: Range of params will not be checked.
 
         :param channel: Desired channel (Dropdown), defaults to Channels.CHANNEL_1
@@ -1194,13 +1195,13 @@ class AnalyzerRemote():
         """
         return self._value_parser(cmd="getmaxmeasurepositions")
 
-    def get_preamp_info(self, preamp_port: Union[PreampPorts, int]) -> tuple:
+    def get_preamp_info(self, preamp_port: Union[PreampPorts, int]) -> Dict:
         """ Returns a string with serial number, firmware version and S-Value of connected preamp.
 
         :param preamp_port: Preamp port with connected preamp
         :type preamp_port: int, PreampPorts
         :raises KeyError: Raises if parsed variable is no supported preamp port
-        :return: Serial number, firmware version and S-value as tuple
+        :return: Serial number, firmware version and S-value as tuple. Keywords are: "serial_type", "serial_number", "S-value"
         :rtype: tuple
         """
         if preamp_port in PreampPorts or preamp_port in range(0, 8):

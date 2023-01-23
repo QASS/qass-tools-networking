@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file simultaneous
 
 - Classname Samplerates to Samplerates16Bit
 
+- Return from get_preamp_info(self, preamp_port: Union[PreampPorts, int]) -> __tuple__ too get_preamp_info(self, preamp_port: Union[PreampPorts, int]) -> __Dict__
+
 ### Removed
 
 - None
