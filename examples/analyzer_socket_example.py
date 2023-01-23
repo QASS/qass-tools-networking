@@ -4,10 +4,10 @@ from qass.tools.networking.analyzer_socket import AnalyzerRemote, Channels, Ampl
 ######## Example 1 ############
 """ Simple example how to intialize a socket connection to the optimizer and have access to analyzer functions."""
 with AnalyzerRemote(ip="192.168.2.67") as opti:
-    opti.set_preamp(channel=Channels.CHANNEL_1)
+    opti.set_multiplexer(channel=Channels.CHANNEL_1)
     info = opti.get_project_info()
     print(info)
-    opti.set_preamp(gain=800)
+    opti.set_multiplexer(gain=800)
 
     proc = opti.get_process_number()
 
