@@ -386,7 +386,7 @@ class ReceiveThread(threading.Thread):
 
 
 class AnalyzerRemote():
-    """ Class provides methods for external analyzer control (system operator independant) over a TCP socket."""
+    """ Class provides methods for external analyzer control (system operator independant) over a TCP socket. Function are supported since an Analyzer version: QASS optimizer4D sysV11b (2022-05-18) or higher. A higher required Analyzer version will be documented for each function as note."""
 
     def __init__(self, ip: str, port=17000, debug_mode=False):
         """Constructor provides helper and creates logger module .
