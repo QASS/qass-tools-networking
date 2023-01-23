@@ -159,3 +159,5 @@ Analyzer Helper Classes
 
 .. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerSyntaxError
         :members:
+
+.. include:: changelog.rst
