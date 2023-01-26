@@ -9,12 +9,34 @@ Planned changes for next releases will be noted here. If you have any suggestion
 * Set io as line in set_simulated_io_input(args) 
 * Save project function
 
+2.0.2
+"""""
+:Date: January 23, 2023
+
+:AnalyzerVersion: ``QASS optimizer4D sysV11b (2022-05-18)``
+
+:Contributor: Oliver Kowollik
+
+New Features
+------------
+* Custom role ``Contributor`` now avaible as sphinx supported docstring type
+  
+  Example:
+  ```
+  :Contributor: Oliver Kowollik
+  ```
+
+Fixes
+-----
+* Changelog entries extended by Contributor Tag
 
 2.0.1
 """""
 :Date: January 23, 2023
 
 :AnalyzerVersion: ``QASS optimizer4D sysV11b (2022-05-18)``
+
+:Contributor: Oliver Kowollik
 
 New Features
 ------------
@@ -25,15 +47,14 @@ New Features
   :AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
   ```
 
-* Changelog
-
-
 2.0.0
 """""
 
 :Date: January 23, 2023
 
 :AnalyzerVersion: ``QASS optimizer4D sysV11b (2022-05-18)``
+
+:Contributor: Oliver Kowollik
 
 Changes
 -------
