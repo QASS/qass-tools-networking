@@ -24,7 +24,8 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode',
 templates_path = ['_templates']
 exclude_patterns = []
 rst_prolog = """
-.. role:: AnalyzerVersion
+.. role:: AnalyzerVersion,
+.. role:: Contributor
 """
 
 # -- Options for HTML output -------------------------------------------------
