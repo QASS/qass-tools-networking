@@ -2,7 +2,7 @@ Overview
 ********
 
 The :class:`AnalyzerRemote` class can be used to open a TCP socket to a running Analyzer4D software for remote control.
-It can be used to monitor running processes or start measuring protocols on remote computers. Available functions are supported since Analyzer version: "QASS optimizer4D sysV11b (2022-05-18)" or higher. A higher required Analyzer version will be documented for each function as note.  
+It can be used to monitor running processes or start measuring protocols on remote computers. Available functions are supported since Analyzer version: ``QASS optimizer4D sysV11b (2022-05-18)`` or higher. A higher required Analyzer version will be documented for each function as note.  
 
 Examples
 ********
