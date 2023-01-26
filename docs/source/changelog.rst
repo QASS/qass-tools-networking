@@ -2,6 +2,32 @@ Changelog
 *********
 All notable changes to this project will be documented in this file simultaneously to implemented Git pipelines.
 
+Unreleased
+""""""""""
+Planned changes for next releases will be noted here. If you have any suggestions, please contact: okowollik@qass.net
+
+* Set io as line in set_simulated_io_input(args) 
+* Save project function
+
+
+2.0.1
+"""""
+:Date: January 23, 2023
+
+:AnalyzerVersion: ``QASS optimizer4D sysV11b (2022-05-18)``
+
+New Features
+------------
+* Custom role ``AnalyzerVersion`` now avaible as sphinx supported docstring type
+  
+  Example:
+  ```
+  :AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
+  ```
+
+* Changelog
+
+
 2.0.0
 """""
 
@@ -22,6 +48,7 @@ Changes
 * Changes return value from `Tuple` to `Dict`:
   
   .. automethod:: qass.tools.networking.analyzer_socket.AnalyzerRemote.get_preamp_info
+
 
 New Features
 ------------
@@ -45,25 +72,3 @@ Fixes
   
   .. automethod:: qass.tools.networking.analyzer_socket.AnalyzerRemote.set_multiplexer
 
-2.0.1
-"""""
-:Date: January 23, 2023
-
-:AnalyzerVersion: ``QASS optimizer4D sysV11b (2022-05-18)``
-
-New Features
-------------
-* Custom role ``AnalyzerVersion`` now avaible as sphinx supported docstring type
-  
-  Example:
-  ```
-  :AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
-  ```
-
-* Changelog
-
-Unreleased
-""""""""""
-Planned changes for next releases will be noted here. If you have any suggestions, please contact: okowollik@qass.net
-
-* None
