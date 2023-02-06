@@ -1,160 +1,105 @@
 Overview
 ********
 
-The :class:`AnalyzerSSH` can be used as a standalone programm to extract characteristical values to identify hardware type and status.
+The :class:`AnalyzerSSH` class extends the possible remote control of an Optimizer4D via python context. The provided methods are msotly designed to extract characteristical values to identify hardware type and status of connected machine.
 
 Examples
 ********
 
-Example 1: Initilaizing
+Example 1: Initializing
 """""""""""""""""""""""
-In the first example we build a remote connection (TCP) to an Analyzer4D software and send a command to start a measuring.
+Initializing SSH connection via python context to an connected Linux-based system, in order to send and receive terminal commands.
 
 .. code-block:: python
    :linenos:
 
-        from qass.tools.networking.analyzer_socket import AnalyzerRemote
+        from qass.tools.networking.analyzer_ssh import AnalyzerSSH
 
         ip_address = "111.111.1.111"
-        with SSHHardwareInfoReader("192.168.3.241", debug_mode=False) as opti_client:
-            opti.start_measuring()
+        with AnalyzerSSH(ip_address) as opti_client:
+            ....
 
-Example 2: Access functionalities
-""""""""""""""""""""""""""""""""""
-Simple example how to intialize a socket connection to the optimizer and have access to analyzer functions.
-    
-.. code-block:: python
-    :linenos:
-
-    from qass.tools.networking.analyzer_socket import AnalyzerRemote, Channels, Amplitudes
-    import time
-
-    with AnalyzerRemote("111.111.1.111") as opti:
-        opti.set_multiplexer(channel=Channels.CHANNEL_1)
-        info = opti.get_project_info()
-        print(info)
-        opti.set_multiplexer(gain=800)
-
-        proc = opti.get_process_number()
-
-        opti.set_process_comment("Hey ich bims, eins Kommentar")
-
-        opti.start_measuring()
-        opti.start_sineGenerator(frequency=500, amplitude=Amplitudes.AMP_191_mV)
-        time.sleep(2)
-        opti.stop_sineGenerator()
-        opti.stop_measuring()
-
-Example 3: Debug mode
+Example 2: Debug mode
 """"""""""""""""""""""
-Example three shows an easy way to debug system in case you need some more detailed information how to process incomming responses. By activating debug mode system will be printing out much more sending and receiving information to stdout.
+Example two shows an easy way to debug system in case you need some more detailed information how to process incomming responses. By activating debug mode system provide more detailed information to sys.stdout.
 
 .. code-block:: python
     :linenos:
 
-    from qass.tools.networking.analyzer_socket import AnalyzerRemote
-    import time    
+    from qass.tools.networking.analyzer_ssh import AnalyzerSSH   
     
-    with AnalyzerRemote("192.168.2.67", debug_mode=True) as opti:
-        info = opti.get_project_info()
-        print(info)
+    with AnalyzerSSH("111.111.1.111", debug_mode=True) as opti_client:
+        ....
 
-Example 4: Callbacks
-""""""""""""""""""""
-
-Example to show how to use report function with an easy callback.
-
+Example 3.1: Access reader functionalities
+""""""""""""""""""""""""""""""""""""""""""
+Simple example how to access main functionalities.
+    
 .. code-block:: python
     :linenos:
 
-    from qass.tools.networking.analyzer_socket import AnalyzerRemote
+    from qass.tools.networking.analyzer_ssh import AnalyzerSSH
+
+    with AnalyzerSSH("111.111.1.111") as opti_client:
+        info_dict = opti_client.get_all_infos()
+        opti_client.export_to_json(info_dict)
+
+Example 3.2: Access reader functionalities
+""""""""""""""""""""""""""""""""""""""""""
+Same result but now unscramlbled into the specific parts. Could be an advantage for understanding programm mechanismen.
     
-    def own_callback_example(result):
-        """Function that prints "I/O state changed" everytime it does. Callback function always becomes response as arg. In this case response is used as event. Evertime this event happens print command will happen."""
-        if result:
-                print("I/O state changed")
+.. code-block:: python
+    :linenos:
+
+    from qass.tools.networking.analyzer_ssh import AnalyzerSSH
+
+    with AnalyzerSSH("111.111.1.111") as opti_client:
+        opti_client._detect_harddrives()
+        opti_client.logger.info(
+            f"Automatic detection of one systemplate and {len(opti_client.datapaths)} dataplates completed.")
+        opti_client.check_smartctl()
+        opti_client._get_machine_info()
+        opti_client._get_systemdrive_info()
+        opti_client._get_datadrive_info()
+        opti_client.logger.info("All data read and ready to export.")
+        opti_client.export_to_json(opti_client.all_infos)
+        opti_client.logger.info("Export completed")        
+
+Example 3.3: Access reader functionalities
+""""""""""""""""""""""""""""""""""""""""""
+Same result but in third way to have see computing in progress bar.
     
-    with AnalyzerRemote(ip="192.168.2.67") as opti:
-        # Start report
-        opti.add_io_report_callback(own_callback_example)
-        # Do something
-        #
-        # stop report automatically without active callback
-        opti.remove_io_report_callback(own_callback_example)
+.. code-block:: python
+    :linenos:
 
-Example 5: Set analyzer settings
-"""""""""""""""""""""""""""""""""
+    from qass.tools.networking.analyzer_ssh import AnalyzerSSH
 
-Example to automatically define Analyzer4D settings.
+    with AnalyzerSSH("111.111.1.111") as opti_client:
+        processes = [opti_client._detect_harddrives, opti_client.check_smartctl,
+        opti_client._get_machine_information, opti_client._get_systemdrive_info, opti_client._get_datadrive_info]
+        with tqdm(desc="Progress of computing", total=len(processes)) as bar:
+                for process_step in processes:
+                        process_step()
+                        bar.update()
+        opti_client.logger.info("All data read and ready to export.")
+        opti_client.export_to_json(opti_client.all_infos)
+        opti_client.logger.info("Export completed")
 
-    .. code-block:: python
-        :linenos:
+Example 4: Standalone
+"""""""""""""""""""""
+Use it as standalone application.
     
-        from qass.tools.networking.analyzer_socket import AnalyzerRemote, PreampPorts
-        
-        with AnalyzerRemote(ip="192.168.2.67") as opti:
-            project_dict = opti.get_project_info()
-            current_state = opti.get_service_parameter("pFPGAVersion")
-            if current_state is not 2:
-                opti.set_service_parameter("pFPGAVersion", 2)
-            opti.pulsetest_port(PreampPorts.PREAMP_PORT_1)
-            opti.import_patterns("/my/local/directory/")
+.. code-block:: python
+    :linenos:
 
-AnalyzerRemote
-**************
-.. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerRemote
-        :members:
+    from qass.tools.networking.analyzer_ssh import AnalyzerSSH
+    
+    if __name__ == "__main__":
+        with AnalyzerSSH("111.111.1.111") as opti_client:
+                info_dict = opti_client.get_all_infos()
+                opti_client.export_to_json(info_dict)
 
-
-Analyzer Helper Classes
-***********************
-.. autoclass:: qass.tools.networking.analyzer_socket.Amplitudes
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.Channels
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.ChannelsPorts
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.PreampPorts
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.Samplerates16Bit
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.ExactSamplerates16Bit
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.ExactSamplerates24Bit
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.FFTOversampling
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.FFTWindowing
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.FFTLogarithmic
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.SysAmplitudesType
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.AreaViews
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.SysSettingsClass
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.MultiPreampInput
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.ConnectionError
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.NoneRegistrationError
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerSyntaxError
-        :members:
+AnalyzerSSH
+************
+.. autoclass:: qass.tools.networking.analyzer_ssh.AnalyzerSSH
+   :members:

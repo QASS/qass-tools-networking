@@ -107,8 +107,8 @@ AnalyzerRemote
         :members:
 
 
-Analyzer Helper Classes
-***********************
+AnalyzerRemote Helper Classes
+*****************************
 .. autoclass:: qass.tools.networking.analyzer_socket.Amplitudes
         :members:
 
@@ -159,5 +159,3 @@ Analyzer Helper Classes
 
 .. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerSyntaxError
         :members:
-
-.. include:: changelog.rst
