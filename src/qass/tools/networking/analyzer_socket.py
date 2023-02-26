@@ -1533,6 +1533,40 @@ class AnalyzerRemote():
         hexa = "0xf" + "{0:0>4x}".format(int(binary_str, 2))
         return hexa
 
+    def set_simulated_io_input_line(self, io_line: Union[str, int], state: Union[str, bool] = True):
+        """Set the state for a dedicated io input line. The state will be simulated in the analyzer software.
+        :param io_line: Gives the address of the io_line. This can be either a numeric value between 1 and 24
+        or a string in the format '[byte].[bit]'.
+        :type io_line: Union[str, int]
+        :param state: Gives the state for the referenced io_line. The state can be any out of
+        ('on', 1, '1', True, 'True', 'true', 'enable', 'set') or ('off', 0, '0', False, 'False', 'false', 'disable', 'clear').
+        :type state: Union[str, bool]. Defaults to True.
+        """
+        true_states = ('on', 1, '1', True, 'True', 'true', 'enable', 'set')
+        false_states = ('off', 0, '0', False, 'False', 'false', 'disable', 'clear')
+        accepted_states = true_states + false_states
+        if state not in accepted_states:
+            raise ValueError(f'The state must be one of {accepted_states} but is {state}')
+        
+        if state in true_states:
+            state = 'on'
+        elif state in false_states:
+            state = 'off'
+        
+        from numbers import Number
+        if isinstance(io_line, Number):
+            if not (1 <= io_line <= 24):
+                raise ValueError(f'The given io_line is out of range (1<=io_line<=24): {io_line}')
+        else:
+            import re
+            pattern = re.compile(r'^[124]\.[12345678]$')
+            if not pattern.match(io_line):
+                raise ValueError(f'The given io_line does not fulfill the expected pattern (e.g. 1.3): {io_line}')
+            
+        print(f'{io_line} {state}')
+        # self._value_parser(cmd="setsimioin", p1="1.3 true")
+        self._value_parser(cmd="AppCmd", p1="setsimioin", p2=f'{io_line} {state}')
+
     def set_simulated_io_input(self, io: str) -> None:
         """Set simulated I/O input register. I/0 input register can be set by inverted hexa (smallest significant right)
         or by providing a binary representation of seen bits set in I/O register.
