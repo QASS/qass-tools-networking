@@ -1563,8 +1563,6 @@ class AnalyzerRemote():
             if not pattern.match(io_line):
                 raise ValueError(f'The given io_line does not fulfill the expected pattern (e.g. 1.3): {io_line}')
             
-        print(f'{io_line} {state}')
-        # self._value_parser(cmd="setsimioin", p1="1.3 true")
         self._value_parser(cmd="AppCmd", p1="setsimioin", p2=f'{io_line} {state}')
 
     def set_simulated_io_input(self, io: str) -> None:
