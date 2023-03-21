@@ -359,8 +359,8 @@ class ReceiveThread(threading.Thread):
                     self.logger.warning(buffer)
                     raise e
             # only enter for new current length setting or if message is complete
-            while (len(buffer) >= current_len and len(buffer) != 0) or (current_len is 0 and len(buffer) >= 2):
-                if current_len == 0:
+            while (len(buffer) >= current_len and len(buffer) != 0 and current_len != 0) or (current_len == 0 and len(buffer) >= 2):
+                if current_len == 0 and len(buffer) >= 2:
                     # every two first characters of a message are the incoming length
                     current_len = int.from_bytes(buffer[:2], byteorder='big')
                     # cut length away
