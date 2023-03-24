@@ -1483,7 +1483,7 @@ class AnalyzerRemote():
         :rtype: int
         """
         val = self._value_parser(cmd="readioin")
-        return val.get("result")
+        return int(val.get("result"))
 
     def get_io_output(self) -> int:
         """ Returns set I/O output register as integer appearance of hexa state.
@@ -1492,7 +1492,7 @@ class AnalyzerRemote():
         :rtype: int
         """
         val = self._value_parser(cmd="readioout")
-        return val.get("result")
+        return int(val.get("result"))
 
     def _shift_binary(self, original_bin: str) -> str:
         """Helper method to convert incoming binary to least significant digit on the right side
@@ -1663,7 +1663,7 @@ class AnalyzerRemote():
         self.logger.info(
             f"Callback {callback} for process number report added")
 
-    def set_io_ouput(self, io_line: int, state: bool) -> None:
+    def set_io_output(self, io_line: int, state: bool) -> None:
         """ Sets single I/O ouput line. As parameter only line number of third I/O line is required.
 
         .. warning:: Changing output line 3.1 - 3.3 is not possible. 
