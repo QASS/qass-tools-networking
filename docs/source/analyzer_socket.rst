@@ -115,7 +115,7 @@ AnalyzerRemote Helper Classes
 .. autoclass:: qass.tools.networking.analyzer_socket.Channels
         :members:
 
-.. autoclass:: qass.tools.networking.analyzer_socket.ChannelsPorts
+.. autoclass:: qass.tools.networking.analyzer_socket.ChannelPorts
         :members:
 
 .. autoclass:: qass.tools.networking.analyzer_socket.PreampPorts

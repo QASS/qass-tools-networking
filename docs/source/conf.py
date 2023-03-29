@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'Qass Tools Networking'
 copyright = '2022, QASS GmbH'
 author = 'QASS GmbH'
-release = '2.1.0'
+release = '2.1.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -24,7 +24,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode',
 templates_path = ['_templates']
 exclude_patterns = []
 rst_prolog = """
-.. role:: AnalyzerVersion,
+.. role:: AnalyzerVersion 
 .. role:: Contributor
 """
 

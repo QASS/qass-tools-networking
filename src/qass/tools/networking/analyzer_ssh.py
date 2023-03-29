@@ -67,14 +67,14 @@ class AnalyzerSSH():
             self.logger.error(
                 f"\nExecution type: {exc_type}\nTraceback: {traceback}")
 
-    def _send_ssh_command(self, command: str) -> Union[str, json]:
+    def _send_ssh_command(self, command: str) -> str:
         """ Method handles sending commands to interactive shell as receiving response. In case for needed sudo password function will send either a user setted password opr autoamtically send password already used before. For every message will be opened an own channel, which automatically closes after receiving all data out of this channel. 
 
 
         :param command: Command that should be executed in linux terminal over SSH.
         :type command: str
         :return: Terminal response
-        :rtype: str or json
+        :rtype: str
         """
         # Helper
         buffer = bytearray()

@@ -46,7 +46,7 @@ Simple example how to access main functionalities.
 
 Example 3.2: Access reader functionalities
 """"""""""""""""""""""""""""""""""""""""""
-Same result but now unscramlbled into the specific parts. Could be an advantage for understanding programm mechanismen.
+Same result but now unscrambled into the specific parts. Could be an advantage for understanding programm mechanismen.
     
 .. code-block:: python
     :linenos:
@@ -87,7 +87,7 @@ Same result but in third way to have see computing in progress bar.
 
 Example 4: Standalone
 """""""""""""""""""""
-Use it as standalone application.
+Usage as standalone application.
     
 .. code-block:: python
     :linenos:
@@ -102,4 +102,4 @@ Use it as standalone application.
 AnalyzerSSH
 ************
 .. autoclass:: qass.tools.networking.analyzer_ssh.AnalyzerSSH
-   :members:
+        :members:
