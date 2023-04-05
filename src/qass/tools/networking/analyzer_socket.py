@@ -31,14 +31,6 @@ class Amplitudes(Enum):
     AMP_891_mV = 891
     AMP_955_mV = 955
 
-    @property
-    def get_list(self):
-        """Property lists all allowed amplitudes to generate sine wave from.
-
-        :rtype: List
-        """
-        return list(Amplitudes)
-
 
 class Channels(IntEnum):
     """Available selection box choices for channel in multiplexer configuration that will be addressed"""
@@ -574,34 +566,58 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", p1="startMeasuring")
         self._measuring_active = True
 
-    def start_sineGenerator(self, frequency: int, amplitude: Union[int, Amplitudes]) -> None:
+    def start_sineGenerator(self, frequency, amplitude) -> None:
         """Method to start sine wave generation with custom frequency and amplitude settings.
 
         .. warning:: Sine generator has to be already switched on!
         .. note:: Note that you should consider that the sine generator needs a couple µs to start
-        .. note:: Reminder: Frequency range is limited by used sine generator
+        .. note:: Reminder: Frequency range is limited by used sine generator (currently 50Hz to 1200Hz)
 
-        :param frequency: Used frequency to generate sine wave with in Hz.
+        :param frequency: Used frequency to generate sine wave with in Hz. The suitable range is between 50Hz and 1200Hz.
         :type frequency: int
-        :param amplitude: Used amplitude to generate sine wave in mV. See Amplitudes class for more all supported amplitude values.
-        :type amplitude: int, Amplitudes
-        :raises ValueError: Set amplitude has to be equal to one class constances of class Amplitudes. If exception is raised the user is asked to enter new amplitude and frequency.
+        :param amplitude: Used amplitude to generate sine wave in mV (e.g. 955, 'AMP_955_mV' or Amplitudes.AMP_955_mV). Only discrete amplitude values are valid.
+        :type amplitude: int, str, Enum
+        :raises ValueError: Set amplitude has to be equal to one class constants of class Amplitudes. If exception is raised the user is asked to enter new amplitude and frequency.
         """
-        a = list(Amplitudes)
+
+        min_frequency = 50
+        max_frequency = 1200
+
         try:
-            if amplitude in a or amplitude in Amplitudes:
-                self._value_parser(
-                    cmd="AppCmd", p1="StartSineGen", p2=f"{frequency} {amplitude}")
-                self.logger.info(
-                    f"Sine generator startet with f={frequency} Hz and {amplitude} mV amplitude.")
-                self._sine_gen_active = True
+            if (frequency >= min_frequency and frequency <= max_frequency) != True:
+                raise ValueError
+        except ValueError:
+            print(f'Frequency of {frequency}Hz is not in the range of {min_frequency}Hz...{max_frequency}Hz.')
+            print('SineGenerator will not be started!')
+            frequency = 0
+
+        try:
+            if isinstance(amplitude, int):
+                if any(x.value == amplitude for x in Amplitudes):
+                    pass
+                else:
+                    raise ValueError
+            elif isinstance(amplitude, str):
+                if any(x.name == amplitude for x in Amplitudes):
+                    amplitude = Amplitudes[amplitude].value
+                else:
+                    raise ValueError
+            elif isinstance(amplitude, Enum):
+                if any(x.name == str(amplitude.name) for x in Amplitudes):
+                    amplitude = amplitude.value
+                else:
+                    raise ValueError
             else:
                 raise ValueError
         except ValueError:
-            (f" Desired amplitude {amplitude} is not supported. Please enter one of the following amplitudes to continue: {a}")
-            NEWamp = input("Enter new sine amplitude:")
-            NEWf = input("Enter new sine frequency:")
-            self.start_sineGenerator(NEWf, NEWamp)
+            print(f'Amplitude {amplitude} is not supported. Please use one of the supported amplitudes.')
+            print('SineGenerator will not be started!')
+            amplitude = 0
+
+        if (frequency != 0 and amplitude != 0) == True:
+            self._value_parser(cmd="AppCmd", p1="StartSineGen", p2=f"{frequency} {amplitude}")
+            self.logger.info(f"Sine generator startet with f={frequency} Hz and {amplitude} mV amplitude.")
+            self._sine_gen_active = True
 
     def stop_sineGenerator(self) -> None:
         """Stops generating sine waves."""
