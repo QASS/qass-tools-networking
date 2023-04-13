@@ -11,10 +11,22 @@ If you run into a bug or compatibility problems please contact ewiebelitz@qass.n
 
 .. toctree::
    :maxdepth: 6
+   :caption: Package Changelog
+   
+   changelog
+
+.. toctree::
+   :maxdepth: 6
    :caption: Remote Control and Supervising
    
    analyzer_socket
+
+.. toctree::
+   :maxdepth: 6
+   :caption: SSH Terminal
    
+   analyzer_ssh
+
 .. toctree::
    :maxdepth: 2
    :caption: Python Server Client
