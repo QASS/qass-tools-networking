@@ -566,58 +566,51 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", p1="startMeasuring")
         self._measuring_active = True
 
-    def start_sineGenerator(self, frequency, amplitude) -> None:
+    def start_sineGenerator(self, frequency: int, amplitude: int) -> None:
         """Method to start sine wave generation with custom frequency and amplitude settings.
 
         .. warning:: Sine generator has to be already switched on!
-        .. note:: Note that you should consider that the sine generator needs a couple µs to start
-        .. note:: Reminder: Frequency range is limited by used sine generator (currently 50Hz to 1200Hz)
+        .. note:: Note that you should consider that the sine generator needs a couple of µs to start.
 
         :param frequency: Used frequency to generate sine wave with in Hz. The suitable range is between 50Hz and 1200Hz.
         :type frequency: int
         :param amplitude: Used amplitude to generate sine wave in mV (e.g. 955, 'AMP_955_mV' or Amplitudes.AMP_955_mV). Only discrete amplitude values are valid.
         :type amplitude: int, str, Enum
-        :raises ValueError: Set amplitude has to be equal to one class constants of class Amplitudes. If exception is raised the user is asked to enter new amplitude and frequency.
+        :raises ValueError: Set amplitude has to be equal to an int, string or object of class Amplitudes. The frequency value has to to be valid. If exception is raised the program is terminated.
         """
 
         min_frequency = 50
         max_frequency = 1200
 
-        try:
-            if (frequency >= min_frequency and frequency <= max_frequency) != True:
-                raise ValueError
-        except ValueError:
-            print(f'Frequency of {frequency}Hz is not in the range of {min_frequency}Hz...{max_frequency}Hz.')
-            print('SineGenerator will not be started!')
-            frequency = 0
+        if (frequency >= min_frequency and frequency <= max_frequency) != True:
+            self.logger.error(f'SineGenerator will not be started! Frequency of {frequency}Hz is not in the range of {min_frequency}Hz...{max_frequency}Hz.')
+            raise ValueError
 
-        try:
-            if isinstance(amplitude, int):
-                if any(x.value == amplitude for x in Amplitudes):
-                    pass
-                else:
-                    raise ValueError
-            elif isinstance(amplitude, str):
-                if any(x.name == amplitude for x in Amplitudes):
-                    amplitude = Amplitudes[amplitude].value
-                else:
-                    raise ValueError
-            elif isinstance(amplitude, Enum):
-                if any(x.name == str(amplitude.name) for x in Amplitudes):
-                    amplitude = amplitude.value
-                else:
-                    raise ValueError
+        if isinstance(amplitude, int):
+            if any(x.value == amplitude for x in Amplitudes):
+                pass
             else:
+                self.logger.error(f'SineGenerator will not be started! Amplitude {amplitude} is not supported.')
                 raise ValueError
-        except ValueError:
-            print(f'Amplitude {amplitude} is not supported. Please use one of the supported amplitudes.')
-            print('SineGenerator will not be started!')
-            amplitude = 0
+        elif isinstance(amplitude, str):
+            if any(x.name == amplitude for x in Amplitudes):
+                amplitude = Amplitudes[amplitude].value
+            else:
+                self.logger.error(f'SineGenerator will not be started! Amplitude {amplitude} is not supported.')
+                raise ValueError
+        elif isinstance(amplitude, Enum):
+            if any(x.name == str(amplitude.name) for x in Amplitudes):
+                amplitude = amplitude.value
+            else:
+                self.logger.error(f'SineGenerator will not be started! Amplitude {amplitude} is not supported.')
+                raise ValueError
+        else:
+            self.logger.error(f'SineGenerator will not be started! Amplitude {amplitude} is not supported.')
+            raise ValueError
 
-        if (frequency != 0 and amplitude != 0) == True:
-            self._value_parser(cmd="AppCmd", p1="StartSineGen", p2=f"{frequency} {amplitude}")
-            self.logger.info(f"Sine generator startet with f={frequency} Hz and {amplitude} mV amplitude.")
-            self._sine_gen_active = True
+        self._value_parser(cmd="AppCmd", p1="StartSineGen", p2=f"{frequency} {amplitude}")
+        self.logger.info(f"Sine generator startet with f={frequency}Hz and {amplitude}mV amplitude.")
+        self._sine_gen_active = True
 
     def stop_sineGenerator(self) -> None:
         """Stops generating sine waves."""
