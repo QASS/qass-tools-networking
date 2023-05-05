@@ -7,7 +7,7 @@ Planned changes for next releases will be noted here. If you have any suggestion
 
 2.1.1
 """""
-:Date: May 08, 2023
+:Date: May 05, 2023
 
 :AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
 
@@ -21,6 +21,8 @@ Fixes
 Changes
 -------
 * Optimized range control in :mod:`qass.tools.networking.analyzer_socket.AnalyzerRemote.start_sineGenerator` 
+* Changend name of :mod:`qass.tools.networking.analyzer_socket.AreaViews` attributes
+* New package requirement of paramiko
 
 
 2.1.0
