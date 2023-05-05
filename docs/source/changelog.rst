@@ -5,7 +5,7 @@ Planned changes for next releases will be noted here. If you have any suggestion
 * Set io as line in set_simulated_io_input(args) 
 * Save project function
 
-2.1.1
+2.1.0
 """""
 :Date: March 29, 2023
 
@@ -16,14 +16,6 @@ Planned changes for next releases will be noted here. If you have any suggestion
 Fixes
 -----
 * Update documentation
-
-2.1.0
-"""""
-:Date: February 06, 2023
-
-:AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
-
-:Contributor: Oliver Kowollik
 
 New Features
 ------------
