@@ -2,6 +2,8 @@
 
 Networking package to remotely control the Analyzer4D software.
 
+[Qass Tools Networking Documentation](http://developers.gitlab_pages.qass.net/qass_tools/qass_tools_networking)
+
 ## Install as developer
 
 Navigate a terminal with the current working directory to the repository where the `setup.py` file is:
