@@ -1,6 +1,8 @@
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+import pathlib
+sys.path.insert(0, os.path.abspath('../src'))
+#sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
 
 # Configuration file for the Sphinx documentation builder.
 #

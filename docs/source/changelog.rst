@@ -5,6 +5,26 @@ Planned changes for next releases will be noted here. If you have any suggestion
 * Set io as line in set_simulated_io_input(args) 
 * Save project function
 
+2.1.1
+"""""
+:Date: May 05, 2023
+
+:AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
+
+:Contributor: Oliver Kowollik
+
+Fixes
+-----
+* Update documentation of :mod:`qass.tools.networking.analyzer_ssh.AnalyzerSSH`
+* Deactivation of SineGen is running Flag is raised properly 
+
+Changes
+-------
+* Optimized range control in :mod:`qass.tools.networking.analyzer_socket.AnalyzerRemote.start_sineGenerator` 
+* Changend name of :mod:`qass.tools.networking.analyzer_socket.AreaViews` attributes
+* New package requirement of paramiko
+
+
 2.1.0
 """""
 :Date: March 29, 2023
