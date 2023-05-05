@@ -615,6 +615,7 @@ class AnalyzerRemote():
     def stop_sineGenerator(self) -> None:
         """Stops generating sine waves."""
         self._value_parser(cmd="AppCmd", p1="StopSineGen")
+        self._sine_gen_active = False
 
     def stop_measuring(self) -> None:
         """Method to stop a currently running measurement."""
