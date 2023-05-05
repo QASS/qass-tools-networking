@@ -173,10 +173,10 @@ class SysAmplitudesType(IntEnum):
 
 class AreaViews(IntEnum):
     """ Available view possibilities in analyzer area view."""
-    View_1 = 1
-    View_2 = 2
-    View_3 = 3
-    View_4 = 4
+    VIEW_1 = 1
+    VIEW_2 = 2
+    VIEW_3 = 3
+    VIEW_4 = 4
 
 
 class SysSettingsClass(IntEnum):
@@ -566,7 +566,7 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", p1="startMeasuring")
         self._measuring_active = True
 
-    def start_sineGenerator(self, frequency: int, amplitude: int) -> None:
+    def start_sineGenerator(self, frequency: int, amplitude: Union[int, str, Amplitudes]) -> None:
         """Method to start sine wave generation with custom frequency and amplitude settings.
 
         .. warning:: Sine generator has to be already switched on!
@@ -575,7 +575,7 @@ class AnalyzerRemote():
         :param frequency: Used frequency to generate sine wave with in Hz. The suitable range is between 50Hz and 1200Hz.
         :type frequency: int
         :param amplitude: Used amplitude to generate sine wave in mV (e.g. 955, 'AMP_955_mV' or Amplitudes.AMP_955_mV). Only discrete amplitude values are valid.
-        :type amplitude: int, str, Enum
+        :type amplitude: int, str, Amplitudes
         :raises ValueError: Set amplitude has to be equal to an int, string or object of class Amplitudes. The frequency value has to to be valid. If exception is raised the program is terminated.
         """
 
