@@ -916,7 +916,7 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", p1="sysSleep", p2=time)
         self.logger.info("Analyzer tired. Analyzer sleep.")
 
-    def set_appvar(self, appvar_name: str, appvar_value: any) -> None:
+    def set_appvar(self, appvar_name: str, appvar_value: any, timeout: float = 1) -> None:
         """ Set the value of an AppVar by using the name of the AppVar. The prefix "pro_" will result in the AppVar being saved in the project and persist between restarts. The prefix "sys_" will result in the AppVar being saved globally and made available over all projects.
 
         If the AppVar doesn't exist yet it will be created.
@@ -926,7 +926,7 @@ class AnalyzerRemote():
         :param app_var_value: Value of AppVar. The type can be every datatype supported by python (e.g. float, int, str, json, ...).
         :type app_var_value: any
         """ 
-        self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value)
+        self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value, timeout=timeout)
 
     def get_appvar(self, appvar_name: str) -> str:
         """ Get AppVar value by name.
@@ -1906,7 +1906,10 @@ class AnalyzerRemote():
         # reports are handled external
         if expect_response and user_callback == None:
             # get resonse out of queue
-            analyzer_response = q.get()
+            timeout = 5
+            if 'timeout' in kwargs:
+                timeout = kwargs['timeout']
+            analyzer_response = q.get(timeout=timeout)
             # deregister callback
             self.__recv_thread.deregister_callbacks(recognition)
             # check response for failure
