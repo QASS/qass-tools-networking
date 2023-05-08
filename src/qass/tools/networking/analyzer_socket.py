@@ -484,7 +484,7 @@ class AnalyzerRemote():
         """ 
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.s.settimeout(30)
+            self.s.settimeout(15)
             self.s.connect((self.ip, self.port))
             self.logger.info("Connected to optimizer")
         except socket.timeout:
