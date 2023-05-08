@@ -5,6 +5,20 @@ Planned changes for next releases will be noted here. If you have any suggestion
 * Set io as line in set_simulated_io_input(args) 
 * Save project function
 
+2.2.0
+"""""
+:Date: May 10, 2023
+
+:AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
+
+:Contributor: Oliver Kowollik
+
+New Features
+------------
+* :mod:`qass.tools.networking.analyzer_ssh.AnalyzerSSH._send-ssh_command` now supports fetching Password terimnal respones
+* Possibility to define root password for session :mod:`qass.tools.networking.analyzer_ssh.AnalyzerSSH.set_root_passwort`
+* Possibility to define ssh password for session :mod:`qass.tools.networking.analyzer_ssh.AnalyzerSSH.set_ssh_passwort`
+
 2.1.1
 """""
 :Date: May 05, 2023

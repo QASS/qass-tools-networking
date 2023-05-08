@@ -219,16 +219,27 @@ class ConnectionError(socket.error):
     def __str__(self):
         return self.msg
 
+class ReceiverThreadError(Exception):
+    def __init__(self, message):
+        self.message = message
 
-class NoneRegistrationError(Exception):
-    """ Error is raised if programm cannot find a registered callback for a command. When this exception occurs, programm run into failstate.""" 
-    pass
+    def __str__(self):
+        return self.message
+    
+class ReceivingError(Exception):
+    """ Error is raisen everytime ReceiverThread is running into failstate by receiving information e.g. socket.timeout or socket.error. Number of tasks that are not completed is provided as error message. Not completed does not necessarily mean that command is not send. It only provides information that this amount of task is not connected to an expected response."""
+    def __init__(self, tasks, message=None):
+        self.message = f"ReceiverThread stopped by before {tasks} could be closed because of an unexpected error.\n" 
+        if message:
+            self.message = self.message + message
+        self.logger.error("self.message")
+        self.inform_other_thread()
 
-
-class AnalyzerSyntaxError(Exception):
-    """ Error is raised if analyzer sends a 'not okay' command back which means that sended command syntax is not supported in this way.""" 
-    pass
-
+    def inform_other_thread(self):
+        self.receiver_error = True
+    
+    def __str__(self):
+        return self.standard_message + "\n" + self.message
 
 class ReceiveThread(threading.Thread):
     """ Receiving thread which runs due to contextmanager the whole time and listens to analyzer socket for responses.
@@ -240,6 +251,7 @@ class ReceiveThread(threading.Thread):
         self.__callbacks = defaultdict(list)
         self.s = socket_obj
         self.logger = logger_obj
+        self.receiver_error = False
 
     def warn_none_registered_response(self, message):
         """ Warning is used when a not expected or not registered message comes in from analyzer. A warning is send out and the message will be logged.""" 
@@ -337,19 +349,18 @@ class ReceiveThread(threading.Thread):
                 buffer.extend(self.s.recv(READ_SIZE))
             # if nothing is received, socket runs into failstate (socket.timeout)
             except socket.timeout as e:
-                # if len(self.__callbacks) != 0:
-                continue
-                # else:
-                #    self.logger.error(
-                #        "No signal received altough signal is expected. Programm stopps.")
-                #    raise e
-            # catch other socket exception and crash
+                #timeoue += 1
+                #continue
+                #if timeout >= 3:
+                #    raise ReceiverThreadError()
+                raise ReceiverThreadError(len((self.__callbacks)),message=e)
+                  
+            # catch socket.error mistakes
             except socket.error as e:
-                self.logger.error(e)
                 if int.from_bytes(buffer, byteorder='big') > 0:
                     self.logger.warning("Unfinished message received:\n")
                     self.logger.warning(buffer)
-                    raise e
+                    raise ReceiverThreadError(len((self.__callbacks)),message=e)
             # only enter for new current length setting or if message is complete
             while (len(buffer) >= current_len and len(buffer) != 0 and current_len != 0) or (current_len == 0 and len(buffer) >= 2):
                 if current_len == 0 and len(buffer) >= 2:
@@ -363,11 +374,10 @@ class ReceiveThread(threading.Thread):
                     response = buffer[:current_len]
                     # handle response
                     self.handle_response(response)
-                    # throw ahdnled part away
+                    # throw handled part away
                     buffer = buffer[current_len:]
                     # reset current_length
                     current_len = 0
-                    timeout = 0
 
     def kill_thread(self) -> None:
         """ End forever loop in run method and join thread.""" 
@@ -467,7 +477,7 @@ class AnalyzerRemote():
         """ 
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.s.settimeout(15)
+            self.s.settimeout(30)
             self.s.connect((self.ip, self.port))
             self.logger.info("Connected to optimizer")
         except socket.timeout:
@@ -762,7 +772,6 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd",
                                p1="Preamp", p2=p2_string)
 
-    # ANALYZER: c++ bug, Peter will fix it
     def change_preamp_input(self, opti_port_number: Union[int, PreampPorts], preamp_input_number: Union[int, MultiPreampInput] = MultiPreampInput.MULTI_INPUT_2) -> None:
         """ Method changes which physical preamp input will be used for datastream output to optimizer. Only avaible for multi input preamps.
 
@@ -916,7 +925,7 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", p1="sysSleep", p2=time)
         self.logger.info("Analyzer tired. Analyzer sleep.")
 
-    def set_appvar(self, appvar_name: str, appvar_value: any, timeout: float = 1) -> None:
+    def set_appvar(self, appvar_name: str, appvar_value: any) -> None:
         """ Set the value of an AppVar by using the name of the AppVar. The prefix "pro_" will result in the AppVar being saved in the project and persist between restarts. The prefix "sys_" will result in the AppVar being saved globally and made available over all projects.
 
         If the AppVar doesn't exist yet it will be created.
@@ -926,7 +935,7 @@ class AnalyzerRemote():
         :param app_var_value: Value of AppVar. The type can be every datatype supported by python (e.g. float, int, str, json, ...).
         :type app_var_value: any
         """ 
-        self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value, timeout=timeout)
+        self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value)
 
     def get_appvar(self, appvar_name: str) -> str:
         """ Get AppVar value by name.
@@ -1821,7 +1830,6 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", p1="ResetFailstate")
     # TODO: profibus
     # TODO: profibus report
-
     def _recognition_translator(self, cmd: str) -> str:
         """ Private method to add "response" to already sended cmd str for later recognition.
 
@@ -1905,17 +1913,16 @@ class AnalyzerRemote():
         # receive response if avaible and expected
         # reports are handled external
         if expect_response and user_callback == None:
-            # get resonse out of queue
-            timeout = 5
-            if 'timeout' in kwargs:
-                timeout = kwargs['timeout']
-            analyzer_response = q.get(timeout=timeout)
+            try:
+                # get resonse out of queue
+                analyzer_response = q.get(timeout=10)
+            except queue.Empty:
+                raise ReceiverThreadError("ReceiverThread logs an error by receiving expected analyzer response. Please see the log for detailed information.")
             # deregister callback
             self.__recv_thread.deregister_callbacks(recognition)
             # check response for failure
             self._check_response(analyzer_response)
             return analyzer_response
-
 
 class AnalyzerCmd(AnalyzerRemote):
     """ Depricated class naming. Inherit from normal class.
