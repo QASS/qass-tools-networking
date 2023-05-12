@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.abspath('../src'))
 project = 'Qass Tools Networking'
 copyright = '2022, QASS GmbH'
 author = 'QASS GmbH'
-release = '2.1.1'
+release = '2.2.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

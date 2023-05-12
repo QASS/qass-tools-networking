@@ -5,6 +5,36 @@ Planned changes for next releases will be noted here. If you have any suggestion
 * Set io as line in set_simulated_io_input(args) 
 * Save project function
 
+2.2.0
+"""""
+:Date: May 10, 2023
+
+:AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
+
+:Contributor: Oliver Kowollik
+
+``AnalyzerRemote``
+
+New Features
+------------
+* Timeout for each queue item
+* Every method from :mod:`qass.tools.networking.analyzer_socket` now contains a ``custom_timeout`` keywordargument, which overwirittes the timeout control for each queue block
+* Constructor contains new keywordargument ``timeout`` for setting global timeout, default is 2
+* New custom :mod:`qass.tools.networking.analyzer_socket.ReceivingThreadError` Exception class added
+
+Fixes
+------
+* Documentation :mod:`qass.tools.networking.analyzer_socket.get_io_input`
+* Documentation :mod:`qass.tools.networking.analyzer_socket.get_io_output`
+
+Removed
+-------
+* Custom exception :mod:`qass.tools.networking.analyzer_socket.ConnectionError` removed
+
+Changes
+-------
+* Custom exception ``AnalyzerSyntaxError`` to :mod:`qass.tools.networking.analyzer_socket.AnalyzerError`
+
 2.1.1
 """""
 :Date: May 05, 2023
