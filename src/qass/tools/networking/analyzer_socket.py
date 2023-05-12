@@ -211,20 +211,6 @@ class MultiPreampInput(IntEnum):
     MULTI_INPUT_5 = 4
     MULTI_INPUT_6 = 6
 
-class AnalyzerSyntaxError(Exception):
-    def __init__(self, message):
-        self.message = message
-
-    def __str__(self):
-        return self.message
-
-class ConnectionError(socket.error):
-    def __init__(self, ip, port):
-        self.msg = f"Connection to ip: {ip} on port: {port} could not be established.\n"
-
-    def __str__(self):
-        return self.msg
-
 class ReceiverThreadError(Exception):
     def __init__(self, message):
         self.message = message
@@ -432,8 +418,6 @@ class AnalyzerRemote():
         self.__recv_thread.start()
         return self
 
-    def open(self):
-        
     def analyzer_functionality_warning_decorator(func):
         def inner(*args, **kwargs):
             result = func(*args, **kwargs)
@@ -470,9 +454,11 @@ class AnalyzerRemote():
             self.s.connect((self.ip, self.port))
             self.logger.info("Connected to optimizer")
         except socket.timeout:
-            raise ConnectionError(self.ip, self.port)
+            self.logger.error(f"Connection to ip: {self.ip} on port: {self.port} could not be established.\n")
+            raise
         except socket.error:
-            raise ConnectionError(self.ip, self.port)
+            self.logger.error(f"Connection to ip: {self.ip} on port: {self.port} could not be established.\n")
+            raise
         except KeyboardInterrupt as e:
             self.logger.error(e)
             self.__exit__(exc_type=e)
