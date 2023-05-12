@@ -231,22 +231,7 @@ class ReceiverThreadError(Exception):
 
     def __str__(self):
         return self.message
-    
-class ReceivingError(Exception):
-    """ Error is raisen everytime ReceiverThread is running into failstate by receiving information e.g. socket.timeout or socket.error. Number of tasks that are not completed is provided as error message. Not completed does not necessarily mean that command is not send. It only provides information that this amount of task is not connected to an expected response."""
-    def __init__(self, tasks, message=None):
-        self.message = f"ReceiverThread stopped by before {tasks} could be closed because of an unexpected error.\n" 
-        if message:
-            self.message = self.message + message
-        self.logger.error("self.message")
-        self.inform_other_thread()
-
-    def inform_other_thread(self):
-        self.receiver_error = True
-    
-    def __str__(self):
-        return self.standard_message + "\n" + self.message
-
+   
 class ReceiveThread(threading.Thread):
     """ Receiving thread which runs due to contextmanager the whole time and listens to analyzer socket for responses.
     Responses will be processed and parsed to a callback function (regular: adds response to queue for main thread to fetch te data.""" 
@@ -257,7 +242,6 @@ class ReceiveThread(threading.Thread):
         self.__callbacks = defaultdict(list)
         self.s = socket_obj
         self.logger = logger_obj
-        self.receiver_error = False
 
     def warn_none_registered_response(self, message):
         """ Warning is used when a not expected or not registered message comes in from analyzer. A warning is send out and the message will be logged.""" 
@@ -359,14 +343,15 @@ class ReceiveThread(threading.Thread):
                 #continue
                 #if timeout >= 3:
                 #    raise ReceiverThreadError()
-                raise ReceiverThreadError(len((self.__callbacks), message=e))
-                  
+                self.logger.error(e)
+                raise 
             # catch socket.error mistakes
             except socket.error as e:
                 if int.from_bytes(buffer, byteorder='big') > 0:
+                    self.logger.error(e)
                     self.logger.warning("Unfinished message received:\n")
                     self.logger.warning(buffer)
-                    raise ReceiverThreadError(len((self.__callbacks), message=e))
+                    raise 
             # only enter for new current length setting or if message is complete
             while (len(buffer) >= current_len and len(buffer) != 0 and current_len != 0) or (current_len == 0 and len(buffer) >= 2):
                 if current_len == 0 and len(buffer) >= 2:
@@ -484,7 +469,7 @@ class AnalyzerRemote():
         """ 
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.s.settimeout(15)
+            self.s.settimeout(None)
             self.s.connect((self.ip, self.port))
             self.logger.info("Connected to optimizer")
         except socket.timeout:
@@ -499,7 +484,7 @@ class AnalyzerRemote():
         """ If contextmanager is left, another two seconds will be waited before private function is called on the receiving thread
         (start in enter method of contextmanager) and also raise and log errors.
         """ 
-        time.sleep(2.0)
+        time.sleep(1)
 
         self.__recv_thread.kill_thread()
         # save exit and stop all running services
@@ -1119,7 +1104,7 @@ class AnalyzerRemote():
         :type mode: str, bool
         :raises KeyError: if keyword argument "mode" is parsed with invalid values.
         """ 
-        self._value_parser(cmd="startmeasuring", p1=self.translator[mode], user_timeout=custom_timeout)
+        self._value_parser(cmd="startmeasuring", expect_response=False, p1=self.translator[mode], user_timeout=custom_timeout)
         # flags for context manager exit method
         if self.translator[mode] == "true":
             self._measuring_active = True
@@ -1885,7 +1870,7 @@ class AnalyzerRemote():
                 else:
                     function_timeout = self.timeout  
                 # get resonse out of queue
-                analyzer_response = q.get(timeout=10)
+                analyzer_response = q.get(timeout=function_timeout)
             except queue.Empty:
                 raise ReceiverThreadError("ReceiverThread logs an error by receiving expected analyzer response. Please see the log for detailed information.")
             # deregister callback
