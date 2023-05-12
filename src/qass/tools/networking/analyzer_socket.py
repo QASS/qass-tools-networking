@@ -362,7 +362,7 @@ class ReceiveThread(threading.Thread):
 class AnalyzerRemote():
     """ Class provides methods for external analyzer control (system operator independant) over a TCP socket.""" 
 
-    def __init__(self, ip: str, port=17000, debug_mode=False):
+    def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=2):
         """ Constructor provides helper and creates logger module .
 
         :param ip: Analyzer IP in network.
@@ -371,6 +371,8 @@ class AnalyzerRemote():
         :type port: int
         :param debug_mode: Logs debug messages into sys.stdout
         :type debug_mode: bool
+        :param timeout: Sets global timeout for queue object in seconds, default is 2
+        :type timeout: (pos) int 
 
         ::Example::
             analyzer = AnalyzerRemote(ip="192.168.2.67", port=17000)
@@ -380,7 +382,7 @@ class AnalyzerRemote():
         # helper
         self.ip = ip
         self.port = port
-        self.timeout = 2  # seconds
+        self.timeout = timeout # seconds
         # message ID to assign command to analyzer and specific response
         self.msgid = 0
         self.translator = {True: "true", "start": "true", "true": "true",
