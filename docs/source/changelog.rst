@@ -30,7 +30,10 @@ Fixes
 Removed
 -------
 * Custom exception :mod:`qass.tools.networking.analyzer_socket.ConnectionError` removed
-* Custom exception :mod:`qass.tools.networking.analyzer_socket.AnalyzerSyntaxError` removed
+
+Changes
+-------
+* Custom exception ``AnalyzerSyntaxError`` to :mod:`qass.tools.networking.analyzer_socket.AnalyzerError`
 
 2.1.1
 """""
