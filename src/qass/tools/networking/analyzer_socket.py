@@ -576,7 +576,7 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", p1="startMeasuring")
         self._measuring_active = True
 
-    def start_sineGenerator(self, frequency: int, amplitude: Union[int, str, Amplitudes]) -> None:
+    def start_sineGenerator(self, frequency: int, amplitude: Union[int, str, Amplitudes],timeout=None) -> None:
         """ Method to start sine wave generation with custom frequency and amplitude settings.
 
         .. warning:: Sine generator has to be already switched on!
@@ -618,7 +618,7 @@ class AnalyzerRemote():
             self.logger.error(f'SineGenerator will not be started! Amplitude {amplitude} is not supported.')
             raise ValueError
 
-        self._value_parser(cmd="AppCmd", p1="StartSineGen", p2=f"{frequency} {amplitude}")
+        self._value_parser(cmd="AppCmd", user_timeout=timeout, p1="StartSineGen", p2=f"{frequency} {amplitude}")
         self.logger.info(f"Sine generator startet with f={frequency}Hz and {amplitude}mV amplitude.")
         self._sine_gen_active = True
 
@@ -1872,7 +1872,7 @@ class AnalyzerRemote():
         # actual sending command
         self.s.sendall(cmd_str)
 
-    def _value_parser(self, expect_response=True, user_callback=None, **kwargs) -> Dict:
+    def _value_parser(self, expect_response=True, user_callback=None, user_timeout=None, **kwargs) -> Dict:
         """ Function to coordinate sending parsed command settings and take back answer from receiver thread.
 
         By kwargs specification of each command will be set.
@@ -1915,7 +1915,10 @@ class AnalyzerRemote():
         if expect_response and user_callback == None:
             try:
                 # get resonse out of queue
-                analyzer_response = q.get(timeout=10)
+                function_timeout = 2
+                if user_timeout:
+                    function_timeout = user_timeout
+                analyzer_response = q.get(timeout=function_timeout)
             except queue.Empty:
                 raise ReceiverThreadError("ReceiverThread logs an error by receiving expected analyzer response. Please see the log for detailed information.")
             # deregister callback
