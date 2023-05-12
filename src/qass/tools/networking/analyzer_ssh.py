@@ -36,7 +36,6 @@ class AnalyzerSSH():
 
         self.datapaths = []
         self.sudo_psw = None
-        self.ssh_psw = None
         self.systempath = None
         self.smartctl_json_system = None
         self.smartctl_json_datas = []
@@ -67,25 +66,10 @@ class AnalyzerSSH():
         if exc_type != None:
             self.logger.error(
                 f"\nExecution type: {exc_type}\nTraceback: {traceback}")
-    
-    def set_root_password(self, pswd:str):
-        """ Define sudo/root password beforehand
-
-        :param pswd: root password
-        :type pswd: str
-        """
-        self.sudo_psw = pswd
-
-    def set_ssh_password(self, pswd:str):
-        """ Define ssh password beforehand
-
-        :param pswd: ssh password
-        :type pswd: str
-        """
-        self.ssh_psw = pswd
 
     def _send_ssh_command(self, command: str) -> str:
         """ Method handles sending commands to interactive shell as receiving response. In case for needed sudo password function will send either a user setted password opr autoamtically send password already used before. For every message will be opened an own channel, which automatically closes after receiving all data out of this channel. 
+
 
         :param command: Command that should be executed in linux terminal over SSH.
         :type command: str
@@ -121,39 +105,20 @@ class AnalyzerSSH():
                 terminal_response = buffer.decode(DECODE_STYLE)
                 buffer = buffer[current_length:]
                 current_length = 0
-                
                 # check response for request to enter sudo pswd
                 if re.search(".*\[sudo\].*", terminal_response) and re.search(".*sudo.*", command):
-                    # if sudo pswd had been used before, use this one
-                    if self.sudo_psw:
-                        try:    
-                            # send pswd
-                            channel.send(f'{self.sudo_psw}\n')
-                        # Handle typo mistakes
-                        except ssh_exception.AuthenticationException:
-                            self.pswd_failure_count = 0
-                            self._handle_pswd_failure(channel)
-                    else:
-                        # use function for pswd input, set count  to -1 to stay with 3 repetitions
-                        self.pswd_failure_count = -1
-                        self._handle_pswd_failure(channel.Channel)
-                
-                # handle case of normal ssh password
-                elif re.search(".*Password.*", terminal_response):
-                    # if ssh pswd had been used before, use this one
-                    if self.ssh_psw:
-                        try:    
-                            # send pswd
-                            channel.send(f'{self.ssh_psw}\n')
-                        # Handle typo mistakes
-                        except ssh_exception.AuthenticationException:
-                            self.pswd_failure_count = 0
-                            self._handle_pswd_failure(channel, mode="ssh")
-                    else:
-                        # use function for pswd input, set count  to -1 to stay with 3 repetitions
-                        self.pswd_failure_count = -1
-                        self._handle_pswd_failure(channel.Channel, mode="ssh")
-
+                    try:
+                        # if sudo pswd had been used before, use this one
+                        if not self.sudo_psw:
+                            # else: ask user for new one
+                            self.sudo_psw = pwinput.pwinput(
+                                prompt="Add root passwort for opti:\n", mask="*")
+                        # send pswd
+                        channel.send(f'{self.sudo_psw}\n')
+                    # Handle typo mistakes
+                    except ssh_exception.AuthenticationException:
+                        self.pswd_failure_count = 0
+                        self._handle_pswd_failure(channel)
                 # handle special case of smartctl command as json
                 elif re.search(".*smartctl.*", command):
                     terminal_response = json.loads(terminal_response)
@@ -163,26 +128,8 @@ class AnalyzerSSH():
                     # end loop
                     self.receive = False
         return terminal_response
-    
-    def _handle_pswd_failure(self, channel: channel.Channel, mode="root") -> None:
-        """Recursiv function to enter ssh password until authentification is accept. Recursive loop will be ended after third fail.
 
-        :param channel: Used channel in which authenfication problem occured.
-        :type channel: channel.Channel
-        :raises BadPswdException: Custom Exception if authenfication failed. Approximated as typo mistake.
-        """
-    
-        try:
-            self.pswd_failure_count += 1
-            self.pswd = pwinput.pwinput(
-                prompt=f"Add (new) {mode} passwort for opti:\n", mask="*")
-            channel.send(f'{self.pswd}\n')
-        except ssh_exception.AuthenticationException:
-            if self.ssh_pswd_failure_count >= 4:
-                raise BadPswdException()
-            self._handle_ssh_pswd_failure(channel)
-
-    def _handle_root_pswd_failure(self, channel: channel.Channel) -> None:
+    def _handle_pswd_failure(self, channel: channel.Channel) -> None:
         """Recursiv function to enter sudo password until authentification is accept. Recursive loop will be ended after third fail.
 
         :param channel: Used channel in which authenfication problem occured.

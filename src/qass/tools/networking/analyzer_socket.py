@@ -432,6 +432,8 @@ class AnalyzerRemote():
         self.__recv_thread.start()
         return self
 
+    def open(self):
+        
     def analyzer_functionality_warning_decorator(func):
         def inner(*args, **kwargs):
             result = func(*args, **kwargs)
