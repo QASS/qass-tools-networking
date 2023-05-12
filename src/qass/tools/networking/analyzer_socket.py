@@ -337,22 +337,15 @@ class ReceiveThread(threading.Thread):
         while not self.kill:
             try:
                 buffer.extend(self.s.recv(READ_SIZE))
-            # if nothing is received, socket runs into failstate (socket.timeout)
-            except socket.timeout as e:
-                #timeoue += 1
-                #continue
-                #if timeout >= 3:
-                #    raise ReceiverThreadError()
-                
-                continue
-                #self.logger.error(e)
-                #raise 
             # catch socket.error mistakes
             except socket.error as e:
-                if int.from_bytes(buffer, byteorder='big') > 0:
+                # __exit_- method will raise exception on purpose; this one can just pass
+                # if self.kill != True a wild Exception occured adn is logged 
+                if not self.kill:
                     self.logger.error(e)
-                    self.logger.warning("Unfinished message received:\n")
-                    self.logger.warning(buffer)
+                    if int.from_bytes(buffer, byteorder='big') > 0:
+                        self.logger.warning("Unfinished message received:\n")
+                        self.logger.warning(buffer)
                     raise 
             # only enter for new current length setting or if message is complete
             while (len(buffer) >= current_len and len(buffer) != 0 and current_len != 0) or (current_len == 0 and len(buffer) >= 2):
@@ -373,10 +366,10 @@ class ReceiveThread(threading.Thread):
                     current_len = 0
 
     def kill_thread(self) ->  None:
-        """ End forever loop in run method and join thread.""" 
+        """ End forever loop in run method.""" 
         # self.daemon = True
         self.kill = True
-        self.logger.info("Receiver thread is now killed.")
+        self.logger.info("Receiver thread is now closed.")
         self.join()
 
 
@@ -471,7 +464,7 @@ class AnalyzerRemote():
         """ 
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.s.settimeout(1)
+            self.s.settimeout(None)
             self.s.connect((self.ip, self.port))
             self.logger.info("Connected to optimizer")
         except socket.timeout:
@@ -486,7 +479,9 @@ class AnalyzerRemote():
         """ If contextmanager is left, another two seconds will be waited before private function is called on the receiving thread
         (start in enter method of contextmanager) and also raise and log errors.
         """ 
-
+        # variable to decide if socket.error is raised on purpose
+        self.__recv_thread.kill = True
+        self.s.close()
         self.__recv_thread.kill_thread()
         # save exit and stop all running services
         if self._measuring_active:
@@ -497,8 +492,6 @@ class AnalyzerRemote():
              self._value_parser(expect_response=False, cmd="startmonitoring", p1="false")
         if self._operator_functions_active:
              self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
-
-        self.s.close()
         self.logger.info("Socket connection closed")
         if exc_type != None:
             self.logger.error(
