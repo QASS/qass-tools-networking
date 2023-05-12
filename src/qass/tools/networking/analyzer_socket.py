@@ -343,8 +343,10 @@ class ReceiveThread(threading.Thread):
                 #continue
                 #if timeout >= 3:
                 #    raise ReceiverThreadError()
-                self.logger.error(e)
-                raise 
+                
+                continue
+                #self.logger.error(e)
+                #raise 
             # catch socket.error mistakes
             except socket.error as e:
                 if int.from_bytes(buffer, byteorder='big') > 0:
@@ -469,7 +471,7 @@ class AnalyzerRemote():
         """ 
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.s.settimeout(None)
+            self.s.settimeout(1)
             self.s.connect((self.ip, self.port))
             self.logger.info("Connected to optimizer")
         except socket.timeout:
@@ -477,14 +479,13 @@ class AnalyzerRemote():
         except socket.error:
             raise ConnectionError(self.ip, self.port)
         except KeyboardInterrupt as e:
-            print(e)
+            self.logger.error(e)
             self.__exit__(exc_type=e)
 
     def __exit__(self, exc_type, exc_value, traceback):
         """ If contextmanager is left, another two seconds will be waited before private function is called on the receiving thread
         (start in enter method of contextmanager) and also raise and log errors.
         """ 
-        time.sleep(1)
 
         self.__recv_thread.kill_thread()
         # save exit and stop all running services
