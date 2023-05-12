@@ -1847,7 +1847,7 @@ class AnalyzerRemote():
         # reports are handled external
         if expect_response and user_callback == None:
             try:
-                if kwargs.keys() == user_timeout:
+                if user_timeout:
                     function_timeout = user_timeout
                 else:
                     function_timeout = self.timeout  
