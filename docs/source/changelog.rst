@@ -15,9 +15,23 @@ Planned changes for next releases will be noted here. If you have any suggestion
 
 New Features
 ------------
-* :mod:`qass.tools.networking.analyzer_ssh.AnalyzerSSH._send-ssh_command` now supports fetching Password terimnal respones
+
+``AnalyzerSSH``
+* :mod:`qass.tools.networking.analyzer_ssh.AnalyzerSSH._send_ssh_command` now supports fetching Password terimnal respones
 * Possibility to define root password for session :mod:`qass.tools.networking.analyzer_ssh.AnalyzerSSH.set_root_passwort`
 * Possibility to define ssh password for session :mod:`qass.tools.networking.analyzer_ssh.AnalyzerSSH.set_ssh_passwort`
+
+``AnalyzerRemote``
+* Timeouts for each queue item
+* Every method from :mod:`qass.tools.networking.analyzer_socket` now contains a ``custom_timeout`` keywordargument, which overwirittes the timeout control for each queue block
+* New :mod:`qass.tools.networking.analyzer_socket.ReveiverError` Exception class added for socket timeouts and errors
+* New :mod:`qass.tools.networking.analyzer_socket.ReceivingThreadError` Exception class added
+* Exception in ReceiverThread are now fetched and parsed to other thread to raise :mod:`qass.tools.networking.analyzer_socket.ReceivingThreadError`
+
+Fixes
+------
+* Documentation :mod:`qass.tools.networking.analyzer_socket.get_io_input`
+* Documentation :mod:`qass.tools.networking.analyzer_socket.get_io_output`
 
 2.1.1
 """""
