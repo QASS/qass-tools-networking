@@ -13,25 +13,27 @@ Planned changes for next releases will be noted here. If you have any suggestion
 
 :Contributor: Oliver Kowollik
 
+``AnalyzerRemote``
+
 New Features
 ------------
-
-``AnalyzerSSH``
-* :mod:`qass.tools.networking.analyzer_ssh.AnalyzerSSH._send_ssh_command` now supports fetching Password terimnal respones
-* Possibility to define root password for session :mod:`qass.tools.networking.analyzer_ssh.AnalyzerSSH.set_root_passwort`
-* Possibility to define ssh password for session :mod:`qass.tools.networking.analyzer_ssh.AnalyzerSSH.set_ssh_passwort`
-
-``AnalyzerRemote``
-* Timeouts for each queue item
+* Timeout for each queue item
 * Every method from :mod:`qass.tools.networking.analyzer_socket` now contains a ``custom_timeout`` keywordargument, which overwirittes the timeout control for each queue block
-* New :mod:`qass.tools.networking.analyzer_socket.ReveiverError` Exception class added for socket timeouts and errors
-* New :mod:`qass.tools.networking.analyzer_socket.ReceivingThreadError` Exception class added
-* Exception in ReceiverThread are now fetched and parsed to other thread to raise :mod:`qass.tools.networking.analyzer_socket.ReceivingThreadError`
+* Constructor contains new keywordargument ``timeout`` for setting global timeout, default is 2
+* New custom :mod:`qass.tools.networking.analyzer_socket.ReceivingThreadError` Exception class added
 
 Fixes
 ------
 * Documentation :mod:`qass.tools.networking.analyzer_socket.get_io_input`
 * Documentation :mod:`qass.tools.networking.analyzer_socket.get_io_output`
+
+Removed
+-------
+* Custom exception :mod:`qass.tools.networking.analyzer_socket.ConnectionError` removed
+
+Changes
+-------
+* Custom exception ``AnalyzerSyntaxError`` to :mod:`qass.tools.networking.analyzer_socket.AnalyzerError`
 
 2.1.1
 """""

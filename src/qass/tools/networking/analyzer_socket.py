@@ -217,6 +217,13 @@ class ReceiverThreadError(Exception):
 
     def __str__(self):
         return self.message
+    
+class AnalyzerError(Exception):
+    def __init__(self, message):
+        self.message = message
+        
+    def __str__(self):
+        return self.message  
    
 class ReceiveThread(threading.Thread):
     """ Receiving thread which runs due to contextmanager the whole time and listens to analyzer socket for responses.
@@ -362,7 +369,7 @@ class ReceiveThread(threading.Thread):
 class AnalyzerRemote():
     """ Class provides methods for external analyzer control (system operator independant) over a TCP socket.""" 
 
-    def __init__(self, ip: str, port=17000, debug_mode=False):
+    def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=2):
         """ Constructor provides helper and creates logger module .
 
         :param ip: Analyzer IP in network.
@@ -371,6 +378,8 @@ class AnalyzerRemote():
         :type port: int
         :param debug_mode: Logs debug messages into sys.stdout
         :type debug_mode: bool
+        :param timeout: Sets global timeout for queue object in seconds, default is 2
+        :type timeout: (pos) int 
 
         ::Example::
             analyzer = AnalyzerRemote(ip="192.168.2.67", port=17000)
@@ -380,7 +389,7 @@ class AnalyzerRemote():
         # helper
         self.ip = ip
         self.port = port
-        self.timeout = 2  # seconds
+        self.timeout = timeout # seconds
         # message ID to assign command to analyzer and specific response
         self.msgid = 0
         self.translator = {True: "true", "start": "true", "true": "true",
@@ -802,7 +811,7 @@ class AnalyzerRemote():
     def set_area_scale(self, area_number: int, scale: int = 500, custom_timeout=None) -> None:
         """ Set scale of each view area. Available for splitted analyzer view and single view. In case of single view area_number equals one.
 
-        Scale should be in range(10,1001) | Area number should be in range(1,5,  but is limited to current activated area views.
+        Scale should be in range(10,1001) | Area number should be in range(1,5), but is limited to current activated area views.
 
         :param area_number: Which area should be addressed
         :type area_number: int
@@ -1798,7 +1807,7 @@ class AnalyzerRemote():
         if response.get("ok") == False:
             self.logger.error(
                 "Analyzer could not perform action: check log and documentation.")
-            raise AnalyzerSyntaxError(
+            raise AnalyzerError(
                 "Analyzer could not perform action: check log and documentation.")
 
     def _send(self, command: Dict) ->  None:
@@ -1857,7 +1866,7 @@ class AnalyzerRemote():
         # reports are handled external
         if expect_response and user_callback == None:
             try:
-                if kwargs.keys() == user_timeout:
+                if user_timeout:
                     function_timeout = user_timeout
                 else:
                     function_timeout = self.timeout  
