@@ -5,7 +5,7 @@ Planned changes for next releases will be noted here. If you have any suggestion
 * Set io as line in set_simulated_io_input(args) 
 * Save project function
 
-2.2.0
+3.0.0
 """""
 :Date: May 10, 2023
 
@@ -21,6 +21,8 @@ New Features
 * Every method from :mod:`qass.tools.networking.analyzer_socket` now contains a ``custom_timeout`` keywordargument, which overwirittes the timeout control for each queue block
 * Constructor contains new keywordargument ``timeout`` for setting global timeout, default is 2
 * New custom :mod:`qass.tools.networking.analyzer_socket.ReceivingThreadError` Exception class added
+* New :mod:`qass.tools.networking.analyzer_socket.open` method to use socket without a context manager
+* New :mod:`qass.tools.networking.analyzer_socket.close` method to use socket without a context manager
 
 Fixes
 ------
