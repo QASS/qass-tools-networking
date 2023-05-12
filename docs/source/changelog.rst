@@ -17,8 +17,9 @@ Planned changes for next releases will be noted here. If you have any suggestion
 
 New Features
 ------------
-* Global timeout for each queue item
+* Timeout for each queue item
 * Every method from :mod:`qass.tools.networking.analyzer_socket` now contains a ``custom_timeout`` keywordargument, which overwirittes the timeout control for each queue block
+* Constructor contains new keywordargument ``timeout`` for setting global timeout, default is 2
 * New custom :mod:`qass.tools.networking.analyzer_socket.ReceivingThreadError` Exception class added
 
 Fixes
