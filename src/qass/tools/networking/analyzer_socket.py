@@ -418,6 +418,16 @@ class AnalyzerRemote():
         self.__recv_thread.start()
         return self
 
+    def open(self):
+        """ Method to wrap __enter__ method behaviour for working without a contextmanager. Will open the connection to the Analyzer Instance and start a receiver thread.  
+        """
+        self.__enter__()
+
+    def close(self):
+        """ Method to wrap __exit__ method behaviour for working without a contextmanager. Will close the TCP socket and stop the receiver thread.  
+        """
+        self.__exit__()
+
     def analyzer_functionality_warning_decorator(func):
         def inner(*args, **kwargs):
             result = func(*args, **kwargs)
