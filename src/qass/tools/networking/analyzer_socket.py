@@ -792,7 +792,7 @@ class AnalyzerRemote():
     def set_area_scale(self, area_number: int, scale: int = 500, custom_timeout=None) -> None:
         """ Set scale of each view area. Available for splitted analyzer view and single view. In case of single view area_number equals one.
 
-        Scale should be in range(10,1001) | Area number should be in range(1,5,  but is limited to current activated area views.
+        Scale should be in range(10,1001) | Area number should be in range(1,5), but is limited to current activated area views.
 
         :param area_number: Which area should be addressed
         :type area_number: int
