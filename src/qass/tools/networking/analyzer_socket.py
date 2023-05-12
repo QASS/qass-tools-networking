@@ -217,6 +217,13 @@ class ReceiverThreadError(Exception):
 
     def __str__(self):
         return self.message
+    
+class AnalyzerError(Exception):
+    def __init__(self, message):
+        self.message = message
+        
+    def __str__(self):
+        return self.message  
    
 class ReceiveThread(threading.Thread):
     """ Receiving thread which runs due to contextmanager the whole time and listens to analyzer socket for responses.
@@ -1790,7 +1797,7 @@ class AnalyzerRemote():
         if response.get("ok") == False:
             self.logger.error(
                 "Analyzer could not perform action: check log and documentation.")
-            raise AnalyzerSyntaxError(
+            raise AnalyzerError(
                 "Analyzer could not perform action: check log and documentation.")
 
     def _send(self, command: Dict) ->  None:
