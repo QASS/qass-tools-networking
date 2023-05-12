@@ -411,12 +411,14 @@ class AnalyzerRemote():
         self.logger = self._create_logger(msg_mode)
 
     def __enter__(self):
-        """ Connects the machine to an analyzer reachable over user-given Input of IP (self.ip) and Port (self.port) via TCP and returns an instance of the class. Additionally a second thread (called receiving thread) will be started.
-        This thread will run until __exit__ method will kill recieve thread. Every method contains the possibility to parse a custom timeout. This timeout value in second is determining when the queu waiting for results from the ReceiverThread runs into failstate.
-
-        :return: Instance of AnalyzerRemote class
-        :rtype: AnalyzerRemote object
+        """Method to wrap open method behaviour for working with a contextmanager. Will open the connection to the Analyzer Instance and start a receiver thread.
         """ 
+        self.open()
+        return self
+
+    def open(self):
+        """Connects the machine to an analyzer reachable over user-given Input of IP (self.ip) and Port (self.port) via TCP and returns an instance of the class. Additionally a second thread (called receiving thread) will be started. This thread will run until close method will kill recieve thread. Every method contains the possibility to parse a custom timeout. This timeout value in second is determining when the queu waiting for results from the ReceiverThread runs into failstate.
+        """
         # connect to socket
         self._connecting_analyzer()
 
@@ -425,17 +427,25 @@ class AnalyzerRemote():
                                            group=None, target=None, name="receive thread")
         # start thread
         self.__recv_thread.start()
-        return self
-
-    def open(self):
-        """ Method to wrap __enter__ method behaviour for working without a contextmanager. Will open the connection to the Analyzer Instance and start a receiver thread.  
-        """
-        self.__enter__()
 
     def close(self):
-        """ Method to wrap __exit__ method behaviour for working without a contextmanager. Will close the TCP socket and stop the receiver thread.  
+        """ Method to close the TCP socket and stop the receiver thread. Settet flags will be checked for safe closing of all started analyzer features.  
         """
-        self.__exit__()
+         # variable to decide if socket.error is raised on purpose
+        self.__recv_thread.kill = True
+        self.s.close()
+        self.__recv_thread.kill_thread()
+        # save exit and stop all running services
+        if self._measuring_active:
+             self._value_parser(expect_response=False, cmd="App", p1="stopMeasuring")
+        if self._sine_gen_active:
+             self._value_parser(expect_response=False, cmd="AppCmd", p1="StopSineGen")
+        if self._monitoring_active:
+             self._value_parser(expect_response=False, cmd="startmonitoring", p1="false")
+        if self._operator_functions_active:
+             self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
+        self.logger.info("Socket connection closed")
+        
 
     def analyzer_functionality_warning_decorator(func):
         def inner(*args, **kwargs):
@@ -483,23 +493,9 @@ class AnalyzerRemote():
             self.__exit__(exc_type=e)
 
     def __exit__(self, exc_type, exc_value, traceback):
-        """ If contextmanager is left, another two seconds will be waited before private function is called on the receiving thread
-        (start in enter method of contextmanager) and also raise and log errors.
+        """ If contextmanager is left, close method is called.
         """ 
-        # variable to decide if socket.error is raised on purpose
-        self.__recv_thread.kill = True
-        self.s.close()
-        self.__recv_thread.kill_thread()
-        # save exit and stop all running services
-        if self._measuring_active:
-             self._value_parser(expect_response=False, cmd="App", p1="stopMeasuring")
-        if self._sine_gen_active:
-             self._value_parser(expect_response=False, cmd="AppCmd", p1="StopSineGen")
-        if self._monitoring_active:
-             self._value_parser(expect_response=False, cmd="startmonitoring", p1="false")
-        if self._operator_functions_active:
-             self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
-        self.logger.info("Socket connection closed")
+        self.close()
         if exc_type != None:
             self.logger.error(
                 f"\nExecution type: {exc_type}\nTraceback: {traceback}")
