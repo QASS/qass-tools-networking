@@ -1178,7 +1178,7 @@ class AnalyzerRemote():
         """ 
         return  self._value_parser(cmd="getmaxmeasurepositions", user_timeout=custom_timeout)
 
-    def get_preamp_info(self, preamp_port: Union[PreampPorts, int], custom_timeout=None) -> Dict:
+    def get_preamp_info(self, preamp_port: Union[PreampPorts, int], convert:bool=True, custom_timeout=None) -> Dict:
         """ Returns a string with serial number, firmware version and S-Value of connected preamp.
 
         :param preamp_port: Preamp port with connected preamp
@@ -1202,6 +1202,9 @@ class AnalyzerRemote():
                 "Choosen preampport is not an analyzer system preamp port.")
             raise KeyError(
                 "Choosen preampport is not an analyzer system preamp port.")
+    
+    def set_preamp_s_value(self, s_value:int, custom_timeout=None):
+        self.ge    
 
     def start_operator_function(self, mode: Union[str, bool] = "start", custom_timeout=None) -> None:
         """ Start operator functions.
