@@ -5,6 +5,21 @@ Planned changes for next releases will be noted here. If you have any suggestion
 * Set io as line in set_simulated_io_input(args) 
 * Save project function
 
+3.1.0
+"""""
+:Date: June 01, 2023
+
+:AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
+
+:Contributor: Oliver Kowollik
+
+``AnalyzerRemote``
+
+New Features
+------------
+* New :mod:`qass.tools.networking.analyzer_socket.set_preamp_s_value` method
+
+
 3.0.0
 """""
 :Date: May 10, 2023
@@ -18,7 +33,7 @@ Planned changes for next releases will be noted here. If you have any suggestion
 New Features
 ------------
 * Timeout for each queue item
-* Every method from :mod:`qass.tools.networking.analyzer_socket` now contains a ``custom_timeout`` keywordargument, which overwirittes the timeout control for each queue block
+* Most methods from :mod:`qass.tools.networking.analyzer_socket` now contain a ``custom_timeout`` keywordargument, which overwirittes the timeout control for each queue block
 * Constructor contains new keywordargument ``timeout`` for setting global timeout, default is 2
 * New custom :mod:`qass.tools.networking.analyzer_socket.ReceivingThreadError` Exception class added
 * New :mod:`qass.tools.networking.analyzer_socket.open` method to use socket without a context manager
