@@ -6,6 +6,7 @@ from enum import Enum, IntEnum
 from typing import Any, Dict, List, Union
 import logging
 import sys
+import re
 import threading
 import queue
 from collections import defaultdict
@@ -1188,9 +1189,11 @@ class AnalyzerRemote():
         :rtype: tuple
         """ 
         if preamp_port in PreampPorts or preamp_port in range(0, 8):
-            preamp_hardware_info =  self._value_parser(cmd="getpreampinfo", user_timeout=custom_timeout, p1=preamp_port)
-            preamp_hardware_info = preamp_hardware_info.get('p1')
-            serial_ring, serial_num, s_value, __ = preamp_hardware_info.split(";")
+            preamp_info =  self._value_parser(cmd="getpreampinfo", user_timeout=custom_timeout, p1=preamp_port)
+            preamp_info = preamp_info.get('p1')
+            if not convert:
+                return preamp_info
+            serial_ring, serial_num, s_value, __ = preamp_info.split(";")
             serial_ring_idx = serial_ring.find(":")
             serial_num_idx = serial_num.find(":")
             s_value_idx = s_value.find(":")
@@ -1203,8 +1206,12 @@ class AnalyzerRemote():
             raise KeyError(
                 "Choosen preampport is not an analyzer system preamp port.")
     
-    def set_preamp_s_value(self, s_value:int, custom_timeout=None):
-        self.ge    
+    def set_preamp_s_value(self, s_value:int, preampport:Union[PreampPorts, int]=PreampPorts.PREAMP_PORT_1, custom_timeout=None):
+        
+        preamp_eeprom = self.get_preamp_info(preamp_port=preampport, convert=False)
+        replacement = f"s:{s_value};"
+        preamp_eeprom = re.sub("s:-*\d\d*;", replacement, preamp_eeprom)
+        self._value_parser(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, user_timeout=custom_timeout, expect_response=False)
 
     def start_operator_function(self, mode: Union[str, bool] = "start", custom_timeout=None) -> None:
         """ Start operator functions.
