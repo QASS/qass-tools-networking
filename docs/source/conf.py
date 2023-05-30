@@ -1,6 +1,8 @@
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+import pathlib
+sys.path.insert(0, os.path.abspath('../src'))
+#sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -13,7 +15,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'Qass Tools Networking'
 copyright = '2022, QASS GmbH'
 author = 'QASS GmbH'
-release = '2.1.1'
+release = '2.2.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
