@@ -332,15 +332,15 @@ class ReceiveThread(threading.Thread):
         current_len = 0
         buffer = bytearray()
         READ_SIZE = 4
-        self.kill = False
-        while not self.kill:
+        self.run_thread = False
+        while not self.run_thread:
             try:
                 buffer.extend(self.s.recv(READ_SIZE))
             # catch socket.error mistakes
             except socket.error as e:
                 # __exit_- method will raise exception on purpose; this one can just pass
-                # if self.kill != True a wild Exception occured adn is logged 
-                if not self.kill:
+                # if self.kill != True a wild Exception occured and is logged 
+                if self.kill:
                     self.logger.error(e)
                     if int.from_bytes(buffer, byteorder='big') > 0:
                         self.logger.warning("Unfinished message received:\n")
@@ -367,7 +367,7 @@ class ReceiveThread(threading.Thread):
     def kill_thread(self) ->  None:
         """ End forever loop in run method.""" 
         # self.daemon = True
-        self.kill = True
+        self.run_thread = False
         self.logger.info("Receiver thread is now closed.")
         self.join()
 
@@ -438,10 +438,6 @@ class AnalyzerRemote():
     def close(self):
         """ Method to close the TCP socket and stop the receiver thread. Settet flags will be checked for safe closing of all started analyzer features.  
         """
-         # variable to decide if socket.error is raised on purpose
-        self.__recv_thread.kill = True
-        self.s.close()
-        self.__recv_thread.kill_thread()
         # save exit and stop all running services
         if self._measuring_active:
              self._value_parser(expect_response=False, cmd="App", p1="stopMeasuring")
@@ -451,6 +447,8 @@ class AnalyzerRemote():
              self._value_parser(expect_response=False, cmd="startmonitoring", p1="false")
         if self._operator_functions_active:
              self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
+        self.s.close()
+        self.__recv_thread.kill_thread()
         self.logger.info("Socket connection closed")
         
 
@@ -502,10 +500,13 @@ class AnalyzerRemote():
     def __exit__(self, exc_type, exc_value, traceback):
         """ If contextmanager is left, close method is called.
         """ 
-        self.close()
-        if exc_type != None:
-            self.logger.error(
-                f"\nExecution type: {exc_type}\nTraceback: {traceback}")
+        
+        if exc_type == None:
+            # variable to decide if socket.error is raised on purpose
+            self.__recv_thread.kill = True
+        else: 
+            self.logger.error(f"\nExecution type: {exc_type}\nTraceback: {traceback}")
+        self.close()   
 
     @property
     def get_socket_ip(self):
