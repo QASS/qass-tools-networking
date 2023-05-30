@@ -212,6 +212,11 @@ class MultiPreampInput(IntEnum):
     MULTI_INPUT_5 = 4
     MULTI_INPUT_6 = 6
 
+class PreampType(IntEnum):
+    """ Serial Number Ring for supported Preamp Types."""
+    PASSIVE = 2023
+    ACTIVE  = 2113
+
 class ReceiverThreadError(Exception):
     def __init__(self, message):
         self.message = message
@@ -1207,10 +1212,31 @@ class AnalyzerRemote():
                 "Choosen preampport is not an analyzer system preamp port.")
     
     def set_preamp_s_value(self, s_value:int, preampport:Union[PreampPorts, int]=PreampPorts.PREAMP_PORT_1, custom_timeout=None):
-        
+        """ Method to set preamp s value in preamp EEPROM text.
+
+        :param s_value: S value which should be write to preamp EEPROM text
+        :type s_value: int
+        :param preampport: Preampport where Preamp is connected, defaults to PreampPorts.PREAMP_PORT_1
+        :type preampport: Union[PreampPorts, int], optional
+        """
         preamp_eeprom = self.get_preamp_info(preamp_port=preampport, convert=False)
         replacement = f"s:{s_value};"
         preamp_eeprom = re.sub("s:-*\d\d*;", replacement, preamp_eeprom)
+        self._value_parser(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, user_timeout=custom_timeout, expect_response=False)
+
+    def _set_preamp_eeprom_text(self, preamp_type:, serial_number:int, s_value:int, preampport:Union[PreampPorts, int]=PreampPorts.PREAMP_PORT_1, custom_timeout=None):
+        """ Method to set preamp EEPROM text.
+
+        :param serial_number: _description_
+        :type serial_number: int
+        :param s_value: _description_
+        :type s_value: int
+        :param preampport: _description_, defaults to PreampPorts.PREAMP_PORT_1
+        :type preampport: Union[PreampPorts, int], optional
+        :param custom_timeout: _description_, defaults to None
+        :type custom_timeout: _type_, optional
+        """
+        preamp_eeprom = f"t:2023;s/n:{serial_number};s:{s_value};"
         self._value_parser(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, user_timeout=custom_timeout, expect_response=False)
 
     def start_operator_function(self, mode: Union[str, bool] = "start", custom_timeout=None) -> None:
