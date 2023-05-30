@@ -623,7 +623,7 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", p1="StartSineGen", p2=f"{frequency} {amplitude}")
         self.logger.info(f"Sine generator startet with f={frequency}Hz and {amplitude}mV amplitude.")
         self._sine_gen_active = True
-
+        
     def stop_sineGenerator(self, custom_timeout=None) -> None:
         """ Stops generating sine waves.
         
@@ -1315,7 +1315,7 @@ class AnalyzerRemote():
         self._value_parser(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, expect_response=False)
 
     def _set_preamp_eeprom_text(self, preamp_type:Union[PreampType, int], serial_number:int, s_value:int, preampport:Union[PreampPorts, int]=PreampPorts.PREAMP_PORT_1):
-        """_summary_
+        """ Private method to set preamp EEPROM text.
 
         :param preamp_type: Type of preamp
         :type preamp_type: Union[PreampType, int]
@@ -1326,7 +1326,7 @@ class AnalyzerRemote():
         :param preampport: Preampport to which Preamp is connected, defaults to PreampPorts.PREAMP_PORT_1
         :type preampport: Union[PreampPorts, int], optional
         """
-        preamp_eeprom = f"t:2023;s/n:{serial_number};s:{s_value};"
+        preamp_eeprom = f"t:{preamp_type};s/n:{serial_number};s:{s_value};"
         self._value_parser(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, expect_response=False)
 
     def start_operator_function(self, mode: Union[str, bool] = "start", custom_timeout=None) -> None:
