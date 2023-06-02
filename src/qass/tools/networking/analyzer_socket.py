@@ -332,15 +332,17 @@ class ReceiveThread(threading.Thread):
         current_len = 0
         buffer = bytearray()
         READ_SIZE = 4
-        self.run_thread = False
-        while not self.run_thread:
+        #self.run_thread = False
+        #while not self.run_thread:
+        self.kill = False
+        while not self.kill:
             try:
                 buffer.extend(self.s.recv(READ_SIZE))
             # catch socket.error mistakes
             except socket.error as e:
                 # __exit_- method will raise exception on purpose; this one can just pass
                 # if self.kill != True a wild Exception occured and is logged 
-                if self.kill:
+                if not self.kill:
                     self.logger.error(e)
                     if int.from_bytes(buffer, byteorder='big') > 0:
                         self.logger.warning("Unfinished message received:\n")
@@ -367,7 +369,8 @@ class ReceiveThread(threading.Thread):
     def kill_thread(self) ->  None:
         """ End forever loop in run method.""" 
         # self.daemon = True
-        self.run_thread = False
+        #self.run_thread = False
+        
         self.logger.info("Receiver thread is now closed.")
         self.join()
 
@@ -1560,6 +1563,9 @@ class AnalyzerRemote():
                            
         #  self._value_parser(cmd="PreampTool", user_timeout=custom_timeout)
         #                   p1=f"flash {preampport} {filepath}")
+
+    def detect_preamp(self):
+        return self._value_parser(cmd="appfunc", expect_response=False, p1="PreampTool", p2=f"detect")
 
     def set_default_project(self, comment: str = None, custom_timeout=None) -> None:
         """ Set current active project as new default template.
