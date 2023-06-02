@@ -1603,6 +1603,8 @@ class AnalyzerRemote():
         preampport += 1 # c++ analyzer source code handels here preampports between 1 to 8
         response = self._value_parser(cmd="appfunc", expect_response=True, p1="PreampTool", p2=f"version {preampport}", user_timeout=custom_timeout)
         return response.get("result")
+    
+
 
     def set_default_project(self, comment: str = None, custom_timeout=None) -> None:
         """ Set current active project as new default template.
@@ -2023,20 +2025,6 @@ class AnalyzerRemote():
             # case normal communication server command
             return "response" + cmd
 
-    def _check_response(self, response):
-        """ Private method to check received response for value under key="ok". If value is True, response is approved.
-
-        :param response: Response dict from analyzer to check.
-        :type response: dict
-        :raises AnalyzerSyntaxError: if command could not be performed, due to false syntax or params out of bounds.
-        """ 
-        # rais exception if not performed right
-        if response.get("ok") == False:
-            self.logger.error(
-                "Analyzer could not perform action: check log and documentation.")
-            raise AnalyzerError(
-                "Analyzer could not perform action: check log and documentation.")
-
     def _send(self, command: Dict) ->  None:
         """ Private method to send commands to analyzer. Command will be encoded to bytestring.
 
@@ -2105,8 +2093,6 @@ class AnalyzerRemote():
                 raise ReceiverThreadError("ReceiverThread logs an error by receiving expected analyzer response. Please see the log for detailed information.")
             # deregister callback
             self.__recv_thread.deregister_callbacks(recognition)
-            # check response for failure
-            self._check_response(analyzer_response)
             return analyzer_response
 
 class AnalyzerCmd(AnalyzerRemote):
