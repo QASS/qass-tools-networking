@@ -282,19 +282,7 @@ class ReceiveThread(threading.Thread):
             else:
                 self.__callbacks.pop(recognition)
 
-    def _check_response(self, response):
-        """ Private method to check received response for value under key="ok". If value is True, response is approved.
-
-        :param response: Response dict from analyzer to check.
-        :type response: dict
-        :raises AnalyzerSyntaxError: if command could not be performed, due to false syntax or params out of bounds.
-        """ 
-        # rais exception if not performed right
-        if response.get("ok") == False:
-            self.logger.error(
-                "Analyzer could not perform action: check log and documentation.")
-            raise AnalyzerError(
-                "Analyzer could not perform action: check log and documentation.")
+  
 
     def handle_response(self, response, encoding_style="utf-8") ->  None:
         """ Handles every complete message. Handling means decoding the byte string to dict and apply the response to every registered callback.
