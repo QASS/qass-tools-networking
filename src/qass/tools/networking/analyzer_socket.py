@@ -400,6 +400,7 @@ class AnalyzerRemote():
         self.ip = ip
         self.port = port
         self.timeout = timeout # seconds
+        self.error = False
         # message ID to assign command to analyzer and specific response
         self.msgid = 0
         self.translator = {True: "true", "start": "true", "true": "true",
@@ -441,6 +442,8 @@ class AnalyzerRemote():
     def close(self):
         """ Method to close the TCP socket and stop the receiver thread. Settet flags will be checked for safe closing of all started analyzer features.  
         """
+        # variable to decide if socket.error is raised on purpose --> close method always on purpose
+        self.__recv_thread.kill = True
         # save exit and stop all running services
         if self._measuring_active:
              self._value_parser(expect_response=False, cmd="App", p1="stopMeasuring")
@@ -503,11 +506,7 @@ class AnalyzerRemote():
     def __exit__(self, exc_type, exc_value, traceback):
         """ If contextmanager is left, close method is called.
         """ 
-        
-        if exc_type == None:
-            # variable to decide if socket.error is raised on purpose
-            self.__recv_thread.kill = True
-        else: 
+        if exc_type != None:
             self.logger.error(f"\nExecution type: {exc_type}\nTraceback: {traceback}")
         self.close()   
 
@@ -1564,8 +1563,15 @@ class AnalyzerRemote():
         #  self._value_parser(cmd="PreampTool", user_timeout=custom_timeout)
         #                   p1=f"flash {preampport} {filepath}")
 
-    def detect_preamp(self):
-        return self._value_parser(cmd="appfunc", expect_response=False, p1="PreampTool", p2=f"detect")
+    def detect_preamp(self, custom_timeout="never"):
+        """ Method which let Analyzer check for connected Preamps
+
+        :return: _description_
+        :rtype: _type_
+        """
+        response = self._value_parser(cmd="appfunc", expect_response=True, p1="PreampTool", p2=f"detect", user_timeout=custom_timeout)
+        return response.get("result")
+
 
     def set_default_project(self, comment: str = None, custom_timeout=None) -> None:
         """ Set current active project as new default template.
@@ -2057,6 +2063,8 @@ class AnalyzerRemote():
         if expect_response and user_callback == None:
             try:
                 if user_timeout:
+                    if isinstance(user_timeout, str) and user_timeout == "never":
+                        user_timeout = None # equals block
                     function_timeout = user_timeout
                 else:
                     function_timeout = self.timeout  
