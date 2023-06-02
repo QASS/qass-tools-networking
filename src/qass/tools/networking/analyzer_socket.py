@@ -224,7 +224,7 @@ class ReceiverThreadError(Exception):
     def __str__(self):
         return self.message
     
-class AnalyzerError(Exception):
+class AnalyzerError(RuntimeError):
     def __init__(self, message):
         self.message = message
         
