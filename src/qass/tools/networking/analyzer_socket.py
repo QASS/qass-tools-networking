@@ -1563,12 +1563,13 @@ class AnalyzerRemote():
         #  self._value_parser(cmd="PreampTool", user_timeout=custom_timeout)
         #                   p1=f"flash {preampport} {filepath}")
 
-    def detect_preamp(self, custom_timeout="never"):
-        """ Method which let Analyzer check for connected Preamps
+    def detect_preamp(self) -> str:
+        """ Method which let Analyzer check for connected Preamps (will not auto. activate them!)
 
-        :return: _description_
-        :rtype: _type_
+        :return: String saying how much preamps are detected
+        :rtype: str
         """
+        custom_timeout="never"
         response = self._value_parser(cmd="appfunc", expect_response=True, p1="PreampTool", p2=f"detect", user_timeout=custom_timeout)
         return response.get("result")
 
