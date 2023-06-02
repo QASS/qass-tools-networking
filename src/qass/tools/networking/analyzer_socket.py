@@ -282,6 +282,20 @@ class ReceiveThread(threading.Thread):
             else:
                 self.__callbacks.pop(recognition)
 
+    def _check_response(self, response):
+        """ Private method to check received response for value under key="ok". If value is True, response is approved.
+
+        :param response: Response dict from analyzer to check.
+        :type response: dict
+        :raises AnalyzerSyntaxError: if command could not be performed, due to false syntax or params out of bounds.
+        """ 
+        # rais exception if not performed right
+        if response.get("ok") == False:
+            self.logger.error(
+                "Analyzer could not perform action: check log and documentation.")
+            raise AnalyzerError(
+                "Analyzer could not perform action: check log and documentation.")
+
     def handle_response(self, response, encoding_style="utf-8") ->  None:
         """ Handles every complete message. Handling means decoding the byte string to dict and apply the response to every registered callback.
         Therefore the response is not in unit form, we need an if block which handles recognition over cmd name and message id
@@ -295,6 +309,9 @@ class ReceiveThread(threading.Thread):
         # change appearance
         response = response.decode(encoding_style)
         response = json.loads(response)
+        
+        self._check_response(response)
+
 
         # handle cases
         with self.lock:
@@ -379,7 +396,7 @@ class AnalyzerRemote():
     """ Class provides methods for external analyzer control (system operator independant) over a TCP socket. Every method that gets a response is able to set a custom timeout for analyzer reponse. Should anything happen without TCP
     socket crashing, timeout will run into failstate. """ 
 
-    def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=2):
+    def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=4):
         """ Constructor provides helper and creates logger module .
 
         :param ip: Analyzer IP in network.
@@ -1304,7 +1321,7 @@ class AnalyzerRemote():
             raise KeyError(
                 "Choosen preampport is not an analyzer system preamp port.")
     
-    def set_preamp_s_value(self, s_value:int, preampport:Union[PreampPorts, int]=PreampPorts.PREAMP_PORT_1):
+    def write_preamp_s_value(self, s_value:int, preampport:Union[PreampPorts, int]=PreampPorts.PREAMP_PORT_1):
         """ Method to set preamp s value in preamp EEPROM text.
 
         :param s_value: S value which should be write to preamp EEPROM text
@@ -1315,9 +1332,9 @@ class AnalyzerRemote():
         preamp_eeprom = self.get_preamp_info(preamp_port=preampport, convert=False)
         replacement = f"s:{s_value};"
         preamp_eeprom = re.sub("s:-*\d\d*;", replacement, preamp_eeprom)
-        self._value_parser(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, expect_response=False)
+        self._value_parser(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, expect_response=True)
 
-    def _set_preamp_eeprom(self, preamp_type:Union[PreampType, int], serial_number:int, s_value:int, preampport:Union[PreampPorts, int]=PreampPorts.PREAMP_PORT_1):
+    def _write_preamp_eeprom(self, preamp_type:Union[PreampType, int], serial_number:int, s_value:int, preampport:Union[PreampPorts, int]=PreampPorts.PREAMP_PORT_1):
         """ Private method to set preamp EEPROM text.
 
         :param preamp_type: Type of preamp
@@ -2027,7 +2044,7 @@ class AnalyzerRemote():
         :type command: Dict
         """ 
         # print every sended command
-        self.logger.info(f"Command sent:{command}")
+        self.logger.debug(f"Command sent:{command}")
         # prepare command
         cmd_str = json.dumps(command).encode()
         cmd_str = (len(cmd_str)).to_bytes(2, 'big') + cmd_str
