@@ -235,7 +235,7 @@ class ReceiveThread(threading.Thread):
     """ Receiving thread which runs due to contextmanager the whole time and listens to analyzer socket for responses.
     Responses will be processed and parsed to a callback function (regular: adds response to queue for main thread to fetch te data.""" 
 
-    def __init__(self, socket_obj, logger_obj, group=None, target=None, name=None, args=()):
+    def __init__(self, socket_obj, logger_obj, suppress_cb_exceptions=True, group=None, target=None, name=None, args=()):
         threading.Thread.__init__(self, group, target, name, args)
         self.lock = threading.RLock()
         self.__callbacks = defaultdict(list)
