@@ -1599,7 +1599,17 @@ class AnalyzerRemote():
         response = self._value_parser(cmd="appfunc", expect_response=True, p1="PreampTool", p2=f"version {preampport}", user_timeout=custom_timeout)
         return response.get("result")
     
+    def reboot_preamp(self, preampport: Union[int, PreampPorts], custom_timeout=None)   ->None:
+        """ Reboots preamp for one second.
 
+        :param preampport: Port where preamp is connected
+        :type preampport: Union[int, PreampPorts]
+        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
+        :type custom_timeout: int, optional
+        """
+        preampport += 1 # c++ analyzer source code handels here preampports between 1 to 8
+        p2_string = f"port {preampport} reboot"
+        self._value_parser(cmd="AppCmd", p1="Preamp", p2=p2_string, user_timeout=custom_timeout)
 
     def set_default_project(self, comment: str = None, custom_timeout=None) -> None:
         """ Set current active project as new default template.
