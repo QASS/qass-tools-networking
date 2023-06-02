@@ -388,7 +388,7 @@ class AnalyzerRemote():
     """ Class provides methods for external analyzer control (system operator independant) over a TCP socket. Every method that gets a response is able to set a custom timeout for analyzer reponse. Should anything happen without TCP
     socket crashing, timeout will run into failstate. """ 
 
-    def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=4):
+    def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=4, suppress_cb_exceptions:bool = True):
         """ Constructor provides helper and creates logger module .
 
         :param ip: Analyzer IP in network.
@@ -399,6 +399,8 @@ class AnalyzerRemote():
         :type debug_mode: bool
         :param timeout: Sets global timeout for queue object in seconds, default is 2
         :type timeout: (pos) int 
+        :param suppress_cb_exceptions: Flag to supress raised exceptions in callback functions, default True
+        :type suppress_cb_exceptions: bool
 
         ::Example::
             analyzer = AnalyzerRemote(ip="192.168.2.67", port=17000)
@@ -410,6 +412,7 @@ class AnalyzerRemote():
         self.port = port
         self.timeout = timeout # seconds
         self.error = False
+        self.suppress_cb_exceptions = suppress_cb_exceptions
         # message ID to assign command to analyzer and specific response
         self.msgid = 0
         self.translator = {True: "true", "start": "true", "true": "true",
@@ -443,7 +446,7 @@ class AnalyzerRemote():
         self._connecting_analyzer()
 
         # create thread instance
-        self.__recv_thread = ReceiveThread(self.s, self.logger,
+        self.__recv_thread = ReceiveThread(self.s, self.logger, suppress_cb_exceptions=self.suppress_cb_exceptions,
                                            group=None, target=None, name="receive thread")
         # start thread
         self.__recv_thread.start()
