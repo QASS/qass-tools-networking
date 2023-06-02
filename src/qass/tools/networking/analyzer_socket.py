@@ -241,6 +241,7 @@ class ReceiveThread(threading.Thread):
         self.__callbacks = defaultdict(list)
         self.s = socket_obj
         self.logger = logger_obj
+        self._suppress_cb_exceptions = suppress_cb_exceptions
 
     def warn_none_registered_response(self, message):
         """ Warning is used when a not expected or not registered message comes in from analyzer. A warning is send out and the message will be logged.""" 
@@ -298,35 +299,38 @@ class ReceiveThread(threading.Thread):
         response = response.decode(encoding_style)
         response = json.loads(response)
         
-        self._check_response(response)
-
+        callbacks = None
 
         # handle cases
         with self.lock:
             # case start_operator: sends a second message which has no cmd entry
-            if "cmd" not in response.keys():
-                if "operator" in response.keys() and "finished" in response.keys():
-                    self.__callbacks[response["operator"]][0](response)
-                    self.deregister_callbacks(response["operator"])
-                return
-            # reports always use their cmd name as recognition
-            elif response['cmd'] in self.__callbacks:
-                # reports alwys registered with cmd->only case we need to check for mutiple callbacks
-                length = len(self.__callbacks[response['cmd']])
-                for idx in range(0, length):
-                    self.__callbacks[response['cmd']][idx](response)
-            # if no report there is only one entry--> [0] always uses right callback
-            # case resid
-            elif 'resid' in response:
-                if response['resid'] in self.__callbacks:
-                    self.__callbacks[response['resid']][0](response)
-            # case msgid
-            elif 'msgid' in response:
-                if response['msgid'] in self.__callbacks:
-                    self.__callbacks[response['msgid']][0](response)
-            # incooming messages wich are not registered will be just logged as warning
-            else:
+            # if "cmd" not in response.keys() and "operator" in response.keys() and "finished" in response.keys():
+            #         callbacks = self.__callbacks[response["operator"]]
+            #         self.deregister_callbacks(callbacks)
+            #         return
+            
+            # loop for supported key words trough response and save corresponding Callbacks 
+            for v in ['cmd', 'resid', 'msgid']:
+                if v in response:
+                    callbacks = self.__callbacks[response[v]]
+                    break
+            # if key is not found in response warn
+            if callbacks is None:
+                # incooming messages wich are not registered will be just logged as warning
                 self.warn_none_registered_response(response)
+            else:
+                # execute all callback functions
+                for cb in callbacks:
+                    try:
+                        cb(response)
+                    # catch exceptions which are related to parsed callback
+                    except Exception as e:
+                        import traceback
+                        exc_str = traceback.format_exception(None)
+                        self.logger.error(exc_str)
+                        # supress
+                        if not self._suppress_cb_exceptions:
+                            raise
 
     def run(self) ->  None:
         """ Overriden run method of thread module will be executed as the thread starts.
