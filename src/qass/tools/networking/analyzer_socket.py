@@ -312,6 +312,9 @@ class ReceiveThread(threading.Thread):
             # loop for supported key words trough response and save corresponding Callbacks 
             for v in ['cmd', 'resid', 'msgid']:
                 if v in response:
+                    # case for all AppCmds: reponse contains cmd but it is not unique--> has to use resid or msgid
+                    if response[v] == "responseappcmd":
+                        continue
                     callbacks = self.__callbacks[response[v]]
                     break
             # if key is not found in response warn
@@ -1324,10 +1327,10 @@ class AnalyzerRemote():
         :param preampport: Preampport where Preamp is connected, defaults to PreampPorts.PREAMP_PORT_1
         :type preampport: Union[PreampPorts, int], optional
         """
-        preamp_eeprom = self.get_preamp_info(preamp_port=preampport, convert=False)
+        preamp_eeprom = self.get_preamp_info(preamp_port=preampport, convert=False, custom_timeout="never")
         replacement = f"s:{s_value};"
         preamp_eeprom = re.sub("s:-*\d\d*;", replacement, preamp_eeprom)
-        self._value_parser(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, expect_response=True)
+        self._value_parser(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, expect_response=True, user_timeout="never")
 
     def _write_preamp_eeprom(self, preamp_type:Union[PreampType, int], serial_number:int, s_value:int, preampport:Union[PreampPorts, int]=PreampPorts.PREAMP_PORT_1):
         """ Private method to set preamp EEPROM text.
@@ -1599,7 +1602,7 @@ class AnalyzerRemote():
         response = self._value_parser(cmd="appfunc", expect_response=True, p1="PreampTool", p2=f"version {preampport}", user_timeout=custom_timeout)
         return response.get("result")
     
-    def reboot_preamp(self, preampport: Union[int, PreampPorts], custom_timeout=None)   ->None:
+    def reboot_preamp(self, preampport: Union[int, PreampPorts])   ->None:
         """ Reboots preamp for one second.
 
         :param preampport: Port where preamp is connected
@@ -1609,7 +1612,7 @@ class AnalyzerRemote():
         """
         preampport += 1 # c++ analyzer source code handels here preampports between 1 to 8
         p2_string = f"port {preampport} reboot"
-        self._value_parser(cmd="AppCmd", p1="Preamp", p2=p2_string, user_timeout=custom_timeout)
+        self._value_parser(cmd="AppCmd", p1="Preamp", p2=p2_string, user_timeout="never")
 
     def set_default_project(self, comment: str = None, custom_timeout=None) -> None:
         """ Set current active project as new default template.
