@@ -312,6 +312,9 @@ class ReceiveThread(threading.Thread):
             # loop for supported key words trough response and save corresponding Callbacks 
             for v in ['cmd', 'resid', 'msgid']:
                 if v in response:
+                    # case for all AppCmds: reponse contains cmd but it is not unique--> has to use resid or msgid
+                    if response[v] == "responseappcmd":
+                        continue
                     callbacks = self.__callbacks[response[v]]
                     break
             # if key is not found in response warn
