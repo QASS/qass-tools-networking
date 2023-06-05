@@ -323,7 +323,7 @@ class ReceiveThread(threading.Thread):
                 for cb in callbacks:
                     try:
                         cb(response)
-                    # catch exceptions which are related to parsed callback
+                    # catch exceptions which are related to bugs in parsed custom_callbacks
                     except Exception as e:
                         import traceback
                         exc_str = traceback.format_exception(None)
@@ -349,7 +349,7 @@ class ReceiveThread(threading.Thread):
                 buffer.extend(self.s.recv(READ_SIZE))
             # catch socket.error mistakes
             except socket.error as e:
-                # __exit_- method will raise exception on purpose; this one can just pass
+                # __exit__ method will raise exception on purpose; this one can just pass
                 # if self.kill != True a wild Exception occured and is logged 
                 if not self.kill:
                     self.logger.error(e)
@@ -385,8 +385,8 @@ class ReceiveThread(threading.Thread):
 
 
 class AnalyzerRemote():
-    """ Class provides methods for external analyzer control (system operator independant) over a TCP socket. Every method that gets a response is able to set a custom timeout for analyzer reponse. Should anything happen without TCP
-    socket crashing, timeout will run into failstate. """ 
+    """ Class provides methods for external analyzer control (system operator independant) over a TCP socket. Every method that gets a response is able to set a custom timeout for analyzer reponse. Should any kind of bugs happen without TCP
+    socket crashing, Queue timeout will run into failstate. """ 
 
     def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=4, suppress_cb_exceptions:bool = True):
         """ Constructor provides helper and creates logger module .
@@ -397,7 +397,7 @@ class AnalyzerRemote():
         :type port: int
         :param debug_mode: Logs debug messages into sys.stdout
         :type debug_mode: bool
-        :param timeout: Sets global timeout for queue object in seconds, default is 2
+        :param timeout: Sets global timeout for queue object in seconds, default is 4
         :type timeout: (pos) int 
         :param suppress_cb_exceptions: Flag to supress raised exceptions in callback functions, default True
         :type suppress_cb_exceptions: bool
@@ -2087,17 +2087,21 @@ class AnalyzerRemote():
         if expect_response and user_callback == None:
             try:
                 if user_timeout:
+                    # handle case that as timeout string "never" is parsed for a non blocking possibility
                     if isinstance(user_timeout, str) and user_timeout == "never":
                         user_timeout = None # equals block
+                    # else just take normal parsed timeout as int
                     function_timeout = user_timeout
+                # if nothing is parsed, take default
                 else:
                     function_timeout = self.timeout  
-                # get resonse out of queue
+                # get response out of queue for all cases without own custom_callback
                 analyzer_response = q.get(timeout=function_timeout)
             except queue.Empty:
                 raise ReceiverThreadError("ReceiverThread logs an error by receiving expected analyzer response. Please see the log for detailed information.")
             # deregister callback
             self.__recv_thread.deregister_callbacks(recognition)
+            # check for bugs in message
             self._check_response(analyzer_response)
             return analyzer_response
         
