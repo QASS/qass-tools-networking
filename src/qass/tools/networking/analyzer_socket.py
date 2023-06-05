@@ -1327,10 +1327,10 @@ class AnalyzerRemote():
         :param preampport: Preampport where Preamp is connected, defaults to PreampPorts.PREAMP_PORT_1
         :type preampport: Union[PreampPorts, int], optional
         """
-        preamp_eeprom = self.get_preamp_info(preamp_port=preampport, convert=False)
+        preamp_eeprom = self.get_preamp_info(preamp_port=preampport, convert=False, custom_timeout="never")
         replacement = f"s:{s_value};"
         preamp_eeprom = re.sub("s:-*\d\d*;", replacement, preamp_eeprom)
-        self._value_parser(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, expect_response=True)
+        self._value_parser(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, expect_response=True, user_timeout="never")
 
     def _write_preamp_eeprom(self, preamp_type:Union[PreampType, int], serial_number:int, s_value:int, preampport:Union[PreampPorts, int]=PreampPorts.PREAMP_PORT_1):
         """ Private method to set preamp EEPROM text.
