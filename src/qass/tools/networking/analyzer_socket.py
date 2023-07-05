@@ -1294,6 +1294,18 @@ class AnalyzerRemote():
         """
         self._value_parser(cmd="loadprojectbyname", p1=project_name, p2=part_number, user_timeout=custom_timeout)
     
+    def load_project_by_IOid(self, project_IOid:Union[str, int], part_number:str="", custom_timeout=None) ->None:
+        """ Loads project by set IO id. 
+
+        :param project_IOid: Projects unique IO id
+        :type project_IOid: Union[str, int]
+        :param part_number: Set part number, most of the time should be empty, defaults to ""
+        :type part_number: str, optional
+        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
+        :type custom_timeout: int, optional
+        """
+        self._value_parser(cmd="loadprojectbyioid", p1=f"{project_IOid}", p2=part_number, user_timeout=custom_timeout)
+
     def get_measure_positions(self, custom_timeout=None) -> Dict:
         """ Gets a dictionary with all measure positions and if used an energy value.
 
