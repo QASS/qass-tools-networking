@@ -241,18 +241,17 @@ class ReceiveThread(threading.Thread):
         self.__callbacks = defaultdict(list)
         self.s = socket_obj
         self.logger = logger_obj
+        #self.daemon = True
         self._suppress_cb_exceptions = suppress_cb_exceptions
 
     def warn_none_registered_response(self, message):
         """ Warning is used when a not expected or not registered message comes in from analyzer. A warning is send out and the message will be logged.""" 
         new_message = "Not registered analyzer response:" + str(message)
         self.logger.warning(new_message)
-        # warnings.warn(new_message)
 
     def register_callbacks(self, recognition: Union[str, int], callback) ->  None:
         """ Function to register incoming analyzer response by msg_id or cmd name.
         Parsed callback will be registered by adding it as recognition-callback pair to a dict self.__callbacks.
-
 
         A MultiDict is used here which by default creates a list for every dict entry (basically a key-list-pair).
         So it is possible to store mutiple callbacks for one recognition.
@@ -329,8 +328,10 @@ class ReceiveThread(threading.Thread):
                     # catch exceptions which are related to bugs in parsed custom_callbacks
                     except Exception as e:
                         import traceback
-                        exc_str = traceback.format_exception(None)
+                        exc_str = traceback.format_exception(e)
+                        traceback.print_exception(e)
                         self.logger.error(exc_str)
+                        self.logger.error(e)
                         # supress
                         if not self._suppress_cb_exceptions:
                             raise
@@ -380,9 +381,7 @@ class ReceiveThread(threading.Thread):
 
     def kill_thread(self) ->  None:
         """ End forever loop in run method.""" 
-        # self.daemon = True
-        #self.run_thread = False
-        
+        #self.daemon = True
         self.logger.info("Receiver thread is now closed.")
         self.join()
 
@@ -451,14 +450,16 @@ class AnalyzerRemote():
         # create thread instance
         self.__recv_thread = ReceiveThread(self.s, self.logger, suppress_cb_exceptions=self.suppress_cb_exceptions,
                                            group=None, target=None, name="receive thread")
+        self.__recv_thread.daemon = True
         # start thread
         self.__recv_thread.start()
 
     def close(self):
         """ Method to close the TCP socket and stop the receiver thread. Settet flags will be checked for safe closing of all started analyzer features.  
         """
-        # variable to decide if socket.error is raised on purpose --> close method always on purpose
         self.__recv_thread.kill = True
+        #self.__recv_thread.join(timeout=5)
+        # variable to decide if socket.error is raised on purpose --> close method always on purpose
         # save exit and stop all running services
         if self._measuring_active:
              self._value_parser(expect_response=False, cmd="App", p1="stopMeasuring")
@@ -468,8 +469,9 @@ class AnalyzerRemote():
              self._value_parser(expect_response=False, cmd="startmonitoring", p1="false")
         if self._operator_functions_active:
              self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
+
+        #self.__recv_thread.kill_thread()
         self.s.close()
-        self.__recv_thread.kill_thread()
         self.logger.info("Socket connection closed")
         
 
