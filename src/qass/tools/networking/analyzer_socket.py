@@ -979,7 +979,7 @@ class AnalyzerRemote():
         self.logger.info("Analyzer tired. Analyzer sleep.")
 
     def set_appvar(self, appvar_name: str, appvar_value: any, custom_timeout=None) -> None:
-        """ Set the value of an AppVar by using the name of the AppVar. The prefix "pro_" will result in the AppVar being saved in the project and persist between restarts. The prefix "sys_" will result in the AppVar being saved globally and made available over all projects.
+        """ Set the value of an AppVar by using the name of the AppVar. The prefix 'pro_' will result in the AppVar being saved in the project and persist between restarts. The prefix 'sys_' will result in the AppVar being saved globally and made available over all projects.
 
         If the AppVar doesn't exist yet it will be created.
 
@@ -2145,7 +2145,7 @@ class AnalyzerRemote():
 
         :param response: Response dict from analyzer to check.
         :type response: dict
-        :raises AnalyzerSyntaxError: if command could not be performed, due to false syntax or params out of bounds.
+        :raises AnalyzerError: if command could not be performed, due to false syntax or params out of bounds.
         """ 
         # rais exception if not performed right
         if response.get("ok") == False:
