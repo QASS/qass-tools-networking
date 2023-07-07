@@ -151,11 +151,11 @@ AnalyzerRemote Helper Classes
 .. autoclass:: qass.tools.networking.analyzer_socket.MultiPreampInput
         :members:
 
-.. autoclass:: qass.tools.networking.analyzer_socket.ConnectionError
+.. autoclass:: qass.tools.networking.analyzer_socket.PreampType
         :members:
 
-.. autoclass:: qass.tools.networking.analyzer_socket.NoneRegistrationError
+.. autoclass:: qass.tools.networking.analyzer_socket.ReceiverThreadError
         :members:
 
-.. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerSyntaxError
+.. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerError
         :members:

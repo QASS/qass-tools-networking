@@ -7,9 +7,9 @@ Planned changes for next releases will be noted here. If you have any suggestion
 
 3.1.0
 """""
-:Date: June 01, 2023
+:Date: July 10, 2023
 
-:AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
+:AnalyzerVersion: V2.03.30.00 (31 Mai 2023)
 
 :Contributor: Oliver Kowollik
 
@@ -17,14 +17,31 @@ Planned changes for next releases will be noted here. If you have any suggestion
 
 New Features
 ------------
-* New :mod:`qass.tools.networking.analyzer_socket.set_preamp_s_value` method
+* New :mod:`qass.tools.networking.analyzer_socket.write_preamp_s_value` method
+* New :mod:`qass.tools.networking.analyzer_socket._write_preamp_eeprom` method
+* New :mod:`qass.tools.networking.analyzer_socket.write_preamp_s_value` method
+* New :mod:`qass.tools.networking.analyzer_socket.load_project` method
+* New :mod:`qass.tools.networking.analyzer_socket.load_project_by_IOid` method
+* New :mod:`qass.tools.networking.analyzer_socket.detect_preamp` method
+* New :mod:`qass.tools.networking.analyzer_socket.get_preamp_firmware` method
+* New :mod:`qass.tools.networking.analyzer_socket.reboot_preamp` method
+* Additional convert flag to :mod:`qass.tools.networking.analyzer_socket.get_preamp_info`
+* New IntEnum :mod:`qass.tools.networking.analyzer_socket.PreampTypes` class 
+* Add dependancies
+
+Fixes
+------
+* Documentation :mod:`qass.tools.networking.analyzer_socket.get_preamp_info`
+* Bug in Receiver Thread
+* Rework ReceiverThread handling
+
 
 
 3.0.0
 """""
 :Date: May 10, 2023
 
-:AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
+:AnalyzerVersion: V2.03.22.90 (10 Juni 2022)
 
 :Contributor: Oliver Kowollik
 
@@ -56,7 +73,7 @@ Changes
 """""
 :Date: May 05, 2023
 
-:AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
+:AnalyzerVersion: V2.03.22.90 (10 Juni 2022)
 
 :Contributor: Oliver Kowollik
 
@@ -76,7 +93,7 @@ Changes
 """""
 :Date: March 29, 2023
 
-:AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
+:AnalyzerVersion: V2.03.22.90 (10 Juni 2022)
 
 :Contributor: Oliver Kowollik
 
@@ -92,7 +109,7 @@ New Features
 """""
 :Date: January 23, 2023
 
-:AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
+:AnalyzerVersion: V2.03.22.90 (10 Juni 2022)
 
 :Contributor: Oliver Kowollik
 
@@ -113,7 +130,7 @@ Fixes
 """""
 :Date: January 23, 2023
 
-:AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
+:AnalyzerVersion: V2.03.22.90 (10 Juni 2022)
 
 :Contributor: Oliver Kowollik
 
@@ -131,7 +148,7 @@ New Features
 
 :Date: January 23, 2023
 
-:AnalyzerVersion: QASS optimizer4D sysV11b (2022-05-18)
+:AnalyzerVersion: V2.03.22.90 (10 Juni 2022)
 
 :Contributor: Oliver Kowollik
 
