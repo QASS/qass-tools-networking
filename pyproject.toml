@@ -2,6 +2,10 @@
 requires = [
     "setuptools>=42",
     "wheel",
-    "numpy>=1.19.5"
+    "numpy>=1.19.5",
+    "retry",
+    "paramiko",
+    "pwinput", 
+    "tqdm"
 ]
 build-backend = "setuptools.build_meta"

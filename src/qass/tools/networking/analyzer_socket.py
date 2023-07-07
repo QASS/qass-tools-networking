@@ -1281,6 +1281,30 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         self._value_parser(cmd="loaduserproject", user_timeout=custom_timeout)
+    
+    def load_project(self, project_name:str, part_number:str="", custom_timeout=None) ->None:
+        """ Loads project by project name. 
+
+        :param project_name: Name of the project
+        :type project_name: str
+        :param part_number: Set part number, most of the time should be empty, defaults to ""
+        :type part_number: str, optional
+        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
+        :type custom_timeout: int, optional
+        """
+        self._value_parser(cmd="loadprojectbyname", p1=project_name, p2=part_number, user_timeout=custom_timeout)
+    
+    def load_project_by_IOid(self, project_IOid:Union[str, int], part_number:str="", custom_timeout=None) ->None:
+        """ Loads project by set IO id. 
+
+        :param project_IOid: Projects unique IO id
+        :type project_IOid: Union[str, int]
+        :param part_number: Set part number, most of the time should be empty, defaults to ""
+        :type part_number: str, optional
+        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
+        :type custom_timeout: int, optional
+        """
+        self._value_parser(cmd="loadprojectbyioid", p1=f"{project_IOid}", p2=part_number, user_timeout=custom_timeout)
 
     def get_measure_positions(self, custom_timeout=None) -> Dict:
         """ Gets a dictionary with all measure positions and if used an energy value.
@@ -1292,29 +1316,35 @@ class AnalyzerRemote():
         """ 
         return  self._value_parser(cmd="getmaxmeasurepositions", user_timeout=custom_timeout)
 
-    def get_preamp_info(self, preamp_port: Union[PreampPorts, int], convert:bool=True, custom_timeout=None) -> Dict:
-        """ Returns a string with serial number, firmware version and S-Value of connected preamp.
+    def get_preamp_info(self, preamp_port: Union[PreampPorts, int], convert:bool=True, custom_timeout=None) -> Union[Dict,str]:
+        """ By default returns a dictionary with preamp serial ring and number as the set s value. If convert is set to False the string is parsed as str without putting values into dictionary.
 
-        :param preamp_port: Preamp port with connected preamp
-        :type preamp_port: int, PreampPorts
-        :raises KeyError: Raises if parsed variable is no supported preamp port
-        :return: Serial number, firmware version and S-value parsed in dictionary. Keywords are: "serial_type", "serial_number", "S-value"
-        :rtype: tuple
+        :param preamp_port: Preamp port with connected preamp.
+        :type preamp_port: int or PreampPorts
+        :param convert: Flag to convert incomming information to more readble form, default True.
+        :type convert: bool
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
+        :raises KeyError: Raises if parsed variable is no supported preamp port
+        :return: Serial ring, number and s-value parsed in dictionary. Keywords are: "serial_type", "serial_number", "s-value"
+        :rtype: Dict or str
         """ 
         if preamp_port in PreampPorts or preamp_port in range(0, 8):
             preamp_info =  self._value_parser(cmd="getpreampinfo", user_timeout=custom_timeout, p1=preamp_port)
             preamp_info = preamp_info.get('p1')
             if not convert:
                 return preamp_info
-            serial_ring, serial_num, s_value, __ = preamp_info.split(";")
-            serial_ring_idx = serial_ring.find(":")
-            serial_num_idx = serial_num.find(":")
-            s_value_idx = s_value.find(":")
-            preamp = {
-                "serial_type": serial_ring[serial_ring_idx+1:], "serial_number": serial_num[serial_num_idx+1:], "S-value": s_value[s_value_idx+1:]}
-            return preamp
+            try:
+                serial_ring, serial_num, s_value, __ = preamp_info.split(";")
+                serial_ring_idx = serial_ring.find(":")
+                serial_num_idx = serial_num.find(":")
+                s_value_idx = s_value.find(":")
+                preamp = {
+                    "serial_type": serial_ring[serial_ring_idx+1:], "serial_number": serial_num[serial_num_idx+1:], "S-value": s_value[s_value_idx+1:]}
+                return preamp
+            except ValueError as e:
+                self.logger.warning("The provided Preamp is not configurated properly. Please contact a QASS Service Technician to solve that.")
+                return None
         else:
             self.logger.error(
                 "Choosen preampport is not an analyzer system preamp port.")
@@ -1338,7 +1368,7 @@ class AnalyzerRemote():
         """ Private method to set preamp EEPROM text.
 
         :param preamp_type: Type of preamp
-        :type preamp_type: Union[PreampType, int]
+        :type preamp_type: PreampType or int
         :param serial_number: Serial Number
         :type serial_number: int
         :param s_value: s value for preamp
@@ -1722,9 +1752,9 @@ class AnalyzerRemote():
         """ Set the state for a dedicated io input line. The state will be simulated in the analyzer software.
         
         :param io_line: Gives the address of the io_line. This can be either a numeric value between 1 and 24 or a string in the format '[byte].[bit]'.
-        :type io_line: Union[str, int]
+        :type io_line: str or int
         :param state: Gives the state for the referenced io_line. The state can be any out of ('on', 1, '1', True, 'True', 'true', 'enable', 'set') or ('off', 0, '0', False, 'False', 'false', 'disable', 'clear').
-        :type state: Union[str, bool], defaults to True.
+        :type state: str or bool, defaults to True.
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
