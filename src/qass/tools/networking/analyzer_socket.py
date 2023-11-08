@@ -2138,8 +2138,8 @@ class AnalyzerRemote():
                     function_timeout = self.timeout  
                 # get response out of queue for all cases without own custom_callback
                 analyzer_response = q.get(timeout=function_timeout)
-            except queue.Empty:
-                raise ReceiverThreadError("ReceiverThread logs an error by receiving expected analyzer response. Please see the log for detailed information.")
+            except queue.Empty as QueueError: # Raise from None, excludes queue.Empty Error from Traceback 
+                raise ReceiverThreadError("ReceiverThread logs an error by receiving an expected analyzer response. Please see the log for detailed information.") from None
             # deregister callback
             self.__recv_thread.deregister_callbacks(recognition)
             # check for bugs in message
