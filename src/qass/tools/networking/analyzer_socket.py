@@ -663,15 +663,15 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", p1="stopMeasuring", user_timeout=custom_timeout)
         self._measuring_active = False
 
-    def set_process_comment(self, proc_comm: str, custom_timeout=None) -> None:
-        """ Set a process comment for the selected process. Parsed string will be saved in database under entry: process.comment
+    def set_process_comment(self, proc_number:int, proc_comment: str, custom_timeout=None) -> None:
+        """ Set a process comment for the parsed process. Parsed string will be saved in database under entry: process.comment
 
         :param proc_comm: Text which should be seen and saved as process comment
         :type proc_comm: str
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", p1="setprocesscomment", p2=proc_comm, user_timeout=custom_timeout)
+        self._value_parser(cmd="AppCmd", p1="setprocesscomment", p2=f"{proc_number} {proc_comment}", user_timeout=custom_timeout)
 
     def set_area_view(self, split: int, custom_timeout=None) -> None:
         """ Set analyzer view to a split view with up to 4 different splitted process. Reversed process to change back to
