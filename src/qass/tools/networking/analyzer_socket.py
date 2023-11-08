@@ -155,7 +155,7 @@ class FFTLogarithmic(IntEnum):
     FFT_LOGARITHMIC_BASE_14 = 14
     FFT_LOGARITHMIC_BASE_15 = 15
     FFT_LOGARITHMIC_BASE_16 = 16
-    NONE_FFT_OVERSAMPLING = 0
+    NO_FFT_LOGARITHMIC_BASE = 0
 
 
 class SysAmplitudesType(IntEnum):
