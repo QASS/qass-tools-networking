@@ -1215,7 +1215,7 @@ class AnalyzerRemote():
             self._monitoring_active = True
 
     def set_monitoring_mode(self, mode: Union[bool, str], custom_timeout=None) -> None:
-        """ Start or stop monitoring modus.
+        """ Start or stop monitoring modus. When in doubt, check documentation.
 
         .. list-table:: Keywords on one look
             :widths: 15 25
@@ -1537,7 +1537,7 @@ class AnalyzerRemote():
 
     def export_operator_network(self, target_filepath: str, export: str = "root", custom_timeout=None) -> None:
         """ Exports operator network as JSON file. Export contains either current activated
-        (key:"root",  all (key:"all") or just the network template (key:"template") by parsing the key to export. 
+        (key:"root",  all (key:"all") or just the network template (key:"template") by parsing the key to export.When in doubt, check documentation.
 
         .. list-table:: Keywords on one look
             :widths: 15 25
@@ -1786,7 +1786,7 @@ class AnalyzerRemote():
 
     def set_simulated_io_input(self, io: str, custom_timeout=None) -> None:
         """ Set simulated I/O input register. I/0 input register can be set by inverted hexa (smallest significant right)
-        or by providing a binary representation of seen bits set in I/O register.
+        or by providing a binary representation of seen bits set in I/O register. When in doubt, see documentation.
 
         First 8 digits are first I/O input register
         Second 8 digits are second I/O input register
@@ -1917,7 +1917,7 @@ class AnalyzerRemote():
                 f"Callback {callback} for process number report added")
 
     def set_io_output(self, io_line: int, state: bool, custom_timeout=None) -> None:
-        """ Sets single I/O ouput line. As parameter only line number of third I/O line is required.
+        """ Sets single I/O ouput line. As parameter only line number of third I/O line is required. When in doubt, check documentation.
 
         .. warning:: Changing output line 3.1 - 3.3 is not possible. 
 
@@ -1989,7 +1989,10 @@ class AnalyzerRemote():
                                   
 
     def set_human_confirmation(self, process_IO=False, **kwargs) -> None:
-        """ Send human confiramtion over current process. Score and comment can be parsed over kwargs.
+        """ Send human confiramtion over current process. Score and comment can be parsed over kwargs. When in doubt, check documentation.
+            
+            Supported Kwargs Key: "comment" --> Human comment for confirmation
+            Supported Kwargs Key: "score"   --> Score value for confirmation
 
         .. list-table:: Possible keyword arguments
             :widths: 15 25
