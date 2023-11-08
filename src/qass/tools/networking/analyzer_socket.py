@@ -457,12 +457,12 @@ class AnalyzerRemote():
     def close(self):
         """ Method to close the TCP socket and stop the receiver thread. Settet flags will be checked for safe closing of all started analyzer features.  
         """
-        self.__recv_thread.kill = True
+        
         #self.__recv_thread.join(timeout=5)
         # variable to decide if socket.error is raised on purpose --> close method always on purpose
         # save exit and stop all running services
         if self._measuring_active:
-             self._value_parser(expect_response=False, cmd="App", p1="stopMeasuring")
+             self._value_parser(expect_response=False, cmd="AppCmd", p1="stopMeasuring")
         if self._sine_gen_active:
              self._value_parser(expect_response=False, cmd="AppCmd", p1="StopSineGen")
         if self._monitoring_active:
@@ -470,6 +470,7 @@ class AnalyzerRemote():
         if self._operator_functions_active:
              self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
 
+        self.__recv_thread.kill = True
         #self.__recv_thread.kill_thread()
         self.s.close()
         self.logger.info("Socket connection closed")
