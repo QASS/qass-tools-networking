@@ -666,8 +666,10 @@ class AnalyzerRemote():
     def set_process_comment(self, proc_number:int, proc_comment: str, custom_timeout=None) -> None:
         """ Set a process comment for the parsed process. Parsed string will be saved in database under entry: process.comment
 
-        :param proc_comm: Text which should be seen and saved as process comment
-        :type proc_comm: str
+        :param proc_number: Process which should get the comment, identified by process number
+        :param proc_number: int
+        :param proc_comment: Text which should be seen and saved as process comment
+        :type proc_comment: str
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
