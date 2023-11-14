@@ -390,7 +390,7 @@ class AnalyzerRemote():
     """ Class provides methods for external analyzer control (system operator independant) over a TCP socket. Every method that gets a response is able to set a custom timeout for analyzer reponse. Should any kind of bugs happen without TCP
     socket crashing, Queue timeout will run into failstate. """ 
 
-    def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=4, suppress_cb_exceptions:bool = True):
+    def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=4, suppress_cb_exceptions:bool = True, **kwargs):
         """ Constructor provides helper and creates logger module .
 
         :param ip: Analyzer IP in network.
@@ -403,6 +403,23 @@ class AnalyzerRemote():
         :type timeout: (pos) int 
         :param suppress_cb_exceptions: Flag to supress raised exceptions in callback functions, default True
         :type suppress_cb_exceptions: bool
+
+        .. list-table:: Auto stopping remote started services
+            :widths: 25 25
+            :header-rows: 1
+
+            * - kwargs key
+              - service
+            * - save_mode
+              - Activate service to send command for stopping beforehand remote startet service: measuring, monitoring, sine generator, operator functions
+            * - auto_stop_measuring
+              - Activate service to stop remote started measuring
+            * - auto_stop_sineGenerator
+              - Activate service to stop remote started sine generator
+            * - auto_stop_monitoring
+              - Activate service to stop remote started monitoring
+            * - auto_stop_operator_functions
+              - Activate service to stop remote started operator function output
 
         ::Example::
             analyzer = AnalyzerRemote(ip="192.168.2.67", port=17000)
@@ -423,6 +440,7 @@ class AnalyzerRemote():
                            "false": "false", "disable": "false", "monitor": "monitor"}
         # flags for exit method of context manager
         self._io_report_count = 0
+        self.kwargs = kwargs
         self._proc_report_count = 0
         self._appvar_report_count = 0
         self._measuring_active = False
@@ -460,15 +478,24 @@ class AnalyzerRemote():
         
         #self.__recv_thread.join(timeout=5)
         # variable to decide if socket.error is raised on purpose --> close method always on purpose
-        # save exit and stop all running services
-        if self._measuring_active:
-             self._value_parser(expect_response=False, cmd="AppCmd", p1="stopMeasuring")
-        if self._sine_gen_active:
-             self._value_parser(expect_response=False, cmd="AppCmd", p1="StopSineGen")
-        if self._monitoring_active:
-             self._value_parser(expect_response=False, cmd="startmonitoring", p1="false")
-        if self._operator_functions_active:
-             self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
+        # save exit and stop all running services if wished
+        if self.kwargs.get("save_mode", False):
+            if self._measuring_active:
+                self._value_parser(expect_response=False, cmd="AppCmd", p1="stopMeasuring")
+            if self._sine_gen_active:
+                self._value_parser(expect_response=False, cmd="AppCmd", p1="StopSineGen")
+            if self._monitoring_active:
+                self._value_parser(expect_response=False, cmd="startmonitoring", p1="false")
+            if self._operator_functions_active:
+                self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
+        if self.kwargs.get("auto_stop_sineGenerator", False) and self._sine_gen_active:
+            self._value_parser(expect_response=False, cmd="AppCmd", p1="StopSineGen")
+        if self.kwargs.get("auto_stop_measuring", False) and self._measuring_active:
+            self._value_parser(expect_response=False, cmd="AppCmd", p1="stopMeasuring")
+        if self.kwargs.get("auto_stop_monitoring:", False) and self._monitoring_active:
+            self._value_parser(expect_response=False, cmd="startmonitoring", p1="false")
+        if self.kwargs.get("auto_stop_operator_functions", False) and self._operator_functions_active:
+            self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
 
         self.__recv_thread.kill = True
         #self.__recv_thread.kill_thread()
