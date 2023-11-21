@@ -223,6 +223,13 @@ class ReceiverThreadError(Exception):
 
     def __str__(self):
         return self.message
+
+class ConnectionError(Exception):
+    def __init__(self, message):
+        self.message = message 
+
+    def __str__(self):
+        return self.message
     
 class AnalyzerError(RuntimeError):
     def __init__(self, message):
@@ -538,12 +545,9 @@ class AnalyzerRemote():
             self.s.settimeout(None)
             self.s.connect((self.ip, self.port))
             self.logger.info("Connected to optimizer")
-        except socket.timeout:
+        except (socket.timeout, socket.error):
             self.logger.error(f"Connection to ip: {self.ip} on port: {self.port} could not be established.\n")
-            raise
-        except socket.error:
-            self.logger.error(f"Connection to ip: {self.ip} on port: {self.port} could not be established.\n")
-            raise
+            raise ConnectionError(f"Connection to ip: {self.ip} on port: {self.port} could not be established.\n")
         except KeyboardInterrupt as e:
             self.logger.error(e)
             self.__exit__(exc_type=e)
