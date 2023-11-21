@@ -5,6 +5,29 @@ Planned changes for next releases will be noted here. If you have any suggestion
 * Set io as line in set_simulated_io_input(args) 
 * Save project function
 
+3.2.0
+"""""
+:Date: November 15, 2023
+
+:AnalyzerVersion: V2.03.30.00 (31 Mai 2023)
+
+:Contributor: Oliver Kowollik
+
+``AnalyzerRemote``
+
+New Features
+------------
+* New custom exception class :class:`ConnectionError`
+
+Changes
+------------
+* Add service to auto stopp certain remote startet methods by kwargs
+
+Fixes
+------
+* Errorhandling is now optimized for more clearity
+* Fix :mod:`qass.tools.networking.analyzer_socket.set_process_comment` method. A process number is now needed as first arguemnt.
+
 3.1.0
 """""
 :Date: July 10, 2023
