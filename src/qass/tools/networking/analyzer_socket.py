@@ -399,11 +399,10 @@ class ReceiveThread(threading.Thread):
 
 
 class AnalyzerRemote():
-    """ Class provides methods for external analyzer control (system operator independant) over a TCP socket. Every method that gets a response is able to set a custom timeout for analyzer reponse. Should any kind of bugs happen without TCP
-    socket crashing, Queue timeout will run into failstate. """ 
+    """ Class provides methods for external analyzer control (system operator independant) over a TCP socket. Every method that gets a response is able to set a custom timeout for analyzer reponse. Should any kind of bugs happen without TCP socket crashing, Queue timeout will run into failstate. """ 
 
     def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=4, suppress_cb_exceptions:bool=True, auto_stop:List=None):
-        """ Constructor provides helper and creates logger module .
+        """ Constructor provides helper and creates logger module.
 
         :param ip: Analyzer IP in network.
         :type ip: str
@@ -415,29 +414,21 @@ class AnalyzerRemote():
         :type timeout: (pos) int 
         :param suppress_cb_exceptions: Flag to supress raised exceptions in callback functions, default True
         :type suppress_cb_exceptions: bool
+        :param auto_stop: Parse list with commands to auto stop certain services started in Analyzer4D Software, by exit with statement, defaults to None
+        :type auto_stop: List
 
-        .. list-table:: Auto stopping remote started services
-            :widths: 25 25
-            :header-rows: 1
-
-            * - kwargs key
-              - service
-            * - save_mode
-              - Activate service to send command for stopping beforehand remote startet service: measuring, monitoring, sine generator, operator functions
-            * - auto_stop_measuring
-              - Activate service to stop remote started measuring
-            * - auto_stop_sineGenerator
-              - Activate service to stop remote started sine generator
-            * - auto_stop_monitoring
-              - Activate service to stop remote started monitoring
-            * - auto_stop_operator_functions
-              - Activate service to stop remote started operator function output
-
-        ::Example::
-            analyzer = AnalyzerRemote(ip="192.168.2.67", port=17000)
-            analyzer = AnalyzerRemote(ip="192.168.2.67")
-            analyzer = AnalyzerRemote("192.168.2.67")
-        """ 
+        
+        ==================  ==========================================================================================================================================
+        auto_stop commands  services
+        ==================  ==========================================================================================================================================
+        all                 Activate service to send command for stopping beforehand remote startet service: measuring, monitoring, sine generator, operator functions
+        measuring           Activate service to stop remote started measuring
+        sineGen             Activate service to stop remote started sine generator
+        monitoring          Activate service to stop remote started monitoring
+        operatorFunctions   Activate service to stop remote started operator function output
+        ==================  ========================================================================================================================================== 
+        
+        """
         # helper
         self.ip = ip
         self.port = port
@@ -488,8 +479,7 @@ class AnalyzerRemote():
         self.__recv_thread.register_callbacks('error', callback)
         
     def close(self):
-        """ Method to close the TCP socket and stop the receiver thread. Settet flags will be checked for safe closing of all started analyzer features.  
-        """
+        """ Method to close the TCP socket and stop the receiver thread. Settet flags will be checked for safe closing of all started analyzer features."""
   
         # save exit and stop all running services if wished
         if self.auto_stop:
@@ -526,8 +516,7 @@ class AnalyzerRemote():
         return inner
 
     def _create_logger(self, level_mode):
-        """ Creates a logger which will print out to sys.stdout and log custom message and time, log level,
-        function name and if available line number where log occured.
+        """ Creates a logger which will print out to sys.stdout and log custom message and time, log level, function name and if available line number where log occured.
 
         :param level_mode: logging msg mode (e.g. logging.debug)
         :type level_mode: Message level that will be displayed
@@ -639,6 +628,7 @@ class AnalyzerRemote():
         """ Method to start sine wave generation with custom frequency and amplitude settings.
 
         .. warning:: Sine generator has to be already switched on!
+        
         .. note:: Note that you should consider that the sine generator needs a couple of µs to start.
 
         :param frequency: Used frequency to generate sine wave with in Hz. The suitable range is between 50Hz and 1200Hz.
@@ -1016,7 +1006,7 @@ class AnalyzerRemote():
         self.logger.info("Analyzer tired. Analyzer sleep.")
 
     def set_appvar(self, appvar_name: str, appvar_value: any, custom_timeout=None) -> None:
-        """ Set the value of an AppVar by using the name of the AppVar. The prefix 'pro_' will result in the AppVar being saved in the project and persist between restarts. The prefix 'sys_' will result in the AppVar being saved globally and made available over all projects.
+        """ Set the value of an AppVar by using the name of the AppVar. The prefix `pro_` will result in the AppVar being saved in the project and persist between restarts. The prefix `sys_` will result in the AppVar being saved globally and made available over all projects.
 
         If the AppVar doesn't exist yet it will be created.
 
@@ -1031,15 +1021,15 @@ class AnalyzerRemote():
 
     def get_appvar(self, appvar_name: str, custom_timeout=None) -> str:
         """ Get AppVar value by name.
-
+        
+        .. note: If requested Appvar is a json, the parsed value will be changed due to string escape.
+        
         :param app_var_name: Name of AppVar to adress.
         :type app_var_name: str
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         :return: AppVar value
         :rtype: str
-
-        .. note: If requested Appvar is a json, the parsed value will be changed due to string escape.
         """ 
         val =  self._value_parser(cmd="getappvar", p1=appvar_name, user_timeout=custom_timeout)
 
@@ -1310,10 +1300,9 @@ class AnalyzerRemote():
 
         .. warning:: To use this a test project must be loaded before!!!
 
-        .. note:: If no testproject was loaded beforehand, <name_variable> in analyzer software will not be addressed and
-        a new project without name!(="") is going to be created. Once a project like this exist, analyzer cannot perform this again
-        and without loading a test project beforehand, function will do nothing (but parse any check).
+        .. note:: If no testproject was loaded beforehand, <name_variable> in analyzer software will not be addressed and a new project without name!(="") is going to be created. Once a project like this exist, analyzer cannot perform this again and without loading a test project beforehand, function will do nothing (but parse any check).
 
+        
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
@@ -1573,6 +1562,7 @@ class AnalyzerRemote():
         """ Exports operator network as JSON file. Export contains either current activated
         (key:"root",  all (key:"all") or just the network template (key:"template") by parsing the key to export.When in doubt, check documentation.
 
+        
         .. list-table:: Keywords on one look
             :widths: 15 25
             :header-rows: 1
@@ -1822,9 +1812,7 @@ class AnalyzerRemote():
         """ Set simulated I/O input register. I/0 input register can be set by inverted hexa (smallest significant right)
         or by providing a binary representation of seen bits set in I/O register. When in doubt, see documentation.
 
-        First 8 digits are first I/O input register
-        Second 8 digits are second I/O input register
-        Give in all inputs as strings only!
+        First 8 digits are first I/O input register. Second 8 digits are second I/O input register. Give in all inputs as strings only!
 
         .. list-table:: I/O Input possibilities
             :widths: 25 25
@@ -2023,8 +2011,8 @@ class AnalyzerRemote():
     def set_human_confirmation(self, process_IO=False, **kwargs) -> None:
         """ Send human confiramtion over current process. Score and comment can be parsed over kwargs. When in doubt, check documentation.
             
-            Supported Kwargs Key: "comment" --> Human comment for confirmation
-            Supported Kwargs Key: "score"   --> Score value for confirmation
+        Supported Kwargs Key: "comment" --> Human comment for confirmation
+        Supported Kwargs Key: "score"   --> Score value for confirmation
 
         .. list-table:: Possible keyword arguments
             :widths: 15 25
@@ -2118,9 +2106,7 @@ class AnalyzerRemote():
         self.s.sendall(cmd_str)
 
     def _value_parser(self, expect_response=True, user_callback=None, user_timeout=None, **kwargs) -> Dict:
-        """ Function to coordinate sending parsed command settings and take back answer from receiver thread.
-
-        By kwargs specification of each command will be set.
+        """ Function to coordinate sending parsed command settings and take back answer from receiver thread. By kwargs specification each command will be set.
 
         :param expect_response: Flag to not wait for analyzer response, defaults to True
         :type expect_response: bool, optional
@@ -2208,7 +2194,7 @@ class AnalyzerCmd(AnalyzerRemote):
     """ Depricated class naming. Inherit from normal class.
 
     .. deprecated:: since 1.1
-     Use :class:`AnalyzerRemote` class instead.
+    Use :class:`AnalyzerRemote` class instead.
 
     :param AnalyzerRemote: Inherited class
     :type AnalyzerRemote: class

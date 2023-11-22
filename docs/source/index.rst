@@ -9,11 +9,6 @@ Welcome to QASS Tools Networking's documentation!
 This package provides tools to work remote with the Analyzer4D Software and build a communication interface between remote control and Analyzer4D.
 If you run into a bug or compatibility problems please contact ewiebelitz@qass.net or okowollik@qass.net.
 
-.. toctree::
-   :maxdepth: 6
-   :caption: Package Changelog
-   
-   changelog
 
 .. toctree::
    :maxdepth: 6
@@ -26,6 +21,12 @@ If you run into a bug or compatibility problems please contact ewiebelitz@qass.n
    :caption: SSH Terminal
    
    analyzer_ssh
+
+.. toctree::
+   :maxdepth: 6
+   :caption: Package Changelog
+   
+   changelog
 
 .. toctree::
    :maxdepth: 2

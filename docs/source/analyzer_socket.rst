@@ -5,19 +5,18 @@ The :class:`AnalyzerRemote` class can be used to open a TCP socket to a running 
 It can be used to monitor running processes or start measuring protocols on remote computers. Available functions are supported since Analyzer version: ``QASS optimizer4D sysV11b (2022-05-18)`` or higher. A higher required Analyzer version will be documented for each function as note.  
 
 Error Handling
-**************
-
+""""""""""""""
 The module AnalyzerRemote contains three kinds of custom exception classes. By an occuring :class:`AnalyzerError` the Analyzer4D software was unable to perform the required action. You should see the Analyzer4D log where more information are provided. Most likely you either tried a command 
 yourself, which is going really well or you wanted the software to perform an unpossible action like giving a process number which is not exitsting. With an :class:`ReceiverThreadError` there is a problem with a not provided value by the analyzer where a value is expected. This mostly 
 happens if one of two things is happening. Either it will raise from the third custom exception, :class:`ConnectionError`, and will be a consequential error or there is a return value from the analyzer expected but nothing is given and a timeout engages. Please check for Analyzer4D 
 functionality in both cases. This :class:`ConnectionError` is raisen by unexpected loss of connection or no connection with the optimizer in the first hand. 
 
 Safety Mode
-***********
-
+"""""""""""
 Class object contains safety method which is available by parsing a command list under keyword argument `auto_stop`. Safety mode means an automatically supervised state of started services as sine generator, measuring, monitoring and operator functions.
 State will be always saved and is callable by corresponding properties. By activating auto stop for a single service or for all services, before exiting with statement command will be send to stop service.
-A full list of avaiblen auto stops is provided in the following: `all`, `sineGen`, `measuring`, `monitoring`, `operatorFunction`  
+A full list of avaiblen auto stops is provided in the following: `all`, `sineGen`, `measuring`, `monitoring`, `operatorFunction`.
+
 
 Examples
 ********
@@ -119,12 +118,16 @@ Example to automatically define Analyzer4D settings.
 
 AnalyzerRemote
 **************
-.. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerRemote
+.. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerRemote      
         :members:
+
+        .. automethod:: __init__
 
 
 AnalyzerRemote Helper Classes
 *****************************
+.. autointenum:: qass.tools.networking.analyzer_socket.Amplitudes 
+
 .. autoclass:: qass.tools.networking.analyzer_socket.Amplitudes
         :members:
 
