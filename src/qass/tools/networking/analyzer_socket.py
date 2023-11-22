@@ -289,8 +289,6 @@ class ReceiveThread(threading.Thread):
             else:
                 self.__callbacks.pop(recognition)
 
-  
-
     def handle_response(self, response, encoding_style="utf-8") ->  None:
         """ Handles every complete message. Handling means decoding the byte string to dict and apply the response to every registered callback.
         Therefore the response is not in unit form, we need an if block which handles recognition over cmd name and message id
@@ -304,7 +302,6 @@ class ReceiveThread(threading.Thread):
         # change appearance
         response = response.decode(encoding_style)
         response = json.loads(response)
-        
         callbacks = None
 
         # handle cases
@@ -321,7 +318,7 @@ class ReceiveThread(threading.Thread):
                     # case for all AppCmds: reponse contains cmd but it is not unique--> has to use resid or msgid
                     if response[v] == "responseappcmd":
                         continue
-                    callbacks = self.__callbacks[response[v]]
+                    callbacks = self.__callbacks[response[v]] # option to take also a MultiDict and use getlist metod
                     break
             # if key is not found in response warn
             if callbacks is None:
@@ -369,8 +366,6 @@ class ReceiveThread(threading.Thread):
                 buffer.extend(self.s.recv(READ_SIZE))
             # catch socket.error mistakes
             except socket.error as e:
-                # __exit__ method will raise exception on purpose; this one can just pass
-                # if self.kill != True a wild Exception occured and is logged 
                 if not self.kill:
                     self.logger.error(e)
                     if int.from_bytes(buffer, byteorder='big') > 0:
@@ -407,7 +402,7 @@ class AnalyzerRemote():
     """ Class provides methods for external analyzer control (system operator independant) over a TCP socket. Every method that gets a response is able to set a custom timeout for analyzer reponse. Should any kind of bugs happen without TCP
     socket crashing, Queue timeout will run into failstate. """ 
 
-    def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=4, suppress_cb_exceptions:bool = True, **kwargs):
+    def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=4, suppress_cb_exceptions:bool=True, auto_stop:List=None):
         """ Constructor provides helper and creates logger module .
 
         :param ip: Analyzer IP in network.
@@ -457,7 +452,7 @@ class AnalyzerRemote():
                            "false": "false", "disable": "false", "monitor": "monitor"}
         # flags for exit method of context manager
         self._io_report_count = 0
-        self.kwargs = kwargs
+        self.auto_stop = auto_stop
         self._proc_report_count = 0
         self._appvar_report_count = 0
         self._measuring_active = False
@@ -465,11 +460,11 @@ class AnalyzerRemote():
         self._monitoring_active = False
         self._operator_functions_active = False
         self.q = queue.Queue()
-
+        
         # short solution logger to sys.stdout
         msg_mode = logging.DEBUG if debug_mode else logging.INFO
         self.logger = self._create_logger(msg_mode)
-
+   
     def __enter__(self):
         """Method to wrap open method behaviour for working with a contextmanager. Will open the connection to the Analyzer Instance and start a receiver thread.
         """ 
@@ -488,38 +483,40 @@ class AnalyzerRemote():
         self.__recv_thread.daemon = True
         # start thread
         self.__recv_thread.start()
-
+        # Register simple put in queue callback for error messages
+        def callback(result, queue_var=self.q): return queue_var.put(result)
+        self.__recv_thread.register_callbacks('error', callback)
+        
     def close(self):
         """ Method to close the TCP socket and stop the receiver thread. Settet flags will be checked for safe closing of all started analyzer features.  
         """
-        
-        #self.__recv_thread.join(timeout=5)
-        # variable to decide if socket.error is raised on purpose --> close method always on purpose
+  
         # save exit and stop all running services if wished
-        if self.kwargs.get("save_mode", False):
-            if self._measuring_active:
-                self._value_parser(expect_response=False, cmd="AppCmd", p1="stopMeasuring")
-            if self._sine_gen_active:
+        if self.auto_stop:
+            if "all" in self.auto_stop:
+                if self._measuring_active:
+                    self._value_parser(expect_response=False, cmd="AppCmd", p1="stopMeasuring")
+                if self._sine_gen_active:
+                    self._value_parser(expect_response=False, cmd="AppCmd", p1="StopSineGen")
+                if self._monitoring_active:
+                    self._value_parser(expect_response=False, cmd="startmonitoring", p1="false")
+                if self._operator_functions_active:
+                    self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
+            if "sineGen" in self.auto_stop and self._sine_gen_active:
                 self._value_parser(expect_response=False, cmd="AppCmd", p1="StopSineGen")
-            if self._monitoring_active:
+            if "measuring" in self.auto_stop and self._measuring_active:
+                self._value_parser(expect_response=False, cmd="AppCmd", p1="stopMeasuring")
+            if "monitoring" in self.auto_stop and self._monitoring_active:
                 self._value_parser(expect_response=False, cmd="startmonitoring", p1="false")
-            if self._operator_functions_active:
+            if "operatorFunctions" in self.auto_stop and self._operator_functions_active:
                 self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
-        if self.kwargs.get("auto_stop_sineGenerator", False) and self._sine_gen_active:
-            self._value_parser(expect_response=False, cmd="AppCmd", p1="StopSineGen")
-        if self.kwargs.get("auto_stop_measuring", False) and self._measuring_active:
-            self._value_parser(expect_response=False, cmd="AppCmd", p1="stopMeasuring")
-        if self.kwargs.get("auto_stop_monitoring:", False) and self._monitoring_active:
-            self._value_parser(expect_response=False, cmd="startmonitoring", p1="false")
-        if self.kwargs.get("auto_stop_operator_functions", False) and self._operator_functions_active:
-            self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
 
         self.__recv_thread.kill = True
+        self.logger.debug("Receiver Thread Closed")
         #self.__recv_thread.kill_thread()
         self.s.close()
         self.logger.info("Socket connection closed")
         
-
     def analyzer_functionality_warning_decorator(func):
         def inner(*args, **kwargs):
             result = func(*args, **kwargs)
@@ -742,7 +739,6 @@ class AnalyzerRemote():
         """ 
         self._value_parser(cmd="AppCmd", p1="SaveAreaView", p2=template_num, user_timeout=custom_timeout)
             
-
     def load_area_view(self, template_num: int, custom_timeout=None) -> None:
         """ Load presaved (!) area view template.
 
@@ -753,7 +749,6 @@ class AnalyzerRemote():
         """ 
         self._value_parser(cmd="AppCmd", p1="LoadAreaView", p2=template_num, user_timeout=custom_timeout)
             
-
     def load_simulation_buffer(self, file_path: str, channel: int, do_not_copy_meta_data=False, custom_timeout=None) -> None:
         """ Load and set local simulation buffer for specific channel.
 
@@ -822,7 +817,6 @@ class AnalyzerRemote():
         p2_string = f"channel {channel_number} pulsetest {gain} {count} {delay}"
         self._value_parser(cmd="AppCmd", p1="Preamp", p2=p2_string, user_timeout=custom_timeout)
                                
-
     def start_pulsetest_port(self, port_number: Union[int, PreampPorts], gain: int = 800, count: int = 1, delay: int = 0, multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT, custom_timeout=None) -> None:
         """ External set of pulse test. Only avaible for exisiting ports and sensors.
 
@@ -979,7 +973,6 @@ class AnalyzerRemote():
         """ 
         self._value_parser(cmd="AppCmd", p1="LoadProcess", p2=f"{process_number} {start_time}", user_timeout=custom_timeout)
                            
-
     def get_service_parameter(self, param_setting: str, custom_timeout=None) -> str:
         """ Get Values from Service Parameter (Configuration->Settings->Parameter)
         
@@ -1906,7 +1899,6 @@ class AnalyzerRemote():
 
         self._value_parser(cmd="setsimioin", p1=io_hexa, user_timeout=custom_timeout)
                            
-
     def add_io_report_callback(self, callback, custom_timeout=None) -> None:
         """ Adds callback function to report of I/O register. Everytime I/O register changes, added callback functions will be executed. See networking_example.py for an example.
         By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
@@ -2028,7 +2020,6 @@ class AnalyzerRemote():
         """ 
         return  self._value_parser(cmd="appfunc", p1=function_name, p2=function_param, user_timeout=custom_timeout)
                                   
-
     def set_human_confirmation(self, process_IO=False, **kwargs) -> None:
         """ Send human confiramtion over current process. Score and comment can be parsed over kwargs. When in doubt, check documentation.
             
