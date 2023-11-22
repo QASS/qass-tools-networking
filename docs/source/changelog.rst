@@ -21,7 +21,7 @@ New Features
 
 Changes
 ------------
-* Add service to auto stopp certain remote startet methods by kwargs
+* Add service to auto stopp certain remote startet methods parsing command list to constructor under `auto_stop`
 
 Fixes
 ------

@@ -12,6 +12,13 @@ yourself, which is going really well or you wanted the software to perform an un
 happens if one of two things is happening. Either it will raise from the third custom exception, :class:`ConnectionError`, and will be a consequential error or there is a return value from the analyzer expected but nothing is given and a timeout engages. Please check for Analyzer4D 
 functionality in both cases. This :class:`ConnectionError` is raisen by unexpected loss of connection or no connection with the optimizer in the first hand. 
 
+Safety Mode
+***********
+
+Class object contains safety method which is available by parsing a command list under keyword argument `auto_stop`. Safety mode means an automatically supervised state of started services as sine generator, measuring, monitoring and operator functions.
+State will be always saved and is callable by corresponding properties. By activating auto stop for a single service or for all services, before exiting with statement command will be send to stop service.
+A full list of avaiblen auto stops is provided in the following: `all`, `sineGen`, `measuring`, `monitoring`, `operatorFunction`  
+
 Examples
 ********
 
