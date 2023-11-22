@@ -342,6 +342,15 @@ class ReceiveThread(threading.Thread):
                         # supress
                         if not self._suppress_cb_exceptions:
                             raise
+    
+    def handle_error(self, error):
+        """ Small method to directly parse error to main thread. Therefore in open method of main thread there is a error callback registered."""
+        # build mini command
+        response = {'cmd': "error", 'kind': error}
+        # callback is a put in queue
+        callback = self.__callbacks[response['cmd']]
+        for cb in callback:
+            cb(response)
 
     def run(self) ->  None:
         """ Overriden run method of thread module will be executed as the thread starts.
@@ -367,7 +376,8 @@ class ReceiveThread(threading.Thread):
                     if int.from_bytes(buffer, byteorder='big') > 0:
                         self.logger.warning("Unfinished message received:\n")
                         self.logger.warning(buffer)
-                    raise 
+                    # parse error to mainthread and go on listening
+                    self.handle_error(ConnectionError("Connection to Analyzer4D software is lost. Please check connection avaibility of both devices."))
             # only enter for new current length setting or if message is complete
             while (len(buffer) >= current_len and len(buffer) != 0 and current_len != 0) or (current_len == 0 and len(buffer) >= 2):
                 if current_len == 0 and len(buffer) >= 2:
@@ -454,7 +464,7 @@ class AnalyzerRemote():
         self._sine_gen_active = False
         self._monitoring_active = False
         self._operator_functions_active = False
-        
+        self.q = queue.Queue()
 
         # short solution logger to sys.stdout
         msg_mode = logging.DEBUG if debug_mode else logging.INFO
@@ -2144,8 +2154,8 @@ class AnalyzerRemote():
         # if response is expected:
         # register callback before sending
         if expect_response and user_callback == None:
-            q = queue.Queue()
-            def callback(result, queue_var=q): return queue_var.put(result)
+            # use class variabele self.q as queue object
+            def callback(result, queue_var=self.q): return queue_var.put(result)
             self.__recv_thread.register_callbacks(recognition, callback)
         elif expect_response:
             self.__recv_thread.register_callbacks(
@@ -2167,29 +2177,41 @@ class AnalyzerRemote():
                 # if nothing is parsed, take default
                 else:
                     function_timeout = self.timeout  
-                # get response out of queue for all cases without own custom_callback
-                analyzer_response = q.get(timeout=function_timeout)
+                # get response out of queue for all cases without own custom_callback // handles also receiver thread errors
+                analyzer_response = self.q.get(timeout=function_timeout)
             except queue.Empty as QueueError: # Raise from None, excludes queue.Empty Error from Traceback 
-                raise ReceiverThreadError("ReceiverThread logs an error by receiving an expected analyzer response. Please see the log for detailed information.") from None
-            # deregister callback
-            self.__recv_thread.deregister_callbacks(recognition)
-            # check for bugs in message
-            self._check_response(analyzer_response)
+                raise ReceiverThreadError(f"Analyzer was not responding in timeout time. Please check if communication between devices is lost or custom timeout method has to be used.") from None
+            # check for message state and also if receiver thread gives back an error, unregister callbacks
+            self._check_response(analyzer_response, recognition)
+            
             return analyzer_response
         
-    def _check_response(self, response):
-        """ Private method to check received response for value under key="ok". If value is True, response is approved.
+    def _check_response(self, response:Dict, recognition:str):
+        """ Private method to check received response for ErrorCallback or for analyzer response value under key="ok". If value is True, response is approved. Not ErrorCallbacks will be unregistered.
 
         :param response: Response dict from analyzer to check.
         :type response: dict
+        :param recognition: Recognition for not ErrorCallbacks
+        :type recognition: str
         :raises AnalyzerError: if command could not be performed, due to false syntax or params out of bounds.
+        :raises ReceiverThreadError: if parsed from Receiver Thread
         """ 
-        # rais exception if not performed right
-        if response.get("ok") == False:
+        # ErrorCallbacks
+        if 'cmd' in response and response.get('cmd') == "error":
+            origin_error = response.get("kind")
             self.logger.error(
-                "Analyzer could not perform action: check log and documentation.")
-            raise AnalyzerError(
-                "Analyzer could not perform action: check log and documentation.")
+                f"Receiver Thread logs an unexpected error from {origin_error}")
+            raise ReceiverThreadError(
+                "Receiver Thread logs an unexpected error") from origin_error
+        # check normal response
+        elif "ok" in response:
+            if response.get("ok") == False:
+                self.logger.error(
+                    "Analyzer4D software could not perform action: check log and documentation.")
+                raise AnalyzerError(
+                    "Analyzer4D software could not perform action: check log and documentation.")
+            # deregister callbacks (ErrorCallback is not deregistered)
+            self.__recv_thread.deregister_callbacks(recognition)
 
 class AnalyzerCmd(AnalyzerRemote):
     """ Depricated class naming. Inherit from normal class.
