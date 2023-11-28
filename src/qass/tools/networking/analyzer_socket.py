@@ -162,11 +162,11 @@ class SysAmplitudesType(IntEnum):
     """ System amplitude types available in analyzer software. Helps to represent calculated
     maximum amplitudes in different styles.""" 
     AMPLITUDE_DEFAULT = 0
-    # Amplitude is original ADC output value from hardware
+    #: Amplitude is original ADC output value from hardware
     AMPLITUDE_ADC_OUT = 1
-    # Amplitude is normalized energy value. (timedif x frqdif x normalized amplitude)
+    #: Amplitude is normalized energy value. (timedif x frqdif x normalized amplitude)
     AMPLITUDE_NORM_ENERGY = 2
-    # Amplitude normalized to 1 as full ADC value:
+    #: Amplitude normalized to 1 as full ADC value:
     AMPLITUDE_NORM_ONE = 3
     AMPLITUDE_MILLI_VOLT = 4
     AMPLITUDE_MICRO_VOLT = 5
@@ -182,29 +182,31 @@ class AreaViews(IntEnum):
 
 class SysSettingsClass(IntEnum):
     """ Predefined system settings classes.""" 
-    NO_CLASS = 0 	# Wird zur Zeit auch per Voreinstellung in "./config/QASS/analyzer.conf" gespeichert
-    # Das ist die Default-Klasse für pVars, die in einem VarSet untergebracht sind
+    
+    #: Wird zur Zeit auch per Voreinstellung in "./config/QASS/analyzer.conf" gespeichert
+    NO_CLASS = 0 	
+    #: Das ist die Default-Klasse für pVars, die in einem VarSet untergebracht sind
     VAR_SET_CLASS = 1
-    # Die Variable enthält System-Einstellungen, die später auch in ".config/QASS" gespeichert werden
+    #: Die Variable enthält System-Einstellungen, die später auch in ".config/QASS" gespeichert werden
     SYSTEM_CONFIG = 2
-    USER_CONFIG = 3     # Wird in "./config/QASS/analyzer.conf" in der USER Sektion gespeichert
-    GLOBAL_TRIGGER_CONFIG = 4     # Globale Triggereinstellung
-    GLOBAL_MEASURE_CONFIG = 5     # Globale MeasureConfig Einstellung
-    MEASURE_CONFIG = 6     # MeasureConfig Struktur
-    CLIENT_CONFIG = 7     # Branding und application Start Einstellungen
-    VIDEO_CONFIG = 8     # This is a configuration Setting for a CAM or VideoRecording
+    USER_CONFIG = 3     # doc: Wird in "./config/QASS/analyzer.conf" in der USER Sektion gespeichert
+    GLOBAL_TRIGGER_CONFIG = 4     # doc: Globale Triggereinstellung
+    GLOBAL_MEASURE_CONFIG = 5     # doc Globale MeasureConfig Einstellung
+    MEASURE_CONFIG = 6     # doc: MeasureConfig Struktur
+    CLIENT_CONFIG = 7     # doc: Branding und application Start Einstellungen
+    VIDEO_CONFIG = 8     # doc: This is a configuration Setting for a CAM or VideoRecording
     COLOR_CONFIG = 9
-    NETWORK_CONFIG = 10    # A network configuration
+    NETWORK_CONFIG = 10    # doc: A network configuration
     FPGA_CONFIG = 11
     PR_SEARCH_CONFIG = 12
-    GUI_CONFIG = 13    # global GUI and StyleSheet settings
-    SIM_BUFFER_CONFIG = 14    # Configuration of Simulation files
-    BACKUP_CONFIG = 15  # Configuration for backups and automatic backups
+    GUI_CONFIG = 13    # doc: global GUI and StyleSheet settings
+    SIM_BUFFER_CONFIG = 14    # doc: Configuration of Simulation files
+    BACKUP_CONFIG = 15  # doc: Configuration for backups and automatic backups
 
 
 class MultiPreampInput(IntEnum):
     """ Enums for Multi Input Preamps. The numeration starts on the uppest left input and goes rowise from left to right, too the lowest input (right side).""" 
-    NONE_MULTI_INPUT = 999  # Just a flag, to not use any input values
+    NONE_MULTI_INPUT = 999  # doc: Just a flag, to not use any input values. No internal anlyzer link!
     MULTI_INPUT_1 = 0
     MULTI_INPUT_2 = 1
     MULTI_INPUT_3 = 2

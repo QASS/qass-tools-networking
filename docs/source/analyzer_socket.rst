@@ -118,63 +118,41 @@ Example to automatically define Analyzer4D settings.
 
 AnalyzerRemote
 **************
+
 .. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerRemote      
         :members:
 
         .. automethod:: __init__
 
-
 AnalyzerRemote Helper Classes
 *****************************
-.. autointenum:: qass.tools.networking.analyzer_socket.Amplitudes 
 
-.. autoclass:: qass.tools.networking.analyzer_socket.Amplitudes
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.Amplitudes
 
-.. autoclass:: qass.tools.networking.analyzer_socket.Channels
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.Channels
 
-.. autoclass:: qass.tools.networking.analyzer_socket.ChannelPorts
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.ChannelPorts
 
-.. autoclass:: qass.tools.networking.analyzer_socket.PreampPorts
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.PreampPorts
 
-.. autoclass:: qass.tools.networking.analyzer_socket.Samplerates16Bit
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.Samplerates16Bit
 
-.. autoclass:: qass.tools.networking.analyzer_socket.ExactSamplerates16Bit
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.ExactSamplerates16Bit
 
-.. autoclass:: qass.tools.networking.analyzer_socket.ExactSamplerates24Bit
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.ExactSamplerates24Bit
 
-.. autoclass:: qass.tools.networking.analyzer_socket.FFTOversampling
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.FFTOversampling
 
-.. autoclass:: qass.tools.networking.analyzer_socket.FFTWindowing
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.FFTWindowing
 
-.. autoclass:: qass.tools.networking.analyzer_socket.FFTLogarithmic
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.FFTLogarithmic
 
-.. autoclass:: qass.tools.networking.analyzer_socket.SysAmplitudesType
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.SysAmplitudesType
 
-.. autoclass:: qass.tools.networking.analyzer_socket.AreaViews
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.AreaViews
 
-.. autoclass:: qass.tools.networking.analyzer_socket.SysSettingsClass
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.SysSettingsClass
 
-.. autoclass:: qass.tools.networking.analyzer_socket.MultiPreampInput
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.MultiPreampInput
 
-.. autoclass:: qass.tools.networking.analyzer_socket.PreampType
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.ReceiverThreadError
-        :members:
-
-.. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerError
-        :members:
+.. autoenum:: qass.tools.networking.analyzer_socket.PreampType 

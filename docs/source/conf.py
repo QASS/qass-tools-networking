@@ -21,7 +21,7 @@ release = '3.2.0'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode',
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'enum_tools.autoenum',
               'sphinx.ext.coverage', 'sphinx.ext.napoleon', 'sphinx_design',]
               #'autointenum']
 
@@ -35,10 +35,10 @@ rst_prolog = """
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_logo = "./QASS_Logo_neu_schwarz_groß_cmyk.jpg"
+html_logo = "./QASS_Logo_neu.svg"
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 html_theme_options = {
     'prev_next_buttons_location': 'both',
-    'logo_only': True }
+    'logo_only': False }
