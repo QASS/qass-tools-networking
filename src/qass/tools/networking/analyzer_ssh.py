@@ -21,7 +21,7 @@ class BadPswdException(Exception):
 class AnalyzerSSH():
     """ Class to open a SSH connection in python context extends possible remote control of analyzer functionalities. The here used commands are tested for OpenSuse [Linux version 5.16.8]. Functionallity for other operating systems cannot be guaranteed."""
 
-    def __init__(self, ip: str, username: str = "opti", debug_mode: bool = False):
+    def __init__(self, ip: str, user: str = "opti", ssh_password=None, debug_mode: bool = False):
         """ Initalizing helper values. Creating two different Logger instances to inherit from logger used by Paramiko module and creating own logger. Both are addressing sys.stdout.
 
         :param ip: IP for executing SSH connection
@@ -32,8 +32,8 @@ class AnalyzerSSH():
         :type debug_mode: bool, optional
         """
         self.ip = ip
-        self.username = username
-
+        self.username = user
+        self.ssh_pswd = ssh_password
         self.datapaths = []
         self.sudo_psw = None
         self.systempath = None
@@ -47,26 +47,46 @@ class AnalyzerSSH():
         self._create_module_logger(msg_mode)
 
     def __enter__(self):
-        """Contextmanager opens SSH connection and setting autoamtically host key policy."""
+        """Contextmanager opens SSH connection and setting automatically host key policy."""
+        self.open()
+        return self
+    
+    def open(self):
         # Open SSH connection
         self.client = SSHClient()
         self.client.set_missing_host_key_policy(AutoAddPolicy())
-        # set pswd
-        pswd = pwinput.pwinput(prompt="Add ssh passwort for opti:\n", mask="*")
+        # set ssh_pswd
+        if not self.ssh_pswd:
+            self.ssh_pswd = pwinput.pwinput(prompt="Add ssh passwort for opti:\n", mask="*")
         # connect
-        self.client.connect(self.ip, username=self.username, password=pswd)
-        return self
+        self.client.connect(self.ip, username=self.username, password=self.ssh_pswd)
 
     def __exit__(self, exc_type, exc_value, traceback):
         """Closes all still open connections and delets set root password for this session."""
-        time.sleep(2)
-        self.sudo_psw = None
-        self.client.close()
-        self.logger.info("SSH connection closed")
+        self.close()
         if exc_type != None:
             self.logger.error(
                 f"\nExecution type: {exc_type}\nTraceback: {traceback}")
 
+    def close(self):
+        time.sleep(2)
+        self.sudo_psw = None
+        self.pswd = None
+        self.client.close()
+        self.logger.info("SSH connection closed")
+
+    def set_sudo_password(self, sudo_password:str):
+        self.sudo_psw = sudo_password
+    
+    def send_command(self, command:str):
+        stdin, stdout, stderr = self.client.exec_command(command)
+        if "sudo" in command:
+            if "-S" not in command:
+                command.replace("sudo","sudo -S") 
+            stdin.write('pandora!\n')
+        output = stdout.readlines()
+        
+    
     def _send_ssh_command(self, command: str) -> str:
         """ Method handles sending commands to interactive shell as receiving response. In case for needed sudo password function will send either a user setted password opr autoamtically send password already used before. For every message will be opened an own channel, which automatically closes after receiving all data out of this channel. 
 
@@ -616,6 +636,7 @@ class AnalyzerSSH():
         try:
             # get smartctl
             self.check_smartctl()
+            print("eins")
             # get single infos
             all_infos = {"CPU_name": self.get_CPU_name(),
                          "IP_address": self.get_IP_address(),
@@ -630,7 +651,7 @@ class AnalyzerSSH():
                          "systemplate_relocated_areas": self.get_harddrive_relocated_areas(self.smartctl_json_system),
                          "systemplate_type": self.get_harddrive_type(self.smartctl_json_system),
                          "systemplate_manufractuar_serial": self.get_harddrive_manufacture_serial(self.smartctl_json_system)}
-
+            print("zwo")
             # get all dataplates
             dataplate_info_list = []
             for plate in self.smartctl_json_datas:
