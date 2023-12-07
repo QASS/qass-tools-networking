@@ -11,7 +11,7 @@ with AnalyzerRemote(ip="192.168.2.67") as opti:
 
     proc = opti.get_process_number()
 
-    opti.set_process_comment("Hey ich bims, eins Kommentar")
+    opti.set_process_comment(proc, "Hey ich bims, eins Kommentar")
 
     opti.start_measuring()
     opti.start_sineGenerator(frequency=500, amplitude=Amplitudes.AMP_191_mV)
@@ -55,5 +55,4 @@ with AnalyzerRemote(ip="192.168.2.67") as opti:
     current_state = opti.get_service_parameter("pFPGAVersion")
     if current_state is not 2:
         opti.set_service_parameter("pFPGAVersion", 2)
-    opti.pulsetest_port(PreampPorts.PREAMP_PORT_1)
     opti.import_patterns("/home/opti/patterns/")
