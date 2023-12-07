@@ -1,0 +1,37 @@
+{
+    "CPU_name": "AMD Ryzen 7 5700G with Radeon Graphics\n",
+    "IP_address": "192.168.3.241",
+    "linux_version": "openSUSE Leap 15.3",
+    "RAM_size": 14.91,
+    "FPGA_version": "V2.6.18 (Date:22.4.22)\n",
+    "systemdisk": {
+        "device_path": "/dev/sdb",
+        "mountpoint": "/home",
+        "infos": {
+            "SATA_version": "SATA 3.2",
+            "SATA_linkspeed": "3.0 Gb/s",
+            "manufacturer_serial": "T2039HXHZ00744",
+            "model": "M.2 2280 SATA SSD",
+            "relocated_areas": 0,
+            "power_on_hours": 9562,
+            "size": 512,
+            "health_state": "healthy"
+        }
+    },
+    "datadisk": [
+        {
+            "device_path": "/dev/sda",
+            "mountpoint": "/data1",
+            "infos": {
+                "SATA_version": "SATA 3.3",
+                "SATA_linkspeed": "3.0 Gb/s",
+                "manufacturer_serial": "22303A165F8D",
+                "model": "Micron_5300_MTFDDAK1T9TDS",
+                "relocated_areas": 0,
+                "power_on_hours": 9561,
+                "size": 1920,
+                "health_state": "healthy"
+            }
+        }
+    ]
+}
