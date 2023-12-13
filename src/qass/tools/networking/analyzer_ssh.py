@@ -204,7 +204,27 @@ class SSHConnector():
         if return_paths:
             return self.paths # type: ignore
  
-    def get_harddrive_information(self, device:str, attributes=None)    -> Dict:
+    def get_harddrive_information(self, device:str, attributes:List=None)    -> Dict: # type: ignore
+        """ Function to (partly) read out information from harrddisk, Information origin from smartctl and therefore smartctl has to be isntalled on linux device. 
+        
+        Following information can be read out:
+
+        * 'SATA_version'
+        * 'SATA_linkspeed'
+        * 'manufacturer_serial'
+        * 'model'
+        * 'relocated_areas'
+        * 'power_on_hours'
+        * 'size'
+        * 'health_state'
+
+        :param device: Device (device path)
+        :type device: str
+        :param attributes: List with all attribute keywords which should be read out. Without any parsed values, full list of attributes is used, defaults to None
+        :type attributes: List, optional
+        :return: Dictionary with desired information 
+        :rtype: Dict
+        """
         disk_info = {}
         output = self.send_command("sudo smartctl -a " + device + " --json") # use json format
         
