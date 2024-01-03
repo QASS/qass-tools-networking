@@ -119,7 +119,8 @@ Example to automatically define Analyzer4D settings.
 AnalyzerRemote
 **************
 
-.. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerRemote      
+.. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerRemote
+       
         :members:
 
         .. automethod:: __init__
