@@ -2079,7 +2079,7 @@ class AnalyzerRemote():
         :param bool disable_buffer_boxes: Disable Buffer bounding boxes.
         :param int custom_timeout: Custom timeout flag to get a response. Defaults to None
         """
-        valid_parameters = {key: value for key, value in [("penguifile", penguifile),
+        valid_parameters = {key: self.translator.get(value, value) for key, value in [("penguifile", penguifile),
                                                           ("reload", reload),
                                                           ("activateOnLoad", activate_on_load),
                                                           ("disableOpenGL", disable_open_gl),
