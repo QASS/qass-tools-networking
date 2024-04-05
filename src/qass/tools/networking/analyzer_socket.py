@@ -2068,7 +2068,8 @@ class AnalyzerRemote():
         """ 
         self._value_parser(cmd="AppCmd", p1="writeBackup", user_timeout=custom_timeout)
     
-    def set_sys_pengui_config(self, penguifile=None, reload=None, activate_on_load=None, disable_open_gl=None, disable_buffer_boxes=None, custom_timeout=None):
+    def set_sys_pengui_config(self, penguifile=None, reload=None, activate_on_load=None, disable_open_gl=None, 
+                              disable_buffer_boxes=None, python_init_hook=None):
         """ Sets the entries under Preferences -> GUI -> Custom User Interface.
         This incorporates the behaviour of the qml GUI.
         
@@ -2077,16 +2078,27 @@ class AnalyzerRemote():
         :param bool activate_on_load: Whether to display the qml GUI on program startup.
         :param bool disable_open_gl: Disable the openGL view whenever a qml GUI is actively displayed.
         :param bool disable_buffer_boxes: Disable Buffer bounding boxes.
-        :param int custom_timeout: Custom timeout flag to get a response. Defaults to None
+        :param str python_init_hook: The absolute path to the python script that should be executed during 
+            the startup phase of the analyzer software.
         """
         valid_parameters = {key: self.translator.get(value, value) for key, value in [("penguifile", penguifile),
                                                           ("reload", reload),
                                                           ("activateOnLoad", activate_on_load),
                                                           ("disableOpenGL", disable_open_gl),
-                                                          ("disableBufferBoxes", disable_buffer_boxes)]
+                                                          ("disableBufferBoxes", disable_buffer_boxes),
+                                                          ("pyinithook", python_init_hook)]
                                                           if value is not None}
         for key, value in valid_parameters.items():
             self.send_appcmd("sysPenguiConfig", f"{key} {value}")
+
+    def set_python_init_hook(self, python_init_hook):
+        """
+        Set the python init hook path in Preferences -> Python -> Python Init Hook
+
+        :param str python_init_hook: The absolute path to the python script that should be executed during
+            the startup phase of the analyzer software.
+        """
+        self.set_sys_pengui_config(python_init_hook=python_init_hook)
 
     def reset_failstate(self, custom_timeout=None) -> None:
         """ Reset Analyzer failure state and activates I/O ready by this.
