@@ -2067,6 +2067,26 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         self._value_parser(cmd="AppCmd", p1="writeBackup", user_timeout=custom_timeout)
+    
+    def set_sys_pengui_config(self, penguifile=None, reload=None, activate_on_load=None, disable_open_gl=None, disable_buffer_boxes=None, custom_timeout=None):
+        """ Sets the entries under Preferences -> GUI -> Custom User Interface.
+        This incorporates the behaviour of the qml GUI.
+        
+        :param str penguifile: The absolute path to the qml file that should be loaded.
+        :param bool reload: Whether or not to reload the qml file whenever a project is loaded
+        :param bool activate_on_load: Whether to display the qml GUI on program startup.
+        :param bool disable_open_gl: Disable the openGL view whenever a qml GUI is actively displayed.
+        :param bool disable_buffer_boxes: Disable Buffer bounding boxes.
+        :param int custom_timeout: Custom timeout flag to get a response. Defaults to None
+        """
+        valid_parameters = {key: value for key, value in [("penguifile", penguifile),
+                                                          ("reload", reload),
+                                                          ("activateOnLoad", activate_on_load),
+                                                          ("disableOpenGL", disable_open_gl),
+                                                          ("disableBufferBoxes", disable_buffer_boxes)]
+                                                          if value is not None}
+        for key, value in valid_parameters.items():
+            self.send_appcmd("sysPenguiConfig", f"{key} {value}")
 
     def reset_failstate(self, custom_timeout=None) -> None:
         """ Reset Analyzer failure state and activates I/O ready by this.
