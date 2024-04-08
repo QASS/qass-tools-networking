@@ -1,4 +1,5 @@
 import socket
+from pathlib import Path
 import json
 import numpy as np
 import time
@@ -2069,7 +2070,7 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", p1="writeBackup", user_timeout=custom_timeout)
     
     def set_sys_pengui_config(self, penguifile=None, reload=None, activate_on_load=None, disable_open_gl=None, 
-                              disable_buffer_boxes=None, python_init_hook=None):
+                              disable_buffer_boxes=None):
         """ Sets the entries under Preferences -> GUI -> Custom User Interface.
         This incorporates the behaviour of the qml GUI.
         
@@ -2085,20 +2086,19 @@ class AnalyzerRemote():
                                                           ("reload", reload),
                                                           ("activateOnLoad", activate_on_load),
                                                           ("disableOpenGL", disable_open_gl),
-                                                          ("disableBufferBoxes", disable_buffer_boxes),
-                                                          ("pyinithook", python_init_hook)]
+                                                          ("disableBufferBoxes", disable_buffer_boxes)]
                                                           if value is not None}
         for key, value in valid_parameters.items():
             self.send_appcmd("sysPenguiConfig", f"{key} {value}")
 
-    def set_python_init_hook(self, python_init_hook):
+    def set_python_init_hook(self, python_init_hook: Union[str, Path]):
         """
         Set the python init hook path in Preferences -> Python -> Python Init Hook
 
         :param str python_init_hook: The absolute path to the python script that should be executed during
             the startup phase of the analyzer software.
         """
-        self.set_sys_pengui_config(python_init_hook=python_init_hook)
+        self.send_appcmd("sysPathConfig", f"pyinithook {str(python_init_hook)}")
 
     def reset_failstate(self, custom_timeout=None) -> None:
         """ Reset Analyzer failure state and activates I/O ready by this.
