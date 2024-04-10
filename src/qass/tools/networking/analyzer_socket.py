@@ -1553,6 +1553,7 @@ class AnalyzerRemote():
         :param overwrite: Overwrites current active project, defaults to False
         :type overwrite: bool, optional
         """ 
+        self._check_path_string(filepath)
         p2_string = f"{filepath} {project_name}"
         if keep_original_process_nums:
             p2_string = p2_string + " --originalnums"
@@ -1587,6 +1588,7 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         my_translator = {"root": "-r", "all": "-a", "template": "-t"}
+        self._check_path_string(target_filepath)
         self._value_parser(cmd="AppCmd", expect_response=True, p1="export", p2=f"opnet {target_filepath} {my_translator[export]}", user_timeout=custom_timeout)
 
     def export_trigger_list(self, target_filepath: str, custom_timeout=None) -> None:
@@ -1597,6 +1599,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
+        self._check_path_string(target_filepath)
         self._value_parser(cmd="AppCmd", expect_response=True, p1="export", p2=f"triggerlist {target_filepath}", user_timeout=custom_timeout)
 
     def export_project_archive(self, target_filepath: str, export_name: str, export_process: int = None, export_pengui: bool = True, keep_folder: bool = True) -> None:
@@ -1613,6 +1616,7 @@ class AnalyzerRemote():
         :param keep_folder: Preserves folder structure and exports this structure to target, defaults to True
         :type keep_folder: bool, optional
         """ 
+        self._check_path_string(target_filepath)
         p2_string = f"{target_filepath} {export_name}"
         if export_process:
             p2_string = p2_string + f" --process {export_process}"
@@ -1634,6 +1638,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
+        self._check_path_string(filepath)
         preampport += 1
         self._value_parser(cmd="appfunc", expect_response=False, p1="PreampTool", p2=f"flash {preampport} {filepath}")
                            
@@ -2087,7 +2092,9 @@ class AnalyzerRemote():
                                                         ("disableOpenGL", disable_open_gl),
                                                         ("disableBufferBoxes", disable_buffer_boxes)]:
             if value is not None:
-                activated_params.append(f'{key} {self.translator.get(value,value)} ')
+                if key == "penguifile":
+                    self._check_path_string(value)
+                activated_params.append(f"{key} '{self.translator.get(value,value)}' ")
         p2_str = ''.join(activated_params)
         if p2_str == "":
             self.logger.info("Method 'set_sys_pengui_config' is not executed because of no valid parameters.")
@@ -2112,6 +2119,15 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", p1="ResetFailstate", user_timeout=custom_timeout)
     # TODO: profibus
     # TODO: profibus report
+    def _check_path_string(self, path:Union[str, Path]):
+        """ Check paths for whitespace in name.
+
+        :param path: Path to check
+        :type path: Union[str, Path]
+        """
+        if ' ' in str(path):
+            raise ValueError("Analyzer is not supporting whitespaces in paths.")
+        
     def _recognition_translator(self, cmd: str) ->  str:
         """ Private method to add "response" to already sended cmd str for later recognition.
 
