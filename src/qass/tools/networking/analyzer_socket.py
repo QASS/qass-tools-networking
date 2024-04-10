@@ -2009,7 +2009,7 @@ class AnalyzerRemote():
         :return: Standard Analyzer response. Dict contains result of addressed function as str.
         :rtype: Dict
         """ 
-        return  self._value_parser(cmd="appfunc", p1=function_name, p2=function_param, user_timeout=custom_timeout)
+        return self._value_parser(cmd="appfunc", p1=function_name, p2=function_param, user_timeout=custom_timeout)
                                   
     def set_human_confirmation(self, process_IO=False, **kwargs) -> None:
         """ Send human confiramtion over current process. Score and comment can be parsed over kwargs. When in doubt, check documentation.
@@ -2079,8 +2079,6 @@ class AnalyzerRemote():
         :param bool activate_on_load: Whether to display the qml GUI on program startup.
         :param bool disable_open_gl: Disable the openGL view whenever a qml GUI is actively displayed.
         :param bool disable_buffer_boxes: Disable Buffer bounding boxes.
-        :param str python_init_hook: The absolute path to the python script that should be executed during 
-            the startup phase of the analyzer software.
         """
         valid_parameters = {key: self.translator.get(value, value) for key, value in [("penguifile", penguifile),
                                                           ("reload", reload),
