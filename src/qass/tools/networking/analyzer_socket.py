@@ -2091,6 +2091,32 @@ class AnalyzerRemote():
         for key, value in valid_parameters.items():
             self.send_appcmd("sysPenguiConfig", f"{key} {value}")
 
+    def set_sys_pengui_config_test(self, penguifile=None, reload=None, activate_on_load=None, disable_open_gl=None, 
+                              disable_buffer_boxes=None, custom_timeout=None):
+        """ Sets the entries under Preferences -> GUI -> Custom User Interface.
+        This incorporates the behaviour of the qml GUI.
+        
+        :param str penguifile: The absolute path to the qml file that should be loaded.
+        :param bool reload: Whether or not to reload the qml file whenever a project is loaded
+        :param bool activate_on_load: Whether to display the qml GUI on program startup.
+        :param bool disable_open_gl: Disable the openGL view whenever a qml GUI is actively displayed.
+        :param bool disable_buffer_boxes: Disable Buffer bounding boxes.
+        """
+        #build p2 string for use of different optionm -> Analyzer searches for subcmd and then boolean value
+        activated_params= []
+        for key, value in [("penguifile", penguifile),  ("reload", reload),
+                                                        ("activateOnLoad", activate_on_load),
+                                                        ("disableOpenGL", disable_open_gl),
+                                                        ("disableBufferBoxes", disable_buffer_boxes)]:
+            if value is not None:
+                activated_params.append(f'{key} {self.translator.get(value,value)} ')
+        p2_str = ''.join(activated_params)
+        if p2_str == "":
+            self.logger.info("Mehtod 'set_sys_pengui_config_test' is not executed because of no valid parameters.")
+            return
+        self._value_parser(cmd="AppCmd", p1="sysPenguiConfig", p2=p2_str, user_timeout=custom_timeout)
+
+
     def set_python_init_hook(self, python_init_hook: Union[str, Path]):
         """
         Set the python init hook path in Preferences -> Python -> Python Init Hook
