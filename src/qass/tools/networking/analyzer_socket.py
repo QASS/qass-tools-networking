@@ -2118,6 +2118,20 @@ class AnalyzerRemote():
             p2 = p2 + " -a"
         self._value_parser(cmd="AppCmd", p1="ResetFailstate", p2=p2,user_timeout=custom_timeout)
 
+    def set_failstate(self, **kwargs):
+        """ Set Analyzer4d Software into failstate. If no duration is provided, system stays in failstate (clear I/O ready).
+
+        :kwargs int duration: Optional duration [ms] for failstate
+        """
+        duration = kwargs.get("duration", None)
+        if duration:
+            if isinstance(duration, int):
+                self._value_parser(cmd="AppCmd", p1="SetFailstate", p2=f"{duration}")
+            else:
+                raise ValueError("Only integer greater 0 are supported for failstate duration")
+        else:
+            self._value_parser(cmd="AppCmd", p1="SetFailstate") 
+    
     # TODO: profibus
     # TODO: profibus report
     def _check_path_string(self, path:Union[str, Path]):
