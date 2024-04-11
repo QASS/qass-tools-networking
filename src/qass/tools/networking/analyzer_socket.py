@@ -2167,6 +2167,20 @@ class AnalyzerRemote():
         remove_kinds = {"all":"remove-all", "busy":"remove-busy", "parameter":"remove-delayed"}
         self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2=f"TRIGGER {remove_kinds[delay_type]}", user_timeout=custom_timeout)
 
+    def start_shell_program(self, programm_path:Union[str,Path], detach_from_analyzer:bool=True):
+        """ Start an arbitary system process via shell. By detaching start of program and analyzer context, start of programm runs asynchron. If false, analyzer waits for finsihed programm (max to 1 sec)
+
+        :param programm_path: Path to Programm
+        :type programm_path: str
+        :param detach_from_analyzer: Flag to decide if process is completted async to analyzer context, defaults to True
+        :type detach_from_analyzer: bool, optional
+        """
+        if detach_from_analyzer:
+            sync_param  = "-detach"
+        else:
+            sync_param = "-noasync"
+        self._value_parser(cmd="AppCmd", p1="StartProgram", p2=f"{sync_param} \"{str(programm_path)}\"")
+
     # TODO: profibus
     # TODO: profibus report
     def _check_path_string(self, path:Union[str, Path]):
