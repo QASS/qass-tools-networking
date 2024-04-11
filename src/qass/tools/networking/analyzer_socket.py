@@ -2105,13 +2105,19 @@ class AnalyzerRemote():
         """
         self._value_parser(cmd="AppCmd", p1="sysPathConfig", p2=f"pyinithook \"{str(python_init_hook_path)}\"")
 
-    def reset_failstate(self, custom_timeout=None) -> None:
-        """ Reset Analyzer failure state and activates I/O ready by this.
-        
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        """ 
-        self._value_parser(cmd="AppCmd", p1="ResetFailstate", user_timeout=custom_timeout)
+    def reset_failstate(self, set_idle_state:bool=True, clear_all_windows:bool=True,custom_timeout=None) -> None:
+        """ Reset failure status of optimizer (activates I/O Ready) 
+
+        :param bool set_idle_state: Application state is set to IDLE, defaults to True
+        :param bool clear_all_windows: Removes all message/notification windows, defaults to True
+        """
+        p2 = ""
+        if set_idle_state:
+            p2 = p2 + "-idle"
+        if clear_all_windows:
+            p2 = p2 + " -a"
+        self._value_parser(cmd="AppCmd", p1="ResetFailstate", p2=p2,user_timeout=custom_timeout)
+
     # TODO: profibus
     # TODO: profibus report
     def _check_path_string(self, path:Union[str, Path]):
