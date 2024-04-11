@@ -2103,7 +2103,7 @@ class AnalyzerRemote():
         :param str python_init_hook_path: The absolute path to the python script that should be executed during
             the startup phase of the analyzer software.
         """
-        self._value_parser(cmd="AppCmd", p1="sysPathConfig", p2=f'pyinithook {str(python_init_hook_path)}')
+        self._value_parser(cmd="AppCmd", p1="sysPathConfig", p2=f"pyinithook \"{str(python_init_hook_path)}\"")
 
     def reset_failstate(self, custom_timeout=None) -> None:
         """ Reset Analyzer failure state and activates I/O ready by this.
