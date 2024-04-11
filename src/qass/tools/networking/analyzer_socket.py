@@ -2132,6 +2132,13 @@ class AnalyzerRemote():
         else:
             self._value_parser(cmd="AppCmd", p1="SetFailstate") 
     
+    def free_buffer_datablocks(self):
+        """ Free all buffer standby datablocks. 
+        
+        .. warning:: Experts method
+        """
+        self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2=f"RAM free-standby")
+    
     # TODO: profibus
     # TODO: profibus report
     def _check_path_string(self, path:Union[str, Path]):
