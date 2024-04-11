@@ -2139,6 +2139,34 @@ class AnalyzerRemote():
         """
         self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2=f"RAM free-standby")
     
+    def remove_delayed_trigger(self, delay_type:str=None, custom_timeout=None):
+        """ Method to remove delayed trigger. 
+
+        .. list-table:: Possible keyword arguments
+            :widths: 15 25
+            :header-rows: 1
+
+            * - Key
+              - Definition
+            * - all
+              - Remove all delayed trigger commands from queue
+            * - busy
+              - Remove trigger commands delayed to busy signal
+            * - parameter
+              - Remove trigger commands delayed by parameters from queue
+
+        .. warning:: Experts method      
+        
+        :param remove_type: Type of delayed signal to remove, defaults to None
+        :type remove_type: str, optional
+
+        :kwargs str all: Remove all delayed trigger commands from queue
+        :kwargs str busy: Remove trigger commands delayed to busy signal
+        :kwargs str parameter: Remove trigger commands delayed by parameters from queue
+        """
+        remove_kinds = {"all":"remove-all", "busy":"remove-busy", "parameter":"remove-delayed"}
+        self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2=f"TRIGGER {remove_kinds[delay_type]}", user_timeout=custom_timeout)
+
     # TODO: profibus
     # TODO: profibus report
     def _check_path_string(self, path:Union[str, Path]):
