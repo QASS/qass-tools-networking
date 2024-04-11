@@ -1507,7 +1507,7 @@ class AnalyzerRemote():
         :param directory_path: Directory path to patterns that will be imported.
         :type directory_path: str
         """ 
-        self._value_parser(expect_response=False, cmd="importpatterns", p1=directory_path)
+        self._value_parser(expect_response=False, cmd="importpatterns", p1=f"\"{directory_path}\"")
 
     def import_trigger_list(self, filepath: str, append: bool = False, custom_timeout=None) -> None:
         """ Import a trigger list file from local path. Append option decides already exisitng triggers will be set active or not.
@@ -1519,7 +1519,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        p2_string = f"triggerlist {filepath}"
+        p2_string = f"triggerlist \"{filepath}\""
 
         if append:
             p2_string = p2_string + " -a"
@@ -1535,7 +1535,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", user_timeout=custom_timeout, p1="import", p2=f"opnet {filepath}")
+        self._value_parser(cmd="AppCmd", user_timeout=custom_timeout, p1="import", p2=f"opnet \"{filepath}\"")
 
     def import_project_archive(self, filepath: str, project_name: str, keep_original_process_nums: bool = False, overwrite: bool = False) -> None:
         """ Import a complete project archive file (tar.gz). 
@@ -1553,8 +1553,7 @@ class AnalyzerRemote():
         :param overwrite: Overwrites current active project, defaults to False
         :type overwrite: bool, optional
         """ 
-        self._check_path_string(filepath)
-        p2_string = f"{filepath} {project_name}"
+        p2_string = f" \"{filepath}\" {project_name}"
         if keep_original_process_nums:
             p2_string = p2_string + " --originalnums"
         if overwrite:
@@ -1588,8 +1587,7 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         my_translator = {"root": "-r", "all": "-a", "template": "-t"}
-        self._check_path_string(target_filepath)
-        self._value_parser(cmd="AppCmd", expect_response=True, p1="export", p2=f"opnet {target_filepath} {my_translator[export]}", user_timeout=custom_timeout)
+        self._value_parser(cmd="AppCmd", expect_response=True, p1="export", p2=f"opnet \"{target_filepath}\" {my_translator[export]}", user_timeout=custom_timeout)
 
     def export_trigger_list(self, target_filepath: str, custom_timeout=None) -> None:
         """ Exports current trigger list to path. Target filepath should contain new file name.
@@ -1599,8 +1597,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._check_path_string(target_filepath)
-        self._value_parser(cmd="AppCmd", expect_response=True, p1="export", p2=f"triggerlist {target_filepath}", user_timeout=custom_timeout)
+        self._value_parser(cmd="AppCmd", expect_response=True, p1="export", p2=f"triggerlist \"{target_filepath}\"", user_timeout=custom_timeout)
 
     def export_project_archive(self, target_filepath: str, export_name: str, export_process: int = None, export_pengui: bool = True, keep_folder: bool = True) -> None:
         """ Exports current active project to path as tar.gz file. This includes all patterns, trigger list and projects.
@@ -1616,8 +1613,7 @@ class AnalyzerRemote():
         :param keep_folder: Preserves folder structure and exports this structure to target, defaults to True
         :type keep_folder: bool, optional
         """ 
-        self._check_path_string(target_filepath)
-        p2_string = f"{target_filepath} {export_name}"
+        p2_string = f"\"{target_filepath}\" {export_name}"
         if export_process:
             p2_string = p2_string + f" --process {export_process}"
         if export_pengui:
@@ -1638,9 +1634,8 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._check_path_string(filepath)
         preampport += 1
-        self._value_parser(cmd="appfunc", expect_response=False, p1="PreampTool", p2=f"flash {preampport} {filepath}")
+        self._value_parser(cmd="appfunc", expect_response=False, p1="PreampTool", p2=f"flash {preampport} \"{filepath}\"")
                            
         #  self._value_parser(cmd="PreampTool", user_timeout=custom_timeout)
         #                   p1=f"flash {preampport} {filepath}")
