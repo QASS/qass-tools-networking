@@ -2244,6 +2244,17 @@ class AnalyzerRemote():
         """
         self._value_parser(cmd="AppCmd", p1="sysPathConfig", p2=f"pysyspaths \"{python_sys_path}\"")
 
+    def set_appvar_container_visible(self, visible:bool=True):
+        """ Shows AppVar Container in Analyzer4D menu. 
+
+        :param bool visible: Flag to activate vision, defaults to True
+        """
+        if visible:
+            state = "enable"
+        else:
+            state = "disable"
+        self._value_parser(cmd="AppCmd", p1="ShowTool", p2=f"APPVARS {state}")    
+    
         
     def _recognition_translator(self, cmd: str) ->  str:
         """ Private method to add "response" to already sended cmd str for later recognition.
