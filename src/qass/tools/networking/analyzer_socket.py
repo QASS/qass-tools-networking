@@ -2237,6 +2237,13 @@ class AnalyzerRemote():
             toolbar = "hidetools"
         self._value_parser(cmd="AppCmd", p1="GuiCMD", p2=f"{toolbar}")
 
+    def set_sys_python_path(self, python_sys_path:Union[str,Path]):
+        """ Set system python path. [Preferences->Python->sys.path extensions]
+        
+        :param Union[str,Path] python_sys_path: Python path
+        """
+        self._value_parser(cmd="AppCmd", p1="sysPathConfig", p2=f"pysyspaths \"{python_sys_path}\"")
+
         
     def _recognition_translator(self, cmd: str) ->  str:
         """ Private method to add "response" to already sended cmd str for later recognition.
