@@ -1383,7 +1383,7 @@ class AnalyzerRemote():
     def write_preamp_s_value(self, s_value:int, preampport:Union[PreampPorts, int]=PreampPorts.PREAMP_PORT_1):
         """ Method to set preamp s value in preamp EEPROM text.
 
-        :param s_value: S value which should be write to preamp EEPROM text
+        :param s_value: s-value which should be write to preamp EEPROM text
         :type s_value: int
         :param preampport: Preampport where Preamp is connected, defaults to PreampPorts.PREAMP_PORT_1
         :type preampport: Union[PreampPorts, int], optional
