@@ -2277,6 +2277,17 @@ class AnalyzerRemote():
             state = "disable"
         self._value_parser(cmd="AppCmd", p1="ShowTool", p2=f"CLASSICMENU {state}") 
 
+    def set_trigger_list(self, enable:bool=True):
+        """ Set trigger list on enabled.
+
+        :param bool enable: enable/disable trigger list, defaults to True
+        """
+        if enable:
+            state = "on"
+        else:
+            state = "off"
+        self._value_parser(cmd="AppCmd", p1="sysTriggerLoop", p2=f"{state}")
+
         
     def _recognition_translator(self, cmd: str) ->  str:
         """ Private method to add "response" to already sended cmd str for later recognition.
