@@ -2181,6 +2181,28 @@ class AnalyzerRemote():
             sync_param = "-noasync"
         self._value_parser(cmd="AppCmd", p1="StartProgram", p2=f"{sync_param} \"{str(programm_path)}\"")
 
+    def restart_analyer(self, wait_time:Union[int,str]=2000, **kwargs):
+        """ Restart analyzer4D Software after system stayed a mininum time (= wait_time) in idel state. 
+
+        :param wait_time: Minimum time [ms] in idle state before analyzer software is closed, defaults to 500 ms
+        :type wait_time: Union[int,str], optional
+        :raises ValueError: If wait_time is smaller or equal zero
+        :raises ValueError: If display_message time is smaller or equal zero 
+        """
+        if isinstance(wait_time, str) and wait_time == "force_now":
+            self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"FORCE_NOW")
+        elif isinstance(wait_time,int):
+            if not wait_time > 0:
+                raise ValueError("Display time has to be greater than 0 ms")
+            last_words = kwargs.get("last_words", None)
+            last_words_display_time = kwargs.get("last_words_display_time", 2000)
+            p2 = f"{wait_time}"
+            if last_words:
+                if not last_words_display_time > 0:
+                    raise ValueError("Display time has to be greater than 0 ms")
+                p2  = p2 + f" {last_words_display_time} \"{last_words}\""
+            self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"{p2}")
+    #TODO: Description
     # TODO: profibus
     # TODO: profibus report
     def _check_path_string(self, path:Union[str, Path]):
