@@ -2087,10 +2087,8 @@ class AnalyzerRemote():
                                                         ("disableOpenGL", disable_open_gl),
                                                         ("disableBufferBoxes", disable_buffer_boxes)]:
             if value is not None:
-                if key == "penguifile":
-                    self._check_path_string(value)
-                activated_params.append(f"{key} '{self.translator.get(value,value)}' ")
-        p2_str = ''.join(activated_params)
+                activated_params.append(f"{key} \"{self.translator.get(value,value)}\" ")
+        p2_str = "".join(activated_params)
         if p2_str == "":
             self.logger.info("Method 'set_sys_pengui_config' is not executed because of no valid parameters.")
             return
