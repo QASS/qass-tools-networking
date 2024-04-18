@@ -2201,16 +2201,17 @@ class AnalyzerRemote():
                 p2  = p2 + f" {last_words_display_time} \"{last_words}\""
             self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"{p2}")
     #TODO: Description
-    # TODO: profibus
-    # TODO: profibus report
-    def _check_path_string(self, path:Union[str, Path]):
-        """ Check paths for whitespace in name.
+    def set_buffer_buttons_visible(self, visible:bool=True):
+        """ Set GUI view of buffer buttons enabled/disabled.
 
-        :param path: Path to check
-        :type path: Union[str, Path]
+        :param bool visible: Enable visualization, defaults to True
         """
-        if ' ' in str(path):
-            raise ValueError("Analyzer is not supporting whitespaces in paths.")
+        if visible:
+            buffer_bar = "showbufferbuttons"
+        else:
+            buffer_bar = "hidebufferbuttons"
+        self._value_parser(cmd="AppCmd", p1="GuiCMD", p2=f"{buffer_bar}")
+
         
     def _recognition_translator(self, cmd: str) ->  str:
         """ Private method to add "response" to already sended cmd str for later recognition.
