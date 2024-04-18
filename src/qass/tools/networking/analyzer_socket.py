@@ -2226,6 +2226,17 @@ class AnalyzerRemote():
             buffer_bar = "hidebufferbuttons"
         self._value_parser(cmd="AppCmd", p1="GuiCMD", p2=f"{buffer_bar}")
 
+    def set_toolbar_visible(self, visible:bool=True):
+        """Set GUI view of tool bar enabled/disabled.
+
+        :param bool visible: Enable visualization, defaults to True
+        """
+        if visible:
+            toolbar = "showtools"
+        else:
+            toolbar = "hidetools"
+        self._value_parser(cmd="AppCmd", p1="GuiCMD", p2=f"{toolbar}")
+
         
     def _recognition_translator(self, cmd: str) ->  str:
         """ Private method to add "response" to already sended cmd str for later recognition.
