@@ -120,10 +120,7 @@ AnalyzerRemote
 **************
 
 .. autoclass:: qass.tools.networking.analyzer_socket.AnalyzerRemote
-       
         :members:
-
-        .. automethod:: __init__
 
 AnalyzerRemote Helper Classes
 *****************************

@@ -29,6 +29,13 @@ If you run into a bug or compatibility problems please contact ewiebelitz@qass.n
    changelog
 
 .. toctree::
+   :maxdepth: 6
+   :caption: Contributing Guidlines
+   
+   contributing_guide
+
+
+.. toctree::
    :maxdepth: 2
    :caption: Python Server Client
 
