@@ -2201,6 +2201,20 @@ class AnalyzerRemote():
                 p2  = p2 + f" {last_words_display_time} \"{last_words}\""
             self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"{p2}")
     #TODO: Description
+
+    def set_GUI_tools_acitvated(self, show_buffer_bar:bool=True, show_toolbar:bool=True):
+        """ Show and Hide buffer buttons and tools in GUI
+
+        :param bool show_buffer_bar: Flag to show or hide buffer buttons, defaults to True
+        :param bool show_toolbar: Flag to show or hide tools, defaults to True
+        """
+        if show_buffer_bar:
+            buffer_bar = "showbufferbuttons"
+        else:
+            buffer_bar = "hidebufferbuttons"
+        
+        self._value_parser(cmd="AppCmd", p1="GuiCMD", p2=f"{buffer_bar}")
+        
     def set_buffer_buttons_visible(self, visible:bool=True):
         """ Set GUI view of buffer buttons enabled/disabled.
 
