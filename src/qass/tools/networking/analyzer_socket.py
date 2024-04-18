@@ -2255,6 +2255,17 @@ class AnalyzerRemote():
             state = "disable"
         self._value_parser(cmd="AppCmd", p1="ShowTool", p2=f"APPVARS {state}")    
     
+    def set_frq_mask_container_visible(self, visible:bool=True):
+        """Shows Frequency mask manager in Analyzer4D menu. 
+
+        :param bool visible: Flag to activate vision, defaults to True
+        """
+        if visible:
+            state = "enable"
+        else:
+            state = "disable"
+        self._value_parser(cmd="AppCmd", p1="ShowTool", p2=f"FRQMASKS {state}") 
+
         
     def _recognition_translator(self, cmd: str) ->  str:
         """ Private method to add "response" to already sended cmd str for later recognition.
