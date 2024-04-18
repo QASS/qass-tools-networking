@@ -2266,6 +2266,17 @@ class AnalyzerRemote():
             state = "disable"
         self._value_parser(cmd="AppCmd", p1="ShowTool", p2=f"FRQMASKS {state}") 
 
+    def set_classic_menu_view(self, enable:bool=True):
+        """ Switch menu view in Analyzer4d Software to classic menu.
+
+        :param bool enable: Enbale/Disable classic menu, defaults to True
+        """
+        if enable:
+            state = "enable"
+        else:
+            state = "disable"
+        self._value_parser(cmd="AppCmd", p1="ShowTool", p2=f"CLASSICMENU {state}") 
+
         
     def _recognition_translator(self, cmd: str) ->  str:
         """ Private method to add "response" to already sended cmd str for later recognition.
