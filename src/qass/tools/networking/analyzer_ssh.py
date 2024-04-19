@@ -1,7 +1,6 @@
 import json
 from os import name
 import sys
-from types import NoneType
 from typing import Dict
 import socket
 from datetime import datetime
@@ -336,8 +335,6 @@ class SSHConnector():
         """
         try:
             health = smartctl_output["smart_status"].get("passed", None)
-            if isinstance(health, NoneType):
-                raise KeyError
             if health == "true" or health == True:
                 return "healthy"
             else:
@@ -502,20 +499,25 @@ class SSHConnector():
         for path, mountpoint in datadisk_paths:
             disk = {"device_path": path,
                 "mountpoint": mountpoint,
-                "infos": self.get_harddrive_information(path)}
+                #"infos": self.get_harddrive_information(path)}
+                }
+            disk.update(self.get_harddrive_information(path))
             datadisk_info.append(disk)
 
         # create dict with all remaining informationa nd append datadisk dict
+        system_dict = { "device_path": systemdisk_path,
+                            "mountpoint": "/home"}
+        system_dict.update(self.get_harddrive_information(systemdisk_path))
         info = {
             "CPU_name": self.get_CPU_name(),
             "IP_address": self.get_IP_address(),
             "linux_version": self.get_linux_version(),
             "RAM_size_Gb": self.get_RAM_size(),
             "FPGA_version": self.get_FPGA_version(),
-            "systemdisk": { "device_path": systemdisk_path,
-                            "mountpoint": "/home",
-                            "infos": self.get_harddrive_information(systemdisk_path)},
+            "systemdisk": system_dict,
+                           # "infos": self.get_harddrive_information(systemdisk_path)},
             "datadisk": datadisk_info}
+        
         return info
     
     def export_to_json(self, export_dict: Dict, filename:str = None) -> None:
