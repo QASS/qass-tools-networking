@@ -11,6 +11,43 @@ Planned changes for next releases will be noted here. If you have any suggestion
 - Set io as line in set_simulated_io_input(args) 
 - Save project function
 
+3.3.0
+=====
+:Date: April 11, 2024
+
+:AnalyzerVersion: V2.03.99.13 optimierter Aufbau (11 Mär 2024)
+
+:Contributor: Oliver Kowollik
+
+.. tab-set::
+  .. tab-item:: New Features
+      
+    - Added a contribution guideline
+    - New :mod:`AnalyzerRemote.set_frequency_mask()` method
+    - New :mod:`AnalyzerRemote.use_frequency_mask()` method
+    - New :mod:`AnalyzerRemote.teach_frequency_mask()` method
+    - New :mod:`AnalyzerRemote.restart_analyzer()` method
+    - New :mod:`AnalyzerRemote.start_shell_program()` method
+    - New :mod:`AnalyzerRemote.remove_delayed_trigger()` method
+    - New :mod:`AnalyzerRemote.free_buffer_datablocks()` method
+    - New :mod:`AnalyzerRemote.set_python_init_hook()` method
+    - New :mod:`AnalyzerRemote.set_sys_pengui_config()` method
+    - New :mod:`AnalyzerRemote.set_failstate()` method
+    - New :mod:`AnalyzerRemote.set_sys_python_path()` method
+    - New :mod:`AnalyzerRemote.set_frq_mask_container_visible()` method
+    - New :mod:`AnalyzerRemote.set_appvar_container_visible()` method
+    - New :mod:`AnalyzerRemote.set_GUI_tools_activated()` method
+    - New :mod:`AnalyzerRemote.set_classic_menu_view()` method
+    - New :mod:`AnalyzerRemote.set_trigger_list()` method
+
+
+  .. tab-item:: Fixes
+
+    - Paths are now supported to contain whitespaces
+    - Fix :mod:`AnalyzerRemote.set_process_comment` method. A process number is now needed as first arguemnt.
+
+
+
 3.2.0
 =====
 :Date: November 15, 2023
@@ -25,10 +62,9 @@ Planned changes for next releases will be noted here. If you have any suggestion
     - New custom exception class :class:`ConnectionError`
     - Add service to auto stopp certain remote startet methods parsing command list to constructor under `auto_stop`
 
-  .. tab-item:: Fixes
+  .. tab-item:: Changes
 
-    - Errorhandling is now optimized for more clearity
-    - Fix :mod:`AnalyzerRemote.set_process_comment` method. A process number is now needed as first arguemnt.
+    - Extend :mod:`AnalyzerRemote.reset_failstate` method by keywords to set application idle and clear notifcation pop-ups
 
 3.1.0 
 ======

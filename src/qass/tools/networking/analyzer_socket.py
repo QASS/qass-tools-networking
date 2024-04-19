@@ -1,4 +1,5 @@
 import socket
+from pathlib import Path
 import json
 import numpy as np
 import time
@@ -1383,7 +1384,7 @@ class AnalyzerRemote():
     def write_preamp_s_value(self, s_value:int, preampport:Union[PreampPorts, int]=PreampPorts.PREAMP_PORT_1):
         """ Method to set preamp s value in preamp EEPROM text.
 
-        :param s_value: S value which should be write to preamp EEPROM text
+        :param s_value: s-value which should be write to preamp EEPROM text
         :type s_value: int
         :param preampport: Preampport where Preamp is connected, defaults to PreampPorts.PREAMP_PORT_1
         :type preampport: Union[PreampPorts, int], optional
@@ -1507,7 +1508,7 @@ class AnalyzerRemote():
         :param directory_path: Directory path to patterns that will be imported.
         :type directory_path: str
         """ 
-        self._value_parser(expect_response=False, cmd="importpatterns", p1=directory_path)
+        self._value_parser(expect_response=False, cmd="importpatterns", p1=f"\"{directory_path}\"")
 
     def import_trigger_list(self, filepath: str, append: bool = False, custom_timeout=None) -> None:
         """ Import a trigger list file from local path. Append option decides already exisitng triggers will be set active or not.
@@ -1519,7 +1520,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        p2_string = f"triggerlist {filepath}"
+        p2_string = f"triggerlist \"{filepath}\""
 
         if append:
             p2_string = p2_string + " -a"
@@ -1535,7 +1536,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", user_timeout=custom_timeout, p1="import", p2=f"opnet {filepath}")
+        self._value_parser(cmd="AppCmd", user_timeout=custom_timeout, p1="import", p2=f"opnet \"{filepath}\"")
 
     def import_project_archive(self, filepath: str, project_name: str, keep_original_process_nums: bool = False, overwrite: bool = False) -> None:
         """ Import a complete project archive file (tar.gz). 
@@ -1553,7 +1554,7 @@ class AnalyzerRemote():
         :param overwrite: Overwrites current active project, defaults to False
         :type overwrite: bool, optional
         """ 
-        p2_string = f"{filepath} {project_name}"
+        p2_string = f" \"{filepath}\" {project_name}"
         if keep_original_process_nums:
             p2_string = p2_string + " --originalnums"
         if overwrite:
@@ -1587,7 +1588,7 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         my_translator = {"root": "-r", "all": "-a", "template": "-t"}
-        self._value_parser(cmd="AppCmd", expect_response=True, p1="export", p2=f"opnet {target_filepath} {my_translator[export]}", user_timeout=custom_timeout)
+        self._value_parser(cmd="AppCmd", expect_response=True, p1="export", p2=f"opnet \"{target_filepath}\" {my_translator[export]}", user_timeout=custom_timeout)
 
     def export_trigger_list(self, target_filepath: str, custom_timeout=None) -> None:
         """ Exports current trigger list to path. Target filepath should contain new file name.
@@ -1597,7 +1598,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", expect_response=True, p1="export", p2=f"triggerlist {target_filepath}", user_timeout=custom_timeout)
+        self._value_parser(cmd="AppCmd", expect_response=True, p1="export", p2=f"triggerlist \"{target_filepath}\"", user_timeout=custom_timeout)
 
     def export_project_archive(self, target_filepath: str, export_name: str, export_process: int = None, export_pengui: bool = True, keep_folder: bool = True) -> None:
         """ Exports current active project to path as tar.gz file. This includes all patterns, trigger list and projects.
@@ -1613,7 +1614,7 @@ class AnalyzerRemote():
         :param keep_folder: Preserves folder structure and exports this structure to target, defaults to True
         :type keep_folder: bool, optional
         """ 
-        p2_string = f"{target_filepath} {export_name}"
+        p2_string = f"\"{target_filepath}\" {export_name}"
         if export_process:
             p2_string = p2_string + f" --process {export_process}"
         if export_pengui:
@@ -1635,7 +1636,7 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         preampport += 1
-        self._value_parser(cmd="appfunc", expect_response=False, p1="PreampTool", p2=f"flash {preampport} {filepath}")
+        self._value_parser(cmd="appfunc", expect_response=False, p1="PreampTool", p2=f"flash {preampport} \"{filepath}\"")
                            
         #  self._value_parser(cmd="PreampTool", user_timeout=custom_timeout)
         #                   p1=f"flash {preampport} {filepath}")
@@ -2009,7 +2010,7 @@ class AnalyzerRemote():
         :return: Standard Analyzer response. Dict contains result of addressed function as str.
         :rtype: Dict
         """ 
-        return  self._value_parser(cmd="appfunc", p1=function_name, p2=function_param, user_timeout=custom_timeout)
+        return self._value_parser(cmd="appfunc", p1=function_name, p2=function_param, user_timeout=custom_timeout)
                                   
     def set_human_confirmation(self, process_IO=False, **kwargs) -> None:
         """ Send human confiramtion over current process. Score and comment can be parsed over kwargs. When in doubt, check documentation.
@@ -2068,16 +2069,251 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         self._value_parser(cmd="AppCmd", p1="writeBackup", user_timeout=custom_timeout)
-
-    def reset_failstate(self, custom_timeout=None) -> None:
-        """ Reset Analyzer failure state and activates I/O ready by this.
+  
+    def set_sys_pengui_config(self, penguifile=None, reload=None, activate_on_load=None, disable_open_gl=None, 
+                              disable_buffer_boxes=None, custom_timeout=None):
+        """ Sets the entries under Preferences -> GUI -> Custom User Interface.
+        This incorporates the behaviour of the qml GUI.
         
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        """ 
-        self._value_parser(cmd="AppCmd", p1="ResetFailstate", user_timeout=custom_timeout)
+        :param str penguifile: The absolute path to the qml file that should be loaded.
+        :param bool reload: Whether or not to reload the qml file whenever a project is loaded
+        :param bool activate_on_load: Whether to display the qml GUI on program startup.
+        :param bool disable_open_gl: Disable the openGL view whenever a qml GUI is actively displayed.
+        :param bool disable_buffer_boxes: Disable Buffer bounding boxes.
+        """
+        #build p2 string for use of different optionm -> Analyzer searches for subcmd and then boolean value
+        activated_params= []
+        for key, value in [("penguifile", penguifile),  ("reload", reload),
+                                                        ("activateOnLoad", activate_on_load),
+                                                        ("disableOpenGL", disable_open_gl),
+                                                        ("disableBufferBoxes", disable_buffer_boxes)]:
+            if value is not None:
+                activated_params.append(f"{key} \"{self.translator.get(value,value)}\" ")
+        p2_str = "".join(activated_params)
+        if p2_str == "":
+            self.logger.info("Method 'set_sys_pengui_config' is not executed because of no valid parameters.")
+            return
+        self._value_parser(cmd="AppCmd", p1="sysPenguiConfig", p2=p2_str, user_timeout=custom_timeout)
+
+    def set_python_init_hook(self, python_init_hook_path: Union[str, Path]):
+        """
+        Set the python init hook path in Preferences -> Python -> Python Init Hook
+
+        :param str python_init_hook_path: The absolute path to the python script that should be executed during
+            the startup phase of the analyzer software.
+        """
+        self._value_parser(cmd="AppCmd", p1="sysPathConfig", p2=f"pyinithook \"{str(python_init_hook_path)}\"")
+
+    def reset_failstate(self, set_idle_state:bool=True, clear_all_windows:bool=True,custom_timeout=None) -> None:
+        """ Reset failure status of optimizer (activates I/O Ready) 
+
+        :param bool set_idle_state: Application state is set to IDLE, defaults to True
+        :param bool clear_all_windows: Removes all message/notification windows, defaults to True
+        """
+        p2 = ""
+        if set_idle_state:
+            p2 = p2 + "-idle"
+        if clear_all_windows:
+            p2 = p2 + " -a"
+        self._value_parser(cmd="AppCmd", p1="ResetFailstate", p2=p2,user_timeout=custom_timeout)
+
+    def set_failstate(self, **kwargs):
+        """ Set Analyzer4d Software into failstate. If no duration is provided, system stays in failstate (clear I/O ready).
+
+        :kwargs int duration: Optional duration [ms] for failstate
+        """
+        duration = kwargs.get("duration", None)
+        if duration:
+            if isinstance(duration, int):
+                self._value_parser(cmd="AppCmd", p1="SetFailstate", p2=f"{duration}")
+            else:
+                raise ValueError("Only integer greater 0 are supported for failstate duration")
+        else:
+            self._value_parser(cmd="AppCmd", p1="SetFailstate") 
+    
+    def free_buffer_datablocks(self):
+        """ Free all buffer standby datablocks. 
+        
+        .. warning:: Experts method
+        """
+        self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2=f"RAM free-standby")
+    
+    def remove_delayed_trigger(self, delay_type:str=None, custom_timeout=None):
+        """ Method to remove delayed trigger. 
+
+        .. list-table:: Possible keyword arguments
+            :widths: 15 25
+            :header-rows: 1
+
+            * - Key
+              - Definition
+            * - all
+              - Remove all delayed trigger commands from queue
+            * - busy
+              - Remove trigger commands delayed to busy signal
+            * - parameter
+              - Remove trigger commands delayed by parameters from queue
+
+        .. warning:: Experts method      
+        
+        :param remove_type: Type of delayed signal to remove, defaults to None
+        :type remove_type: str, optional
+
+        :kwargs str all: Remove all delayed trigger commands from queue
+        :kwargs str busy: Remove trigger commands delayed to busy signal
+        :kwargs str parameter: Remove trigger commands delayed by parameters from queue
+        """
+        remove_kinds = {"all":"remove-all", "busy":"remove-busy", "parameter":"remove-delayed"}
+        self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2=f"TRIGGER {remove_kinds[delay_type]}", user_timeout=custom_timeout)
+
+    def start_shell_program(self, programm_path:Union[str,Path], detach_from_analyzer:bool=True):
+        """ Start an arbitary system process via shell. By detaching start of program and analyzer context, start of programm runs asynchron. If false, analyzer waits for finsihed programm (max to 1 sec)
+
+        :param programm_path: Path to Programm
+        :type programm_path: str
+        :param detach_from_analyzer: Flag to decide if process is completted async to analyzer context, defaults to True
+        :type detach_from_analyzer: bool, optional
+        """
+        if detach_from_analyzer:
+            sync_param  = "-detach"
+        else:
+            sync_param = "-noasync"
+        self._value_parser(cmd="AppCmd", p1="StartProgram", p2=f"{sync_param} \"{str(programm_path)}\"")
+
+    def restart_analyer(self, wait_time:Union[int,str]=2000, **kwargs):
+        """ Restart analyzer4D Software after system stayed a mininum time (= wait_time) in idel state. 
+
+        :param wait_time: Minimum time [ms] in idle state before analyzer software is closed, defaults to 500 ms
+        :type wait_time: Union[int,str], optional
+        :raises ValueError: If wait_time is smaller or equal zero
+        :raises ValueError: If display_message time is smaller or equal zero 
+        """
+        if isinstance(wait_time, str) and wait_time == "force_now":
+            self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"FORCE_NOW")
+        elif isinstance(wait_time,int):
+            if not wait_time > 0:
+                raise ValueError("Display time has to be greater than 0 ms")
+            last_words = kwargs.get("last_words", None)
+            last_words_display_time = kwargs.get("last_words_display_time", 2000)
+            p2 = f"{wait_time}"
+            if last_words:
+                if not last_words_display_time > 0:
+                    raise ValueError("Display time has to be greater than 0 ms")
+                p2  = p2 + f" {last_words_display_time} \"{last_words}\""
+            self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"{p2}")
+    #TODO: Description
+    def set_frequency_mask(self, mask_id:int, measure_config:int):
+        """ Set an already exisiting frequency mask.
+
+        :param int mask_id:  ID of desired mask
+        :param int measure_config: _description_
+        """
+        self._value_parser(cmd="AppCmd", p1="SetFrequencymask", p2=f"{mask_id} {measure_config}")
+    
+    def use_frequency_mask(self, mask_id:int):
+        """ Use already existing frequnecy mask on process.
+
+        :param int mask_id: Use frequency mask with provided ID
+        """
+        self._value_parser(cmd="AppCmd", p1="UseFrequencymask", p2=f"{mask_id}")
+    
+    def teach_frequency_mask(self, mask_id:int, mask_type:str):
+        """ Teach new Frequency mask for loaded measurement.
+
+        :param int mask_id: Frequency mask ID of new mask
+        :param str mask_name: Frequency mask type
+        """
+        self._value_parser(cmd="AppCmd", p1="TeachFrequencymask", p2=f"{mask_id} {mask_type}")
+
+    def set_GUI_tools_acitvated(self, show_buffer_bar:bool=True, show_toolbar:bool=True):
+        """ Show and Hide buffer buttons and tools in GUI
+
+        :param bool show_buffer_bar: Flag to show or hide buffer buttons, defaults to True
+        :param bool show_toolbar: Flag to show or hide tools, defaults to True
+        """
+        if show_buffer_bar:
+            buffer_bar = "showbufferbuttons"
+        else:
+            buffer_bar = "hidebufferbuttons"
+        
+        self._value_parser(cmd="AppCmd", p1="GuiCMD", p2=f"{buffer_bar}")
+        
+    def set_buffer_buttons_visible(self, visible:bool=True):
+        """ Set GUI view of buffer buttons enabled/disabled.
+
+        :param bool visible: Enable visualization, defaults to True
+        """
+        if visible:
+            buffer_bar = "showbufferbuttons"
+        else:
+            buffer_bar = "hidebufferbuttons"
+        self._value_parser(cmd="AppCmd", p1="GuiCMD", p2=f"{buffer_bar}")
+
+    def set_toolbar_visible(self, visible:bool=True):
+        """Set GUI view of tool bar enabled/disabled.
+
+        :param bool visible: Enable visualization, defaults to True
+        """
+        if visible:
+            toolbar = "showtools"
+        else:
+            toolbar = "hidetools"
+        self._value_parser(cmd="AppCmd", p1="GuiCMD", p2=f"{toolbar}")
+
+    def set_sys_python_path(self, python_sys_path:Union[str,Path]):
+        """ Set system python path. [Preferences->Python->sys.path extensions]
+        
+        :param Union[str,Path] python_sys_path: Python path
+        """
+        self._value_parser(cmd="AppCmd", p1="sysPathConfig", p2=f"pysyspaths \"{python_sys_path}\"")
+
+    def set_appvar_container_visible(self, visible:bool=True):
+        """ Shows AppVar Container in Analyzer4D menu. 
+
+        :param bool visible: Flag to activate vision, defaults to True
+        """
+        if visible:
+            state = "enable"
+        else:
+            state = "disable"
+        self._value_parser(cmd="AppCmd", p1="ShowTool", p2=f"APPVARS {state}")    
+    
+    def set_frq_mask_container_visible(self, visible:bool=True):
+        """Shows Frequency mask manager in Analyzer4D menu. 
+
+        :param bool visible: Flag to activate vision, defaults to True
+        """
+        if visible:
+            state = "enable"
+        else:
+            state = "disable"
+        self._value_parser(cmd="AppCmd", p1="ShowTool", p2=f"FRQMASKS {state}") 
+
+    def set_classic_menu_view(self, enable:bool=True):
+        """ Switch menu view in Analyzer4d Software to classic menu.
+
+        :param bool enable: Enbale/Disable classic menu, defaults to True
+        """
+        if enable:
+            state = "enable"
+        else:
+            state = "disable"
+        self._value_parser(cmd="AppCmd", p1="ShowTool", p2=f"CLASSICMENU {state}") 
+
+    def set_trigger_list(self, enable:bool=True):
+        """ Set trigger list on enabled.
+
+        :param bool enable: enable/disable trigger list, defaults to True
+        """
+        if enable:
+            state = "on"
+        else:
+            state = "off"
+        self._value_parser(cmd="AppCmd", p1="sysTriggerLoop", p2=f"{state}")
+
     # TODO: profibus
     # TODO: profibus report
+        
     def _recognition_translator(self, cmd: str) ->  str:
         """ Private method to add "response" to already sended cmd str for later recognition.
 
