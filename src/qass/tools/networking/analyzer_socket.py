@@ -507,6 +507,7 @@ class AnalyzerRemote():
         self.logger.debug("Receiver Thread Closed")
         #self.__recv_thread.kill_thread()
         self.s.close()
+        del self.s
         self.logger.info("Socket connection closed")
         
     def analyzer_functionality_warning_decorator(func):
