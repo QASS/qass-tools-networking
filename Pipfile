@@ -9,6 +9,7 @@ numpy = "*"
 retry = "*"
 paramiko = "*"
 tqdm = "*"
+enum-tools = "*"
 
 [dev-packages]
 

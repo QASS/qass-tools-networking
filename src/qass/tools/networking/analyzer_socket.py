@@ -2201,6 +2201,28 @@ class AnalyzerRemote():
                 p2  = p2 + f" {last_words_display_time} \"{last_words}\""
             self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"{p2}")
     #TODO: Description
+    def set_frequency_mask(self, mask_id:int, measure_config:int):
+        """ Set an already exisiting frequency mask.
+
+        :param int mask_id:  ID of desired mask
+        :param int measure_config: _description_
+        """
+        self._value_parser(cmd="AppCmd", p1="SetFrequencymask", p2=f"{mask_id} {measure_config}")
+    
+    def use_frequency_mask(self, mask_id:int):
+        """ Use already existing frequnecy mask on process.
+
+        :param int mask_id: Use frequency mask with provided ID
+        """
+        self._value_parser(cmd="AppCmd", p1="UseFrequencymask", p2=f"{mask_id}")
+    
+    def teach_frequency_mask(self, mask_id:int, mask_type:str):
+        """ Teach new Frequency mask for loaded measurement.
+
+        :param int mask_id: Frequency mask ID of new mask
+        :param str mask_name: Frequency mask type
+        """
+        self._value_parser(cmd="AppCmd", p1="TeachFrequencymask", p2=f"{mask_id} {mask_type}")
 
     def set_GUI_tools_acitvated(self, show_buffer_bar:bool=True, show_toolbar:bool=True):
         """ Show and Hide buffer buttons and tools in GUI
@@ -2288,6 +2310,8 @@ class AnalyzerRemote():
             state = "off"
         self._value_parser(cmd="AppCmd", p1="sysTriggerLoop", p2=f"{state}")
 
+    # TODO: profibus
+    # TODO: profibus report
         
     def _recognition_translator(self, cmd: str) ->  str:
         """ Private method to add "response" to already sended cmd str for later recognition.
