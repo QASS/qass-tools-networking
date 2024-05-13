@@ -6,6 +6,7 @@ requires = [
     "retry",
     "paramiko",
     "pwinput", 
-    "tqdm"
+    "tqdm",
+    "enum-tools"
 ]
 build-backend = "setuptools.build_meta"

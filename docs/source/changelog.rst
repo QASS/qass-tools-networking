@@ -11,6 +11,21 @@ Planned changes for next releases will be noted here. If you have any suggestion
 - Set io as line in set_simulated_io_input(args) 
 - Save project function
 
+
+3.3.1
+=====
+:Date: May 13, 2024
+
+:AnalyzerVersion: V2.03.99.13 optimierter Aufbau (11 Mär 2024)
+
+:Contributor: Oliver Kowollik
+
+.. tab-set::
+  .. tab-item:: New Features
+      
+    - Expert keyword argument for :mod:`AnalyzerRemote.start_sineGenerator()` method
+
+
 3.3.0
 =====
 :Date: April 11, 2024
