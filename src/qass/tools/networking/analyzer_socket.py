@@ -273,6 +273,7 @@ class ReceiveThread(threading.Thread):
         """ 
         with self.lock:
             self.__callbacks[recognition].append(callback)
+            self.logger.debug(f"Registered (user) callback '{callback}' for key: {recognition}")
 
     def deregister_callbacks(self, recognition: Union[str, int], user_callback=None) ->  None:
         """ Remove registered callback.
@@ -287,10 +288,13 @@ class ReceiveThread(threading.Thread):
         with self.lock:
             if user_callback:
                 self.__callbacks[recognition].remove(user_callback)
+                self.logger.debug(f"Deregistered user callback '{user_callback}' for key: {recognition}")
                 if len(self.__callbacks[recognition]) == 0:
                     self.__callbacks.pop(recognition)
+                    self.logger.debug(f"All user callbacks for key: {recognition} removed.")
             else:
                 self.__callbacks.pop(recognition)
+                self.logger.debug(f"Deregistered key: {recognition}")
 
     def handle_response(self, response, encoding_style="utf-8") ->  None:
         """ Handles every complete message. Handling means decoding the byte string to dict and apply the response to every registered callback.
@@ -378,6 +382,7 @@ class ReceiveThread(threading.Thread):
                     self.handle_error(ConnectionError("Connection to Analyzer4D software is lost. Please check connection avaibility of both devices."))
             # only enter for new current length setting or if message is complete
             while (len(buffer) >= current_len and len(buffer) != 0 and current_len != 0) or (current_len == 0 and len(buffer) >= 2):
+                # initial incomming message length set as new current length
                 if current_len == 0 and len(buffer) >= 2:
                     # every two first characters of a message are the incoming length
                     current_len = int.from_bytes(buffer[:2], byteorder='big')
@@ -456,8 +461,13 @@ class AnalyzerRemote():
         self.q = queue.Queue()
         
         # short solution logger to sys.stdout
-        msg_mode = logging.DEBUG if debug_mode else logging.INFO
-        self.logger = self._create_logger(msg_mode)
+        if debug_mode:
+            logging_level = logging.DEBUG
+        else:
+            logging_level = None
+        logging.basicConfig(stream=sys.stdout, level=logging_level,
+                            format='[%(asctime)s]  %(levelname)s: %(message)s')
+        self.logger = logging.getLogger("networking")
    
     def __enter__(self):
         """Method to wrap open method behaviour for working with a contextmanager. Will open the connection to the Analyzer Instance and start a receiver thread.
@@ -511,26 +521,6 @@ class AnalyzerRemote():
         del self.s
         self.logger.info("Socket connection closed")
         
-    def analyzer_functionality_warning_decorator(func):
-        def inner(*args, **kwargs):
-            result = func(*args, **kwargs)
-            warnings.warn(
-                "Analyzer provides no complete implementation for this yet.")
-            return result
-        return inner
-
-    def _create_logger(self, level_mode):
-        """ Creates a logger which will print out to sys.stdout and log custom message and time, log level, function name and if available line number where log occured.
-
-        :param level_mode: logging msg mode (e.g. logging.debug)
-        :type level_mode: Message level that will be displayed
-        :return: Logger obj
-        """ 
-        logging.basicConfig(stream=sys.stdout, level=level_mode,
-                            format='[%(asctime)s]  %(levelname)s: %(message)s')
-        logger = logging.getLogger()
-        return logger
-
     @retry(ConnectionError, tries=4, delay=1)
     def _connecting_analyzer(self):
         """ Method to create a TCP socket connection with socket address(ip and port) from constructor
