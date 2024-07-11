@@ -2152,8 +2152,19 @@ class AnalyzerRemote():
 
     def set_failstate(self, **kwargs):
         """ Set Analyzer4d Software into failstate. If no duration is provided, system stays in failstate (clear I/O ready).
+            
+        Supported Kwargs Key: "duration", int | Duration in ms for failstate status
 
-        :kwargs int duration: Optional duration [ms] for failstate
+        .. list-table:: Possible keyword arguments
+            :widths: 15 25
+            :header-rows: 1
+
+            * - Key
+              - Value datatype
+              - Description
+            * - comment
+              - int
+              - Duration in ms for failstate status
         """
         duration = kwargs.get("duration", None)
         if duration:
@@ -2219,7 +2230,7 @@ class AnalyzerRemote():
             sync_param = "-noasync"
         self._value_parser(cmd="AppCmd", p1="StartProgram", p2=f"{sync_param} \"{str(programm_path)}\"")
 
-    def restart_analyer(self, wait_time:Union[int,str]=2000, **kwargs):
+    def restart_analyzer(self, wait_time:Union[int,str]=2000, **kwargs):
         """ Restart analyzer4D Software after system stayed a mininum time (= wait_time) in idel state. 
         By parsing "force_now", a reboot will be executed directly.
 
@@ -2257,8 +2268,12 @@ class AnalyzerRemote():
             if last_words:
                 if not last_words_display_time > 0:
                     raise ValueError("Display time has to be greater than 0 ms")
+                if last_words_display_time > wait_time:
+                    last_words_display_time = wait_time
+                    self.logger.info("Disaply time for analyzer message is set to maximum time before restart (= 'wait_time')")
                 p2  = p2 + f" {last_words_display_time} \"{last_words}\""
             self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"{p2}")
+
     #TODO: Description
     def set_frequency_mask(self, mask_id:int, measure_config:int):
         """ Set an already exisiting frequency mask.
