@@ -2389,6 +2389,7 @@ class AnalyzerRemote():
             except queue.Empty as QueueError: # Raise from None, excludes queue.Empty Error from Traceback 
                 raise ReceiverThreadError(f"Analyzer was not responding in timeout time. Please check if communication between devices is lost or custom timeout method has to be used.") from None
             # check for message state and also if receiver thread gives back an error, unregister callbacks
+            
             self._check_response(analyzer_response, recognition)
             
             return analyzer_response
@@ -2417,8 +2418,8 @@ class AnalyzerRemote():
                     "Analyzer4D software could not perform action: check log and documentation.")
                 raise AnalyzerError(
                     "Analyzer4D software could not perform action: check log and documentation.")
-            # deregister callbacks (ErrorCallback is not deregistered)
-            self.__recv_thread.deregister_callbacks(recognition)
+        # deregister callbacks (ErrorCallback is not deregistered)
+        self.__recv_thread.deregister_callbacks(recognition)
 
 class AnalyzerCmd(AnalyzerRemote):
     """ Depricated class naming. Inherit from normal class.
