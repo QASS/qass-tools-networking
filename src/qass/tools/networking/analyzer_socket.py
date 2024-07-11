@@ -1178,13 +1178,16 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         :return: Information about current project.
-        :rtype: Dict
+        :rtype: dict [with dict.keys() = ['analyzerbcdversion', 'analyzerversion', 'projectid', 'projectname', 'pronameprojectid', 'unixtime']]
+
         """ 
         project_info =  self._value_parser(cmd="getinfo", user_timeout=custom_timeout)
 
         # process response
         project_info.pop("v")
         project_info.pop("cmd")
+        project_info.pop("resid")
+        project_info.pop("millisecondpart")
 
         return project_info
 
@@ -1205,18 +1208,32 @@ class AnalyzerRemote():
     def set_measuring_mode(self, mode: Union[bool, str]) -> None:
         """ Start or stop a measurement. Additionally mode provides possibility to start monitoring mode.
 
-        .. list-table:: Keywords on one look
+        Supported 'mode' keys: True, bool     | Start measuring
+        Supported 'mode' keys: False, bool    | Stop measuring
+        Supported 'mode' keys: 'monitor', str | Start monitoring
+
+        .. list-table:: Supported modes
             :widths: 15 25
             :header-rows: 1
 
             * - Key
+              - Value datatype
               - Measuring mode
-            * - monitor
+            * - True
+              - bool
+              - Start measuring
+            * - False
+              - bool
+              - Stop measuring
+            * - "monitor"
+              - bool
               - Start monitoring
-            * - true
-              - Start measurement
-            * - false
-              - Stop measurement
+            * - ["start", "true", "beginn", "enabled", "enable", "on"]        
+              - str
+              - Start measuring
+            * - ["stop", "false", "end", "disabled", "disable", "off"]
+              - str
+              - Stop measuring 
 
         :param mode: Choosen measuring mode out of table above.
         :type mode: str, bool
@@ -1236,18 +1253,30 @@ class AnalyzerRemote():
     def set_monitoring_mode(self, mode: Union[bool, str], custom_timeout=None) -> None:
         """ Start or stop monitoring modus. When in doubt, check documentation.
 
-        .. list-table:: Keywords on one look
+        Supported 'mode' keys: True, bool     | Start monitoring
+        Supported 'mode' keys: 'False', bool  | Stop monitoring
+
+        .. list-table:: Supported modes
             :widths: 15 25
             :header-rows: 1
 
             * - Key
+              - Value datatype
               - Measuring mode
-            * - true
+            * - True
+              - bool
               - Start monitoring
-            * - false
+            * - False
+              - bool
               - Stop monitoring
+            * - ["start", "true", "beginn", "enabled", "enable", "on"]        
+              - str
+              - Start monitoring
+            * - ["stop", "false", "end", "disabled", "disable", "off"]
+              - str
+              - Stop monitoring 
 
-        :param mode: Switch between start monitoring ("true") or stop monitoring  ("false"). For supported keys see translator.
+        :param mode: Switch between start monitoring (True) or stop monitoring (False). For supported keys see translator.
         :type mode: str, bool
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
@@ -1331,11 +1360,15 @@ class AnalyzerRemote():
         """ Gets a dictionary with all measure positions and if used an energy value.
 
         :return: Measurepositions and their calculated energy value.
-        :rtype: Dict
+        :rtype: dict [with dict.keys() = ['mp0','mp1','mp2','mp3','mp4','mp5','mp5','mp7','mp8','mp9','mp10','mp11','mp12', 'mp13','mp14','mp15']
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        return  self._value_parser(cmd="getmaxmeasurepositions", user_timeout=custom_timeout)
+        response = self._value_parser(cmd="getmaxmeasurepositions", user_timeout=custom_timeout)
+        response.pop("v")
+        response.pop("cmd")
+
+        return response
 
     def get_preamp_info(self, preamp_port: Union[PreampPorts, int], convert:bool=True, custom_timeout=None) -> Union[Dict,str]:
         """ By default returns a dictionary with preamp serial ring and number as the set s value. If convert is set to False the string is parsed as str without putting values into dictionary.
@@ -1347,8 +1380,8 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         :raises KeyError: Raises if parsed variable is no supported preamp port
-        :return: Serial ring, number and s-value parsed in dictionary. Keywords are: "serial_type", "serial_number", "s-value"
-        :rtype: Dict or str
+        :return: Serial ring, number and s-value parsed in dictionary.
+        :rtype: dict or str [with dict.keys() = ['serial_type','serial_number','S-value']] 
         """ 
         if preamp_port in PreampPorts or preamp_port in range(0, 8):
             preamp_info =  self._value_parser(cmd="getpreampinfo", user_timeout=custom_timeout, p1=preamp_port)
@@ -1554,21 +1587,27 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", expect_response=False, p1="importprojectarchive", p2=p2_string)
 
     def export_operator_network(self, target_filepath: str, export: str = "root", custom_timeout=None) -> None:
-        """ Exports operator network as JSON file. Export contains either current activated
-        (key:"root",  all (key:"all") or just the network template (key:"template") by parsing the key to export.When in doubt, check documentation.
+        """ Exports operator network as JSON file. When in doubt, check documentation.
 
-        
+        Supported 'export' keys: 'root', str     | current activated
+        Supported 'export' keys: 'all', str      | all networks
+        Supported 'export' keys: 'template', str | network template
+
         .. list-table:: Keywords on one look
             :widths: 15 25
             :header-rows: 1
 
             * - Key
+              - Value datatype 
               - Definition
             * - root
+              - str
               - Exports current active operator network
             * - all
+              - str
               - Exports all avaible operator networks
             * - template
+              - str
               - Exports project specific operator network template
 
         :param folderpath: Target file path
@@ -1999,25 +2038,28 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         :return: Standard Analyzer response. Dict contains result of addressed function as str.
-        :rtype: Dict
+        :rtype: dict
         """ 
         return self._value_parser(cmd="appfunc", p1=function_name, p2=function_param, user_timeout=custom_timeout)
                                   
     def set_human_confirmation(self, process_IO=False, **kwargs) -> None:
         """ Send human confiramtion over current process. Score and comment can be parsed over kwargs. When in doubt, check documentation.
             
-        Supported Kwargs Key: "comment" --> Human comment for confirmation
-        Supported Kwargs Key: "score"   --> Score value for confirmation
+        Supported Kwargs Key: "comment", str | Human comment for confirmation
+        Supported Kwargs Key: "score", int   | Score value for confirmation
 
         .. list-table:: Possible keyword arguments
             :widths: 15 25
             :header-rows: 1
 
             * - Key
-              - Definition
+              - Value datatype
+              - Description
             * - comment
+              - str
               - Human comment for confirmation
             * - score
+              - int
               - Score value for confirmation
 
         :param process_IO: Confirmation if current process is IO or NIO, defaults to False
@@ -2132,27 +2174,33 @@ class AnalyzerRemote():
     def remove_delayed_trigger(self, delay_type:str=None, custom_timeout=None):
         """ Method to remove delayed trigger. 
 
-        .. list-table:: Possible keyword arguments
+        Supported key: "all", str        | Remove all delayed trigger commands from queue
+        Supported key: "busy", str       | Remove trigger commands delayed to busy signal
+        Supported key: "parameter", str  | Remove trigger commands delayed by parameters from queue
+
+        .. list-table:: Possible delay types
             :widths: 15 25
             :header-rows: 1
 
             * - Key
+              - Datatype
               - Definition
-            * - all
+            * - 'all'
+              - str
               - Remove all delayed trigger commands from queue
-            * - busy
+            * - 'busy'
+              - str
               - Remove trigger commands delayed to busy signal
-            * - parameter
+            * - 'parameter'
+              - str
               - Remove trigger commands delayed by parameters from queue
 
         .. warning:: Experts method      
         
-        :param remove_type: Type of delayed signal to remove, defaults to None
-        :type remove_type: str, optional
+        :param delay_type: Type of delayed signal to remove, defaults to None
+        :type delay_type: str, optional
 
-        :kwargs str all: Remove all delayed trigger commands from queue
-        :kwargs str busy: Remove trigger commands delayed to busy signal
-        :kwargs str parameter: Remove trigger commands delayed by parameters from queue
+        
         """
         remove_kinds = {"all":"remove-all", "busy":"remove-busy", "parameter":"remove-delayed"}
         self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2=f"TRIGGER {remove_kinds[delay_type]}", user_timeout=custom_timeout)
@@ -2173,11 +2221,30 @@ class AnalyzerRemote():
 
     def restart_analyer(self, wait_time:Union[int,str]=2000, **kwargs):
         """ Restart analyzer4D Software after system stayed a mininum time (= wait_time) in idel state. 
+        By parsing "force_now", a reboot will be executed directly.
 
-        :param wait_time: Minimum time [ms] in idle state before analyzer software is closed, defaults to 500 ms
+
+        Supported Kwargs Key: "last_words", str              | Displayed message from analyzer before restart
+        Supported Kwargs Key: "last_words_display_time", int | Time frame in ms for displaying last words. Time frame > 0 and Time frame <= wait_time. Keyword is only settable by simultaneously using last_words.
+
+        .. list-table:: Keyword arguments
+            :widths: 15 25
+            :header-rows: 1
+
+            * - Key
+              - Value datatype
+              - Description
+            * - last_words
+              - str
+              - Displayed message from analyzer before restart
+            * - last_words_display_time
+              - int
+              - Time frame in ms for displaying last words. Time frame > 0 and Time frame <= wait_time. Keyword is only settable by simultaneously using last_words. 
+            
+        :param wait_time: Minimum time [ms] in idle state before analyzer software is closed, defaults to 2000 ms
         :type wait_time: Union[int,str], optional
         :raises ValueError: If wait_time is smaller or equal zero
-        :raises ValueError: If display_message time is smaller or equal zero 
+        :raises ValueError: If display_message time is smaller or equal zero
         """
         if isinstance(wait_time, str) and wait_time == "force_now":
             self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"FORCE_NOW")
