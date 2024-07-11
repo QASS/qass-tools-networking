@@ -448,7 +448,7 @@ class AnalyzerRemote():
         self.translator = {True: "true", "start": "true", "true": "true",
                            "beginn": "true", "enabled": "true", "enable": "true", "on": "true",
                            False: "false", "stop": "false", "end": "false", "disabled": "false",
-                           "false": "false", "disable": "false", "monitor": "monitor"}
+                           "false": "false", "disable": "false", "off": "false", "monitor": "monitor"}
         # flags for exit method of context manager
         self._io_report_count = 0
         self.auto_stop = auto_stop
