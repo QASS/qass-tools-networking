@@ -2,7 +2,6 @@ import src.qass.tools.networking.analyzer_ssh as SSH
 
 ##### Example 1 ########
 """ Simple example for examine all supported hardware information and store them as local JSON File."""
-
 with SSH.SSHConnector("machine_IP", ssh_password="ssh_password") as terminal:
     terminal.set_sudo_password("sudo_host_password")
     res = terminal.get_hardware_information()

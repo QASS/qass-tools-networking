@@ -1213,7 +1213,7 @@ class AnalyzerRemote():
         Supported 'mode' keys: 'monitor', str | Start monitoring
 
         .. list-table:: Supported modes
-            :widths: 15 25
+            :widths: 15 10 25
             :header-rows: 1
 
             * - Key
@@ -1257,7 +1257,7 @@ class AnalyzerRemote():
         Supported 'mode' keys: 'False', bool  | Stop monitoring
 
         .. list-table:: Supported modes
-            :widths: 15 25
+            :widths: 15 10 25
             :header-rows: 1
 
             * - Key
@@ -1594,7 +1594,7 @@ class AnalyzerRemote():
         Supported 'export' keys: 'template', str | network template
 
         .. list-table:: Keywords on one look
-            :widths: 15 25
+            :widths: 15 10 25
             :header-rows: 1
 
             * - Key
@@ -2049,7 +2049,7 @@ class AnalyzerRemote():
         Supported Kwargs Key: "score", int   | Score value for confirmation
 
         .. list-table:: Possible keyword arguments
-            :widths: 15 25
+            :widths: 15 10 25
             :header-rows: 1
 
             * - Key
@@ -2156,7 +2156,7 @@ class AnalyzerRemote():
         Supported Kwargs Key: "duration", int | Duration in ms for failstate status
 
         .. list-table:: Possible keyword arguments
-            :widths: 15 25
+            :widths: 15 10 25
             :header-rows: 1
 
             * - Key
@@ -2190,7 +2190,7 @@ class AnalyzerRemote():
         Supported key: "parameter", str  | Remove trigger commands delayed by parameters from queue
 
         .. list-table:: Possible delay types
-            :widths: 15 25
+            :widths: 15 10 25
             :header-rows: 1
 
             * - Key
@@ -2239,7 +2239,7 @@ class AnalyzerRemote():
         Supported Kwargs Key: "last_words_display_time", int | Time frame in ms for displaying last words. Time frame > 0 and Time frame <= wait_time. Keyword is only settable by simultaneously using last_words.
 
         .. list-table:: Keyword arguments
-            :widths: 15 25
+            :widths: 15 10 25
             :header-rows: 1
 
             * - Key

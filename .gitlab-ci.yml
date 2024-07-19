@@ -1,4 +1,23 @@
-image: python:3.6
+##
+## Copyright (c) 2022 QASS GmbH.
+## Website: https://business.qass.net/en
+## Contact: QASS GmbH <info@qass.net>
+##
+## This file is part of Qass tools 
+##
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU Lesser General Public License as published by
+## the Free Software Foundation, version 3 of the License.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+image: python:3.9
 
 build-package:
   stage: deploy
@@ -9,6 +28,7 @@ build-package:
     - pip install twine
     - python3 -m build
     - python3 -m twine upload --repository gitlab dist/* --config-file /tmp/.pypirc
+    - python3 -m twine upload --repository pypi dist/* --config-file /tmp/.pypirc
   only:
     - tags
 
@@ -16,7 +36,7 @@ pages:
   stage: deploy
   script:
     - pip install sphinx
-    - pip install sphinx_rtd_theme numpy retry paramiko pwinput
+    - pip install sphinx_rtd_theme numpy retry paramiko getpass enum-tools tqdm
     - pip install --no-deps .
     - mkdir ./docs/source/_static
     - sphinx-build -b html ./docs/source public
