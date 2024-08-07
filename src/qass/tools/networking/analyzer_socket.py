@@ -2006,7 +2006,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(expect_response=True, cmd="appcmd", p1="setioout", p2=f"{io_line} {state}", user_timeout=custom_timeout)
+        self._value_parser(expect_response=False, cmd="appcmd", p1="setioout", p2=f"{io_line} {state}", user_timeout=custom_timeout)
 
     def remove_process_number_report_callback(self, callback, custom_timeout=None) -> None:
         """ Removes specific callback function from process number report callback list. By removing all callbacks the report function will be automatically stopped.
