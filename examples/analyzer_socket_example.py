@@ -1,9 +1,9 @@
 import time
-from qass.tools.networking.analyzer_socket import AnalyzerRemote, Channels, Amplitudes, PreampPorts
+from qass.tools.networking.analyzer_socket import AnalyzerRemote, Channels, Amplitudes
 
 ######## Example 1 ############
 """ Simple example how to intialize a socket connection to the optimizer and have access to analyzer functions."""
-with AnalyzerRemote(ip="192.168.2.67") as opti:
+with AnalyzerRemote(ip="ip") as opti:
     opti.set_multiplexer(channel=Channels.CHANNEL_1)
     info = opti.get_project_info()
     print(info)
@@ -11,7 +11,7 @@ with AnalyzerRemote(ip="192.168.2.67") as opti:
 
     proc = opti.get_process_number()
 
-    opti.set_process_comment(proc, "Hey ich bims, eins Kommentar")
+    opti.set_process_comment(proc, "Hello World")
 
     opti.start_measuring()
     opti.start_sineGenerator(frequency=500, amplitude=Amplitudes.AMP_191_mV)
@@ -21,7 +21,7 @@ with AnalyzerRemote(ip="192.168.2.67") as opti:
 
 ######## Example 2 ############
 """ Example two shows an easy way to debug system in case you need some more detailed information how to process incomming responses"""
-with AnalyzerRemote(ip="192.168.2.67", debug_mode=True) as opti:
+with AnalyzerRemote(ip="ip", debug_mode=True) as opti:
     info = opti.get_project_info()
     print(info)
 
@@ -31,13 +31,13 @@ with AnalyzerRemote(ip="192.168.2.67", debug_mode=True) as opti:
 def own_callback_example(result):
     """Function that prints "I/O state changed" everytime it does.
 
-    Callback function always becomes response as arg. In this case response is used as event.
-    Evertime this event happens print command will happen.
+    Callback function always has response as argument. In this case response is used as event.
+    Evertime the event happens, print command is going to be executed.
     """
     if result:
         print("I/O state changed")
 
-with AnalyzerRemote(ip="192.168.2.67") as opti:
+with AnalyzerRemote(ip="ip") as opti:
     # Start report
     opti.add_io_report_callback(own_callback_example)
     # Do something
