@@ -1,6 +1,5 @@
 import os
 import sys
-import pathlib
 #sys.path.insert(0, os.path.abspath('../src'))
 sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'src')))
 sys.path.append(os.path.abspath("./_ext"))
@@ -15,7 +14,7 @@ sys.path.append(os.path.abspath("./_ext"))
 project = 'Qass Tools Networking'
 copyright = '2022, QASS GmbH'
 author = 'QASS GmbH'
-release = '3.2.0'
+release = '3.3.2'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -28,7 +28,6 @@ with AnalyzerRemote(ip="192.168.2.67", debug_mode=True) as opti:
 ######## Example 3 ############
 """ Example to show how to use report function with an easy callback"""
 
-
 def own_callback_example(result):
     """Function that prints "I/O state changed" everytime it does.
 
@@ -38,7 +37,6 @@ def own_callback_example(result):
     if result:
         print("I/O state changed")
 
-
 with AnalyzerRemote(ip="192.168.2.67") as opti:
     # Start report
     opti.add_io_report_callback(own_callback_example)
@@ -46,13 +44,3 @@ with AnalyzerRemote(ip="192.168.2.67") as opti:
     #
     # stop report automatically without active callback
     opti.remove_io_report_callback(own_callback_example)
-
-
-######## Example 4 ############
-""" Possible first start for optimizer script"""
-with AnalyzerRemote(ip="192.168.2.67") as opti:
-    project_dict = opti.get_project_info()
-    current_state = opti.get_service_parameter("pFPGAVersion")
-    if current_state is not 2:
-        opti.set_service_parameter("pFPGAVersion", 2)
-    opti.import_patterns("/home/opti/patterns/")

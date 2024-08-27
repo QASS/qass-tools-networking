@@ -273,6 +273,7 @@ class ReceiveThread(threading.Thread):
         """ 
         with self.lock:
             self.__callbacks[recognition].append(callback)
+            self.logger.debug(f"Registered (user) callback '{callback}' for key: {recognition}")
 
     def deregister_callbacks(self, recognition: Union[str, int], user_callback=None) ->  None:
         """ Remove registered callback.
@@ -287,10 +288,13 @@ class ReceiveThread(threading.Thread):
         with self.lock:
             if user_callback:
                 self.__callbacks[recognition].remove(user_callback)
+                self.logger.debug(f"Deregistered user callback '{user_callback}' for key: {recognition}")
                 if len(self.__callbacks[recognition]) == 0:
                     self.__callbacks.pop(recognition)
+                    self.logger.debug(f"All user callbacks for key: {recognition} removed.")
             else:
                 self.__callbacks.pop(recognition)
+                self.logger.debug(f"Deregistered key: {recognition}")
 
     def handle_response(self, response, encoding_style="utf-8") ->  None:
         """ Handles every complete message. Handling means decoding the byte string to dict and apply the response to every registered callback.
@@ -378,6 +382,7 @@ class ReceiveThread(threading.Thread):
                     self.handle_error(ConnectionError("Connection to Analyzer4D software is lost. Please check connection avaibility of both devices."))
             # only enter for new current length setting or if message is complete
             while (len(buffer) >= current_len and len(buffer) != 0 and current_len != 0) or (current_len == 0 and len(buffer) >= 2):
+                # initial incomming message length set as new current length
                 if current_len == 0 and len(buffer) >= 2:
                     # every two first characters of a message are the incoming length
                     current_len = int.from_bytes(buffer[:2], byteorder='big')
@@ -443,7 +448,7 @@ class AnalyzerRemote():
         self.translator = {True: "true", "start": "true", "true": "true",
                            "beginn": "true", "enabled": "true", "enable": "true", "on": "true",
                            False: "false", "stop": "false", "end": "false", "disabled": "false",
-                           "false": "false", "disable": "false", "monitor": "monitor"}
+                           "false": "false", "disable": "false", "off": "false", "monitor": "monitor"}
         # flags for exit method of context manager
         self._io_report_count = 0
         self.auto_stop = auto_stop
@@ -456,8 +461,13 @@ class AnalyzerRemote():
         self.q = queue.Queue()
         
         # short solution logger to sys.stdout
-        msg_mode = logging.DEBUG if debug_mode else logging.INFO
-        self.logger = self._create_logger(msg_mode)
+        if debug_mode:
+            logging_level = logging.DEBUG
+        else:
+            logging_level = None
+        logging.basicConfig(stream=sys.stdout, level=logging_level,
+                            format='[%(asctime)s]  %(levelname)s: %(message)s')
+        self.logger = logging.getLogger("networking")
    
     def __enter__(self):
         """Method to wrap open method behaviour for working with a contextmanager. Will open the connection to the Analyzer Instance and start a receiver thread.
@@ -511,26 +521,6 @@ class AnalyzerRemote():
         del self.s
         self.logger.info("Socket connection closed")
         
-    def analyzer_functionality_warning_decorator(func):
-        def inner(*args, **kwargs):
-            result = func(*args, **kwargs)
-            warnings.warn(
-                "Analyzer provides no complete implementation for this yet.")
-            return result
-        return inner
-
-    def _create_logger(self, level_mode):
-        """ Creates a logger which will print out to sys.stdout and log custom message and time, log level, function name and if available line number where log occured.
-
-        :param level_mode: logging msg mode (e.g. logging.debug)
-        :type level_mode: Message level that will be displayed
-        :return: Logger obj
-        """ 
-        logging.basicConfig(stream=sys.stdout, level=level_mode,
-                            format='[%(asctime)s]  %(levelname)s: %(message)s')
-        logger = logging.getLogger()
-        return logger
-
     @retry(ConnectionError, tries=4, delay=1)
     def _connecting_analyzer(self):
         """ Method to create a TCP socket connection with socket address(ip and port) from constructor
@@ -1188,13 +1178,16 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         :return: Information about current project.
-        :rtype: Dict
+        :rtype: dict [with dict.keys() = ['analyzerbcdversion', 'analyzerversion', 'projectid', 'projectname', 'pronameprojectid', 'unixtime']]
+
         """ 
         project_info =  self._value_parser(cmd="getinfo", user_timeout=custom_timeout)
 
         # process response
         project_info.pop("v")
         project_info.pop("cmd")
+        project_info.pop("resid")
+        project_info.pop("millisecondpart")
 
         return project_info
 
@@ -1215,18 +1208,32 @@ class AnalyzerRemote():
     def set_measuring_mode(self, mode: Union[bool, str]) -> None:
         """ Start or stop a measurement. Additionally mode provides possibility to start monitoring mode.
 
-        .. list-table:: Keywords on one look
-            :widths: 15 25
+        Supported 'mode' keys: True, bool     | Start measuring
+        Supported 'mode' keys: False, bool    | Stop measuring
+        Supported 'mode' keys: 'monitor', str | Start monitoring
+
+        .. list-table:: Supported modes
+            :widths: 15 10 25
             :header-rows: 1
 
             * - Key
+              - Value datatype
               - Measuring mode
-            * - monitor
+            * - True
+              - bool
+              - Start measuring
+            * - False
+              - bool
+              - Stop measuring
+            * - "monitor"
+              - bool
               - Start monitoring
-            * - true
-              - Start measurement
-            * - false
-              - Stop measurement
+            * - ["start", "true", "beginn", "enabled", "enable", "on"]        
+              - str
+              - Start measuring
+            * - ["stop", "false", "end", "disabled", "disable", "off"]
+              - str
+              - Stop measuring 
 
         :param mode: Choosen measuring mode out of table above.
         :type mode: str, bool
@@ -1246,18 +1253,30 @@ class AnalyzerRemote():
     def set_monitoring_mode(self, mode: Union[bool, str], custom_timeout=None) -> None:
         """ Start or stop monitoring modus. When in doubt, check documentation.
 
-        .. list-table:: Keywords on one look
-            :widths: 15 25
+        Supported 'mode' keys: True, bool     | Start monitoring
+        Supported 'mode' keys: 'False', bool  | Stop monitoring
+
+        .. list-table:: Supported modes
+            :widths: 15 10 25
             :header-rows: 1
 
             * - Key
+              - Value datatype
               - Measuring mode
-            * - true
+            * - True
+              - bool
               - Start monitoring
-            * - false
+            * - False
+              - bool
               - Stop monitoring
+            * - ["start", "true", "beginn", "enabled", "enable", "on"]        
+              - str
+              - Start monitoring
+            * - ["stop", "false", "end", "disabled", "disable", "off"]
+              - str
+              - Stop monitoring 
 
-        :param mode: Switch between start monitoring ("true") or stop monitoring  ("false"). For supported keys see translator.
+        :param mode: Switch between start monitoring (True) or stop monitoring (False). For supported keys see translator.
         :type mode: str, bool
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
@@ -1341,11 +1360,15 @@ class AnalyzerRemote():
         """ Gets a dictionary with all measure positions and if used an energy value.
 
         :return: Measurepositions and their calculated energy value.
-        :rtype: Dict
+        :rtype: dict [with dict.keys() = ['mp0','mp1','mp2','mp3','mp4','mp5','mp5','mp7','mp8','mp9','mp10','mp11','mp12', 'mp13','mp14','mp15']
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        return  self._value_parser(cmd="getmaxmeasurepositions", user_timeout=custom_timeout)
+        response = self._value_parser(cmd="getmaxmeasurepositions", user_timeout=custom_timeout)
+        response.pop("v")
+        response.pop("cmd")
+
+        return response
 
     def get_preamp_info(self, preamp_port: Union[PreampPorts, int], convert:bool=True, custom_timeout=None) -> Union[Dict,str]:
         """ By default returns a dictionary with preamp serial ring and number as the set s value. If convert is set to False the string is parsed as str without putting values into dictionary.
@@ -1357,8 +1380,8 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         :raises KeyError: Raises if parsed variable is no supported preamp port
-        :return: Serial ring, number and s-value parsed in dictionary. Keywords are: "serial_type", "serial_number", "s-value"
-        :rtype: Dict or str
+        :return: Serial ring, number and s-value parsed in dictionary.
+        :rtype: dict or str [with dict.keys() = ['serial_type','serial_number','S-value']] 
         """ 
         if preamp_port in PreampPorts or preamp_port in range(0, 8):
             preamp_info =  self._value_parser(cmd="getpreampinfo", user_timeout=custom_timeout, p1=preamp_port)
@@ -1564,21 +1587,27 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", expect_response=False, p1="importprojectarchive", p2=p2_string)
 
     def export_operator_network(self, target_filepath: str, export: str = "root", custom_timeout=None) -> None:
-        """ Exports operator network as JSON file. Export contains either current activated
-        (key:"root",  all (key:"all") or just the network template (key:"template") by parsing the key to export.When in doubt, check documentation.
+        """ Exports operator network as JSON file. When in doubt, check documentation.
 
-        
+        Supported 'export' keys: 'root', str     | current activated
+        Supported 'export' keys: 'all', str      | all networks
+        Supported 'export' keys: 'template', str | network template
+
         .. list-table:: Keywords on one look
-            :widths: 15 25
+            :widths: 15 10 25
             :header-rows: 1
 
             * - Key
+              - Value datatype 
               - Definition
             * - root
+              - str
               - Exports current active operator network
             * - all
+              - str
               - Exports all avaible operator networks
             * - template
+              - str
               - Exports project specific operator network template
 
         :param folderpath: Target file path
@@ -1977,7 +2006,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(expect_response=True, cmd="appcmd", p1="setioout", p2=f"{io_line} {state}", user_timeout=custom_timeout)
+        self._value_parser(expect_response=False, cmd="appcmd", p1="setioout", p2=f"{io_line} {state}", user_timeout=custom_timeout)
 
     def remove_process_number_report_callback(self, callback, custom_timeout=None) -> None:
         """ Removes specific callback function from process number report callback list. By removing all callbacks the report function will be automatically stopped.
@@ -2009,25 +2038,28 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         :return: Standard Analyzer response. Dict contains result of addressed function as str.
-        :rtype: Dict
+        :rtype: dict
         """ 
         return self._value_parser(cmd="appfunc", p1=function_name, p2=function_param, user_timeout=custom_timeout)
                                   
     def set_human_confirmation(self, process_IO=False, **kwargs) -> None:
         """ Send human confiramtion over current process. Score and comment can be parsed over kwargs. When in doubt, check documentation.
             
-        Supported Kwargs Key: "comment" --> Human comment for confirmation
-        Supported Kwargs Key: "score"   --> Score value for confirmation
+        Supported Kwargs Key: "comment", str | Human comment for confirmation
+        Supported Kwargs Key: "score", int   | Score value for confirmation
 
         .. list-table:: Possible keyword arguments
-            :widths: 15 25
+            :widths: 15 10 25
             :header-rows: 1
 
             * - Key
-              - Definition
+              - Value datatype
+              - Description
             * - comment
+              - str
               - Human comment for confirmation
             * - score
+              - int
               - Score value for confirmation
 
         :param process_IO: Confirmation if current process is IO or NIO, defaults to False
@@ -2120,8 +2152,19 @@ class AnalyzerRemote():
 
     def set_failstate(self, **kwargs):
         """ Set Analyzer4d Software into failstate. If no duration is provided, system stays in failstate (clear I/O ready).
+            
+        Supported Kwargs Key: "duration", int | Duration in ms for failstate status
 
-        :kwargs int duration: Optional duration [ms] for failstate
+        .. list-table:: Possible keyword arguments
+            :widths: 15 10 25
+            :header-rows: 1
+
+            * - Key
+              - Value datatype
+              - Description
+            * - comment
+              - int
+              - Duration in ms for failstate status
         """
         duration = kwargs.get("duration", None)
         if duration:
@@ -2142,27 +2185,33 @@ class AnalyzerRemote():
     def remove_delayed_trigger(self, delay_type:str=None, custom_timeout=None):
         """ Method to remove delayed trigger. 
 
-        .. list-table:: Possible keyword arguments
-            :widths: 15 25
+        Supported key: "all", str        | Remove all delayed trigger commands from queue
+        Supported key: "busy", str       | Remove trigger commands delayed to busy signal
+        Supported key: "parameter", str  | Remove trigger commands delayed by parameters from queue
+
+        .. list-table:: Possible delay types
+            :widths: 15 10 25
             :header-rows: 1
 
             * - Key
+              - Datatype
               - Definition
-            * - all
+            * - 'all'
+              - str
               - Remove all delayed trigger commands from queue
-            * - busy
+            * - 'busy'
+              - str
               - Remove trigger commands delayed to busy signal
-            * - parameter
+            * - 'parameter'
+              - str
               - Remove trigger commands delayed by parameters from queue
 
         .. warning:: Experts method      
         
-        :param remove_type: Type of delayed signal to remove, defaults to None
-        :type remove_type: str, optional
+        :param delay_type: Type of delayed signal to remove, defaults to None
+        :type delay_type: str, optional
 
-        :kwargs str all: Remove all delayed trigger commands from queue
-        :kwargs str busy: Remove trigger commands delayed to busy signal
-        :kwargs str parameter: Remove trigger commands delayed by parameters from queue
+        
         """
         remove_kinds = {"all":"remove-all", "busy":"remove-busy", "parameter":"remove-delayed"}
         self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2=f"TRIGGER {remove_kinds[delay_type]}", user_timeout=custom_timeout)
@@ -2181,13 +2230,32 @@ class AnalyzerRemote():
             sync_param = "-noasync"
         self._value_parser(cmd="AppCmd", p1="StartProgram", p2=f"{sync_param} \"{str(programm_path)}\"")
 
-    def restart_analyer(self, wait_time:Union[int,str]=2000, **kwargs):
+    def restart_analyzer(self, wait_time:Union[int,str]=2000, **kwargs):
         """ Restart analyzer4D Software after system stayed a mininum time (= wait_time) in idel state. 
+        By parsing "force_now", a reboot will be executed directly.
 
-        :param wait_time: Minimum time [ms] in idle state before analyzer software is closed, defaults to 500 ms
+
+        Supported Kwargs Key: "last_words", str              | Displayed message from analyzer before restart
+        Supported Kwargs Key: "last_words_display_time", int | Time frame in ms for displaying last words. Time frame > 0 and Time frame <= wait_time. Keyword is only settable by simultaneously using last_words.
+
+        .. list-table:: Keyword arguments
+            :widths: 15 10 25
+            :header-rows: 1
+
+            * - Key
+              - Value datatype
+              - Description
+            * - last_words
+              - str
+              - Displayed message from analyzer before restart
+            * - last_words_display_time
+              - int
+              - Time frame in ms for displaying last words. Time frame > 0 and Time frame <= wait_time. Keyword is only settable by simultaneously using last_words. 
+            
+        :param wait_time: Minimum time [ms] in idle state before analyzer software is closed, defaults to 2000 ms
         :type wait_time: Union[int,str], optional
         :raises ValueError: If wait_time is smaller or equal zero
-        :raises ValueError: If display_message time is smaller or equal zero 
+        :raises ValueError: If display_message time is smaller or equal zero
         """
         if isinstance(wait_time, str) and wait_time == "force_now":
             self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"FORCE_NOW")
@@ -2200,8 +2268,12 @@ class AnalyzerRemote():
             if last_words:
                 if not last_words_display_time > 0:
                     raise ValueError("Display time has to be greater than 0 ms")
+                if last_words_display_time > wait_time:
+                    last_words_display_time = wait_time
+                    self.logger.info("Disaply time for analyzer message is set to maximum time before restart (= 'wait_time')")
                 p2  = p2 + f" {last_words_display_time} \"{last_words}\""
             self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"{p2}")
+
     #TODO: Description
     def set_frequency_mask(self, mask_id:int, measure_config:int):
         """ Set an already exisiting frequency mask.
@@ -2399,6 +2471,7 @@ class AnalyzerRemote():
             except queue.Empty as QueueError: # Raise from None, excludes queue.Empty Error from Traceback 
                 raise ReceiverThreadError(f"Analyzer was not responding in timeout time. Please check if communication between devices is lost or custom timeout method has to be used.") from None
             # check for message state and also if receiver thread gives back an error, unregister callbacks
+            
             self._check_response(analyzer_response, recognition)
             
             return analyzer_response
@@ -2427,8 +2500,8 @@ class AnalyzerRemote():
                     "Analyzer4D software could not perform action: check log and documentation.")
                 raise AnalyzerError(
                     "Analyzer4D software could not perform action: check log and documentation.")
-            # deregister callbacks (ErrorCallback is not deregistered)
-            self.__recv_thread.deregister_callbacks(recognition)
+        # deregister callbacks (ErrorCallback is not deregistered)
+        self.__recv_thread.deregister_callbacks(recognition)
 
 class AnalyzerCmd(AnalyzerRemote):
     """ Depricated class naming. Inherit from normal class.
