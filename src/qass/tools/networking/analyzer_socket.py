@@ -625,8 +625,7 @@ class AnalyzerRemote():
         
         .. note:: Note that you should consider that the sine generator needs a couple of µs to start.
 
-        :param frequency: Used frequency to generate sine wave with in Hz. The suitable range is between 50Hz and 1200Hz (not considerd experts).
-        :type frequency: int
+        :param int frequency: Used frequency to generate sine wave with in Hz. The suitable range is between 50Hz and 1200Hz (not considerd experts).
         :param amplitude: Used amplitude to generate sine wave in mV (e.g. 955, 'AMP_955_mV' or Amplitudes.AMP_955_mV). Only discrete amplitude values are valid.
         :type amplitude: int, str, Amplitudes
         :param bool expert: Expert mode to disable all user safety structure. Auto evaluation of supported amplitudes and sine waves is disabled.
@@ -1769,23 +1768,10 @@ class AnalyzerRemote():
     def _shift_binary(self, original_bin: str) -> str:
         """ Helper method to convert incoming binary to least significant digit on the right side
 
-        :param original_bin: Incoming binary
-        :type original_bin: str
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        :return: Shifted binary
-        :rtype: str
+        :param str original_bin: Incoming binary
+        :param int custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
+        :return str: Shifted binary
         """ 
-        # Elia's Version didn't worked
-        # new_val = 0
-        # for i in range(16):
-        #    bit_state = (original_bin & (1 << i) >> i)
-        #    print("bit state", bit_state)
-        #    new_val = new_val | (bit_state << (16-i))
-
-        # return new_val
-
-        # Oli's version
         # helper list
         new_val = [0] * len(original_bin)
 
