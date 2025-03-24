@@ -2,18 +2,19 @@ import socket
 from pathlib import Path
 import json
 import numpy as np
-import time
 from enum import Enum, IntEnum
 from typing import Any, Dict, List, Union
+import typing
 import logging
-import sys
 import re
 import threading
 import queue
-from collections import defaultdict
-from retry import retry
 import warnings
-
+from concurrent import futures
+import copy
+import struct
+import functools
+import deprecated
 
 class Amplitudes(Enum):
     """ Enum class to list and check available amplitudes in mV to generate sine wave.""" 
@@ -240,176 +241,12 @@ class AnalyzerError(RuntimeError):
         
     def __str__(self):
         return self.message  
-   
-class ReceiveThread(threading.Thread):
-    """ Receiving thread which runs due to contextmanager the whole time and listens to analyzer socket for responses.
-    Responses will be processed and parsed to a callback function (regular: adds response to queue for main thread to fetch te data.""" 
-
-    def __init__(self, socket_obj, logger_obj, suppress_cb_exceptions=True, group=None, target=None, name=None, args=()):
-        threading.Thread.__init__(self, group, target, name, args)
-        self.lock = threading.RLock()
-        self.__callbacks = defaultdict(list)
-        self.s = socket_obj
-        self.logger = logger_obj
-        #self.daemon = True
-        self._suppress_cb_exceptions = suppress_cb_exceptions
-
-    def warn_none_registered_response(self, message):
-        """ Warning is used when a not expected or not registered message comes in from analyzer. A warning is send out and the message will be logged.""" 
-        new_message = "Not registered analyzer response:" + str(message)
-        self.logger.warning(new_message)
-
-    def register_callbacks(self, recognition: Union[str, int], callback) ->  None:
-        """ Function to register incoming analyzer response by msg_id or cmd name.
-        Parsed callback will be registered by adding it as recognition-callback pair to a dict self.__callbacks.
-
-        A MultiDict is used here which by default creates a list for every dict entry (basically a key-list-pair).
-        So it is possible to store mutiple callbacks for one recognition.
-
-        :param recognition: Recognition to identify message.
-        :type recognition: str, int
-        :param callback: Callback to handle response value. Receives the response as an argument.
-        :type callback: function
-        """ 
-        with self.lock:
-            self.__callbacks[recognition].append(callback)
-            self.logger.debug(f"Registered (user) callback '{callback}' for key: {recognition}")
-
-    def deregister_callbacks(self, recognition: Union[str, int], user_callback=None) ->  None:
-        """ Remove registered callback.
-
-        Due to the used MultiDict we have to check if only one callback has to be removed or the complete entry.
-
-        :param recognition: Recognition to identify message.
-        :type recognition: str, int
-        :param user_callback: Deregister , defaults to None
-        :type user_callback: function, optional
-        """ 
-        with self.lock:
-            if user_callback:
-                self.__callbacks[recognition].remove(user_callback)
-                self.logger.debug(f"Deregistered user callback '{user_callback}' for key: {recognition}")
-                if len(self.__callbacks[recognition]) == 0:
-                    self.__callbacks.pop(recognition)
-                    self.logger.debug(f"All user callbacks for key: {recognition} removed.")
-            else:
-                self.__callbacks.pop(recognition)
-                self.logger.debug(f"Deregistered key: {recognition}")
-
-    def handle_response(self, response, encoding_style="utf-8") ->  None:
-        """ Handles every complete message. Handling means decoding the byte string to dict and apply the response to every registered callback.
-        Therefore the response is not in unit form, we need an if block which handles recognition over cmd name and message id
-
-        :param response: Complete analyzer response
-        :type response: bytes string
-        :param encoding_style: Encoding style used from Json module, defaults to "utf-8"
-        :type encoding_style: str, optional
-        """ 
-        self.logger.debug(response)
-        # change appearance
-        response = response.decode(encoding_style)
-        response = json.loads(response)
-        callbacks = None
-
-        # handle cases
-        with self.lock:
-            # case start_operator: sends a second message which has no cmd entry
-            # if "cmd" not in response.keys() and "operator" in response.keys() and "finished" in response.keys():
-            #         callbacks = self.__callbacks[response["operator"]]
-            #         self.deregister_callbacks(callbacks)
-            #         return
-            
-            # loop for supported key words trough response and save corresponding Callbacks 
-            for v in ['cmd', 'resid', 'msgid']:
-                if v in response:
-                    # case for all AppCmds: reponse contains cmd but it is not unique--> has to use resid or msgid
-                    if response[v] == "responseappcmd":
-                        continue
-                    callbacks = self.__callbacks[response[v]] # option to take also a MultiDict and use getlist metod
-                    break
-            # if key is not found in response warn
-            if callbacks is None:
-                # incooming messages wich are not registered will be just logged as warning
-                self.warn_none_registered_response(response)
-            else:
-                # execute all callback functions
-                for cb in callbacks:
-                    try:
-                        cb(response)
-                    # catch exceptions which are related to bugs in parsed custom_callbacks
-                    except Exception as e:
-                        import traceback
-                        exc_str = traceback.format_exception(e)
-                        traceback.print_exception(e)
-                        self.logger.error(exc_str)
-                        self.logger.error(e)
-                        # supress
-                        if not self._suppress_cb_exceptions:
-                            raise
     
-    def handle_error(self, error):
-        """ Small method to directly parse error to main thread. Therefore in open method of main thread there is a error callback registered."""
-        # build mini command
-        response = {'cmd': "error", 'kind': error}
-        # callback is a put in queue
-        callback = self.__callbacks[response['cmd']]
-        for cb in callback:
-            cb(response)
-
-    def run(self) ->  None:
-        """ Overriden run method of thread module will be executed as the thread starts.
-
-        Method listens to socket in forever loop 'till kill_thread method is executed. Listens for small parts and puts messages together.
-        If complete, messsage is parsed it is forwarded to the handle_response method.
-        """ 
-        current_len = 0
-        buffer = bytearray()
-        READ_SIZE = 4
-        #self.run_thread = False
-        #while not self.run_thread:
-        self.kill = False
-        while not self.kill:
-            try:
-                buffer.extend(self.s.recv(READ_SIZE))
-            # catch socket.error mistakes
-            except socket.error as e:
-                if not self.kill:
-                    self.logger.error(e)
-                    if int.from_bytes(buffer, byteorder='big') > 0:
-                        self.logger.warning("Unfinished message received:\n")
-                        self.logger.warning(buffer)
-                    # parse error to mainthread and go on listening
-                    self.handle_error(ConnectionError("Connection to Analyzer4D software is lost. Please check connection avaibility of both devices."))
-            # only enter for new current length setting or if message is complete
-            while (len(buffer) >= current_len and len(buffer) != 0 and current_len != 0) or (current_len == 0 and len(buffer) >= 2):
-                # initial incomming message length set as new current length
-                if current_len == 0 and len(buffer) >= 2:
-                    # every two first characters of a message are the incoming length
-                    current_len = int.from_bytes(buffer[:2], byteorder='big')
-                    # cut length away
-                    buffer = buffer[2:]
-                # if message is complete
-                if len(buffer) >= current_len:
-                    # seperate message
-                    response = buffer[:current_len]
-                    # handle response
-                    self.handle_response(response)
-                    # throw handled part away
-                    buffer = buffer[current_len:]
-                    # reset current_length
-                    current_len = 0
-
-    def kill_thread(self) ->  None:
-        """ End forever loop in run method.""" 
-        #self.daemon = True
-        self.logger.info("Receiver thread is now closed.")
-        self.join()
-
-
+    
 class AnalyzerRemote():
     """ Class provides methods for external analyzer control (system operator independant) over a TCP socket. Every method that gets a response is able to set a custom timeout for analyzer reponse. Should any kind of bugs happen without TCP socket crashing, Queue timeout will run into failstate. """ 
 
-    def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=4, suppress_cb_exceptions:bool=True, auto_stop:List=None):
+    def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=1, suppress_cb_exceptions:bool=True, auto_stop:List=None):
         """ Constructor provides helper and creates logger module.
 
         :param ip: Analyzer IP in network.
@@ -444,110 +281,128 @@ class AnalyzerRemote():
         self.error = False
         self.suppress_cb_exceptions = suppress_cb_exceptions
         # message ID to assign command to analyzer and specific response
-        self.msgid = 0
         self.translator = {True: "true", "start": "true", "true": "true",
                            "beginn": "true", "enabled": "true", "enable": "true", "on": "true",
                            False: "false", "stop": "false", "end": "false", "disabled": "false",
                            "false": "false", "disable": "false", "off": "false", "monitor": "monitor"}
-        # flags for exit method of context manager
-        self._io_report_count = 0
+
+
+
         self.auto_stop = auto_stop
-        self._proc_report_count = 0
-        self._appvar_report_count = 0
+
         self._measuring_active = False
         self._sine_gen_active = False
         self._monitoring_active = False
         self._operator_functions_active = False
-        self.q = queue.Queue()
+
         
-        # short solution logger to sys.stdout
-        if debug_mode:
-            logging_level = logging.DEBUG
-        else:
-            logging_level = None
-        logging.basicConfig(stream=sys.stdout, level=logging_level,
-                            format='[%(asctime)s]  %(levelname)s: %(message)s')
+        self._callback_queue : queue.Queue = None
+        self._msg_id :int = 0
+        self._socket :socket.socket = None
+        self._requests : Dict[int,futures.Future] = {}
+        
+        self._processing_data = threading.Event()
+        self._processing_callbacks = threading.Event()
+        
+        self._receiver_thread : threading.Thread = None
+        self._callback_thread : threading.Thread = None
+            
+        self._msg_id_lock = threading.Lock()
+        self._socket_lock = threading.Lock()
+        self._requests_lock = threading.Lock()
+
+        self._io_callbacks = []
+        self._appvar_callbacks = []
+        self._processnumber_callbacks = []
+        
         self.logger = logging.getLogger("networking")
    
     def __enter__(self):
         """Method to wrap open method behaviour for working with a contextmanager. Will open the connection to the Analyzer Instance and start a receiver thread.
         """ 
-        self.open()
+        self.connect()
         return self
-
-    def open(self):
-        """Connects the machine to an analyzer reachable over user-given Input of IP (self.ip) and Port (self.port) via TCP and returns an instance of the class. Additionally a second thread (called receiving thread) will be started. This thread will run until close method will kill recieve thread. Every method contains the possibility to parse a custom timeout. This timeout value in second is determining when the queu waiting for results from the ReceiverThread runs into failstate.
-        """
-        # connect to socket
-        self._connecting_analyzer()
-
-        # create thread instance
-        self.__recv_thread = ReceiveThread(self.s, self.logger, suppress_cb_exceptions=self.suppress_cb_exceptions,
-                                           group=None, target=None, name="receive thread")
-        self.__recv_thread.daemon = True
-        # start thread
-        self.__recv_thread.start()
-        # Register simple put in queue callback for error messages
-        def callback(result, queue_var=self.q): return queue_var.put(result)
-        self.__recv_thread.register_callbacks('error', callback)
-        
-    def close(self):
-        """ Method to close the TCP socket and stop the receiver thread. Settet flags will be checked for safe closing of all started analyzer features."""
-  
-        # save exit and stop all running services if wished
-        if self.auto_stop:
-            if "all" in self.auto_stop:
-                if self._measuring_active:
-                    self._value_parser(expect_response=False, cmd="AppCmd", p1="stopMeasuring")
-                if self._sine_gen_active:
-                    self._value_parser(expect_response=False, cmd="AppCmd", p1="StopSineGen")
-                if self._monitoring_active:
-                    self._value_parser(expect_response=False, cmd="startmonitoring", p1="false")
-                if self._operator_functions_active:
-                    self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
-            if "sineGen" in self.auto_stop and self._sine_gen_active:
-                self._value_parser(expect_response=False, cmd="AppCmd", p1="StopSineGen")
-            if "measuring" in self.auto_stop and self._measuring_active:
-                self._value_parser(expect_response=False, cmd="AppCmd", p1="stopMeasuring")
-            if "monitoring" in self.auto_stop and self._monitoring_active:
-                self._value_parser(expect_response=False, cmd="startmonitoring", p1="false")
-            if "operatorFunctions" in self.auto_stop and self._operator_functions_active:
-                self._value_parser(expect_response=False, cmd="stoppoperatorfunctionvalues")
-
-        self.__recv_thread.kill = True
-        self.logger.debug("Receiver Thread Closed")
-        #self.__recv_thread.kill_thread()
-        self.s.close()
-        del self.s
-        self.logger.info("Socket connection closed")
-        
-    @retry(ConnectionError, tries=4, delay=1)
-    def _connecting_analyzer(self):
-        """ Method to create a TCP socket connection with socket address(ip and port) from constructor
-
-        Retry decorator will retry method calls if a ConnectionError occurs. Here set delay layes by 1 second and
-        decorator will try again for four times before giving up.
-
-        :raises ConnectionError: Connection error is raisen if no connection can be established.
-        """ 
-        try:
-            self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.s.settimeout(None)
-            self.s.connect((self.ip, self.port))
-            self.logger.info("Connected to optimizer")
-        except (socket.timeout, socket.error):
-            self.logger.error(f"Connection to ip: {self.ip} on port: {self.port} could not be established.\n")
-            raise ConnectionError(f"Connection to ip: {self.ip} on port: {self.port} could not be established.\n")
-        except KeyboardInterrupt as e:
-            self.logger.error(e)
-            self.__exit__(exc_type=e)
 
     def __exit__(self, exc_type, exc_value, traceback):
         """ If contextmanager is left, close method is called.
         """ 
-        if exc_type != None:
-            self.logger.error(f"\nExecution type: {exc_type}\nTraceback: {traceback}")
-        self.close()   
+        if exc_value:
+            self.logger.exception(exc_value)
+            
+        self.disconnect()   
+
+    @deprecated.deprecated(reason="A socket cannot be 'opened' in a technical sense. Use 'connect' to establish a connection instead.",version="3.3.3")
+    def open(self):
+        self.connect()
+        
+        
+    def connect(self):
+        with self._socket_lock:
+            if self._socket:
+                raise ValueError(f'Already connected with: {self._socket.getpeername()}')
+
+            tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tcp_socket.bind(('', 0))
+            tcp_socket.connect((self.ip,self.port))
+                
+            self._socket = tcp_socket
+        
+        self._callback_queue = queue.Queue()
+        
+        if not self._processing_data.is_set():
+            self._receiver_thread = threading.Thread(name='AnalyzerRemoteDataReceiver',
+                                                    target=self._receive_data,
+                                                    daemon=True)
+            self._receiver_thread.start()
+            
+        if not self._processing_callbacks.is_set():
+            self._callback_thread = threading.Thread(name='AnalyzerRemoteCallbackExecutor',
+                                                    target=self._execute_callbacks,
+                                                    daemon=True)
+            self._callback_thread.start()
+            
+    def disconnect(self):
+        if self.auto_stop:
+            if "all" in self.auto_stop:
+                self.auto_stop = ["sineGen","measuring","monitoring","operatorFunctions"]
+            if "sineGen" in self.auto_stop and self._sine_gen_active:
+                self._send_request(cmd="AppCmd", p1="StopSineGen")
+            if "measuring" in self.auto_stop and self._measuring_active:
+                self._send_request(cmd="AppCmd", p1="stopMeasuring")
+            if "monitoring" in self.auto_stop and self._monitoring_active:
+                self._send_request(cmd="startmonitoring", p1="false")
+            if "operatorFunctions" in self.auto_stop and self._operator_functions_active:
+                self._send_request(cmd="stoppoperatorfunctionvalues")
+                
+        self._processing_data.clear()
+        
+        with self._socket_lock:
+            if self._socket:
+                self._socket.shutdown(socket.SHUT_RDWR)
+                
+        # if self._callback_queue:
+        #     self._callback_queue.put(None)
+    
+        if self._receiver_thread and self._receiver_thread.is_alive():
+            self._receiver_thread.join(3)
+            if self._receiver_thread.is_alive():
+                self.logger.error('Failed to close "_receiver_thread"')
+        
+        if self._callback_thread and self._callback_thread.is_alive():
+            self._callback_thread.join(3)
+            if self._callback_thread.is_alive():
+                self.logger.error('Failed to close "_callback_thread"')
+    
+    
+    @deprecated.deprecated(reason="To match the terminology, use 'connect' to establish a connection and 'disconnect' to close it instead of 'open' & 'close'.",version="3.3.3")
+    def close(self):
+        """ Method to close the TCP socket and stop the receiver thread. Settet flags will be checked for safe closing of all started analyzer features."""
+        self.disconnect()        
+        
+    # @retry(ConnectionError, tries=4, delay=1)
+    @deprecated.deprecated(reason="To match the terminology, use 'connect' to establish a connection and 'disconnect' to close it.",version="3.3.3")
+    def _connecting_analyzer(self):
+        self.connect()
 
     @property
     def get_socket_ip(self):
@@ -615,7 +470,8 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", p1="startMeasuring", user_timeout=custom_timeout)
+        
+        self._send_request(cmd="AppCmd", p1="startMeasuring", user_timeout=custom_timeout)
         self._measuring_active = True
 
     def start_sineGenerator(self, frequency: int, amplitude: Union[int, str, Amplitudes], expert:bool=False, custom_timeout=None) -> None:
@@ -663,7 +519,7 @@ class AnalyzerRemote():
             self.logger.error(f'SineGenerator will not be started! Amplitude {amplitude} is not supported.')
             raise ValueError
 
-        self._value_parser(cmd="AppCmd", p1="StartSineGen", p2=f"{frequency} {amplitude}")
+        self._send_request(cmd="AppCmd", p1="StartSineGen", p2=f"{frequency} {amplitude}")
         self.logger.info(f"Sine generator started with f={frequency}Hz and {amplitude}mV amplitude.")
         self._sine_gen_active = True
         
@@ -673,7 +529,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", p1="StopSineGen", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="StopSineGen", user_timeout=custom_timeout)
         self._sine_gen_active = False
 
     def stop_measuring(self, custom_timeout=None) -> None:
@@ -682,7 +538,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", p1="stopMeasuring", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="stopMeasuring", user_timeout=custom_timeout)
         self._measuring_active = False
 
     def set_process_comment(self, proc_number:int, proc_comment: str, custom_timeout=None) -> None:
@@ -695,7 +551,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", p1="setprocesscomment", p2=f"{proc_number} {proc_comment}", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="setprocesscomment", p2=f"{proc_number} {proc_comment}", user_timeout=custom_timeout)
 
     def set_area_view(self, split: int, custom_timeout=None) -> None:
         """ Set analyzer view to a split view with up to 4 different splitted process. Reversed process to change back to
@@ -708,7 +564,7 @@ class AnalyzerRemote():
         :raises ValueError: Raises if split lays out of bounds
         """ 
         if 0 < split <= 4:
-            self._value_parser(user_timeout=custom_timeout, cmd="AppCmd", p1="SetAreaViews", p2=split)
+            self._send_request(user_timeout=custom_timeout, cmd="AppCmd", p1="SetAreaViews", p2=split)
         else:
             self.logger.error("Split amount vor view is out of bounds.")
             raise ValueError("Split amount vor view is out of bounds.")
@@ -721,7 +577,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", p1="SaveAreaView", p2=template_num, user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="SaveAreaView", p2=template_num, user_timeout=custom_timeout)
             
     def load_area_view(self, template_num: int, custom_timeout=None) -> None:
         """ Load presaved (!) area view template.
@@ -731,7 +587,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", p1="LoadAreaView", p2=template_num, user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="LoadAreaView", p2=template_num, user_timeout=custom_timeout)
             
     def load_simulation_buffer(self, file_path: str, channel: int, do_not_copy_meta_data=False, custom_timeout=None) -> None:
         """ Load and set local simulation buffer for specific channel.
@@ -754,7 +610,7 @@ class AnalyzerRemote():
             p2_string = f"channel {channel} nometa path {file_path}"
         else:
             p2_string = f"channel {channel} path {file_path}"
-        self._value_parser(cmd="AppCmd", p1="SimulationBuffer", p2=p2_string, user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="SimulationBuffer", p2=p2_string, user_timeout=custom_timeout)
 
     def set_simulation_buffer(self, channel_number: Union[str, int, ChannelPorts], mode: str, custom_timeout=None) -> None:
         """ Enable or disable already loaded simualtion buffer channel.
@@ -767,10 +623,10 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         if channel_number == "all":
-            self._value_parser(cmd="AppCmd", p1="SimulationBuffer", p2=f"path {self.translator[mode]}", user_timeout=custom_timeout)
+            self._send_request(cmd="AppCmd", p1="SimulationBuffer", p2=f"path {self.translator[mode]}", user_timeout=custom_timeout)
         else:
             channel_number += 1
-            self._value_parser(cmd="AppCmd", p1="SimulationBuffer", p2=f"channel {channel_number} {self.translator[mode]}", user_timeout=custom_timeout)
+            self._send_request(cmd="AppCmd", p1="SimulationBuffer", p2=f"channel {channel_number} {self.translator[mode]}", user_timeout=custom_timeout)
 
     def start_pulsetest_channel(self, channel_number: Union[int, Channels], gain: int = 800, count: int = 1, delay: int = 0, custom_timeout=None) -> None:
         """ External set of pulse test. Only avaible for exisiting ports and sensors.
@@ -799,7 +655,7 @@ class AnalyzerRemote():
             raise ValueError("Params out of bounds")
 
         p2_string = f"channel {channel_number} pulsetest {gain} {count} {delay}"
-        self._value_parser(cmd="AppCmd", p1="Preamp", p2=p2_string, user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="Preamp", p2=p2_string, user_timeout=custom_timeout)
                                
     def start_pulsetest_port(self, port_number: Union[int, PreampPorts], gain: int = 800, count: int = 1, delay: int = 0, multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT, custom_timeout=None) -> None:
         """ External set of pulse test. Only avaible for exisiting ports and sensors.
@@ -834,7 +690,7 @@ class AnalyzerRemote():
             # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
             multi_preamp_input += 1
             p2_string = f"port {port_number} {multi_preamp_input} pulsetest {gain} {count} {delay}"
-        self._value_parser(cmd="AppCmd", p1="Preamp", p2=p2_string, user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="Preamp", p2=p2_string, user_timeout=custom_timeout)
 
     def change_preamp_input(self, opti_port_number: Union[int, PreampPorts], preamp_input_number: Union[int, MultiPreampInput] = MultiPreampInput.MULTI_INPUT_2, custom_timeout=None) -> None:
         """ Method changes which physical preamp input will be used for datastream output to optimizer. Only avaible for multi input preamps.
@@ -851,7 +707,7 @@ class AnalyzerRemote():
         # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         opti_port_number += 1
         preamp_input_number += 1
-        self._value_parser(cmd="AppCmd", p1="Preamp", p2=f"port {opti_port_number} switchinput {preamp_input_number}", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="Preamp", p2=f"port {opti_port_number} switchinput {preamp_input_number}", user_timeout=custom_timeout)
 
     def start_frequency_test_port(self, port_number: Union[int, PreampPorts], multi_preamp_input: Union[int, MultiPreampInput] = MultiPreampInput.NONE_MULTI_INPUT, custom_timeout=None) -> None:
         """ Execute a frequency test for a specific port.
@@ -869,11 +725,11 @@ class AnalyzerRemote():
         # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         port_number += 1
         if multi_preamp_input == MultiPreampInput.NONE_MULTI_INPUT:
-            self._value_parser(cmd="AppCmd", p1="Preamp", p2=f"port {port_number} frqtest", user_timeout=custom_timeout)
+            self._send_request(cmd="AppCmd", p1="Preamp", p2=f"port {port_number} frqtest", user_timeout=custom_timeout)
         else:
             # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
             multi_preamp_input += 1
-            self._value_parser(cmd="AppCmd", p1="Preamp", p2=f"port {port_number} input {multi_preamp_input} frqtest", user_timeout=custom_timeout)
+            self._send_request(cmd="AppCmd", p1="Preamp", p2=f"port {port_number} input {multi_preamp_input} frqtest", user_timeout=custom_timeout)
 
     def start_frequency_test_channel(self, channel_number: Union[int, Channels], custom_timeout=None) -> None:
         """ Execute a frequency test for a specific port. Analyzer isn't resonsing in any way (not in a visual, acoustic or information way).
@@ -887,7 +743,7 @@ class AnalyzerRemote():
         """ 
         # ..warning AppCmds are user functions and due to that not null based. Implemented IntEnums are code based and have to be added by one each.
         channel_number += 1
-        self._value_parser(cmd="AppCmd", p1="Preamp", p2=f"channel {channel_number} frqtest", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="Preamp", p2=f"channel {channel_number} frqtest", user_timeout=custom_timeout)
 
     def set_area_scale(self, area_number: int, scale: int = 500, custom_timeout=None) -> None:
         """ Set scale of each view area. Available for splitted analyzer view and single view. In case of single view area_number equals one.
@@ -903,7 +759,7 @@ class AnalyzerRemote():
         :raises ValueError: If parsed variables are out of bounds. See extended function summary.
         """ 
         if scale in range(10, 1001) and 0 < area_number <= 4:
-             self._value_parser(cmd="AppCmd", p1="SetAreaScale", p2=f"{area_number} {scale}", user_timeout=custom_timeout)
+             self._send_request(cmd="AppCmd", p1="SetAreaScale", p2=f"{area_number} {scale}", user_timeout=custom_timeout)
         else:
             self.logger.error(
                 "Choosen key is out of bounds. Scale should be in range(10,1001) and area number should be in range(1,5).")
@@ -924,7 +780,7 @@ class AnalyzerRemote():
         :raises ValueError: If parsed variables are out of bounds. See extended function summary.
         """ 
         if colour_scale in range(10, 401) and 0 < area_number <= 4:
-             self._value_parser(cmd="AppCmd", p1="SetAreaColor", p2=f"{area_number} {colour_scale}", user_timeout=custom_timeout)
+             self._send_request(cmd="AppCmd", p1="SetAreaColor", p2=f"{area_number} {colour_scale}", user_timeout=custom_timeout)
         else:
             self.logger.error(
                 "Choosen key is out of bounds. Scale should be in range(10,401) and area number should be in range(1,5).")
@@ -943,7 +799,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", p1="SetAreaPosition", p2=f"{area_number} {start_time} {time_range}", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="SetAreaPosition", p2=f"{area_number} {start_time} {time_range}", user_timeout=custom_timeout)
 
     def load_process(self, process_number: int, start_time=0, custom_timeout=None) -> None:
         """ Load and display by process number.
@@ -955,7 +811,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", p1="LoadProcess", p2=f"{process_number} {start_time}", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="LoadProcess", p2=f"{process_number} {start_time}", user_timeout=custom_timeout)
                            
     def get_service_parameter(self, param_setting: str, custom_timeout=None) -> str:
         """ Get Values from Service Parameter (Configuration->Settings->Parameter)
@@ -969,7 +825,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        settings =  self._value_parser(cmd="appfunc", p1="GetServiceParameter", p2=param_setting, user_timeout=custom_timeout)
+        settings =  self._send_request(cmd="appfunc", p1="GetServiceParameter", p2=param_setting, user_timeout=custom_timeout)
         return settings.get("result")
 
     def set_service_parameter(self, param_setting: str, param_value: any, custom_timeout=None) -> None:
@@ -984,7 +840,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", p1="setServiceParameter", p2=f"{param_setting} {param_value}", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="setServiceParameter", p2=f"{param_setting} {param_value}", user_timeout=custom_timeout)
         self.logger.info(
             f"Service parameter {param_setting} is changed to {param_value}")
 
@@ -996,7 +852,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", p1="sysSleep", p2=time, user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="sysSleep", p2=time, user_timeout=custom_timeout)
         self.logger.info("Analyzer tired. Analyzer sleep.")
 
     def set_appvar(self, appvar_name: str, appvar_value: any, custom_timeout=None) -> None:
@@ -1011,7 +867,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value, user_timeout=custom_timeout)
+        self._send_request(cmd="setappvar", p1=appvar_name, p2=appvar_value, user_timeout=custom_timeout)
 
     def get_appvar(self, appvar_name: str, custom_timeout=None) -> str:
         """ Get AppVar value by name.
@@ -1025,7 +881,7 @@ class AnalyzerRemote():
         :return: AppVar value
         :rtype: str
         """ 
-        val =  self._value_parser(cmd="getappvar", p1=appvar_name, user_timeout=custom_timeout)
+        val =  self._send_request(cmd="getappvar", p1=appvar_name, user_timeout=custom_timeout)
 
         return val.get('result')
 
@@ -1037,24 +893,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="clearappvar", p1=appvar_name, user_timeout=custom_timeout)
-
-    def remove_appvar_report_callback(self, callback, custom_timeout=None) -> None:
-        """ Removes specific callback function from AppVar report callback list. By removing all callbacks the report function will be automatically stopped.
-
-        :param callback: Callback function that should be removed from AppVar report functionalities.
-        :type callback: function
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        """ 
-        self.__recv_thread.deregister_callbacks(
-            "responseappvars", callback)
-        self._appvar_report_count -= 1
-        self.logger.info(
-            f"Callback {callback} for AppVar report removed")
-        if self._appvar_report_count == 0:
-            self._value_parser(cmd="reportappvars", p1="false", user_timeout=custom_timeout)
-            self.logger.info("Report of AppVar stopped.")
+        self._send_request(cmd="clearappvar", p1=appvar_name, user_timeout=custom_timeout)
 
     def add_appvar_report_callback(self, callback, custom_timeout=None) -> None:
         """ Add callback function to report of AppVar. Everytime a AppVar changes, added callback functions will be executed. See networking_example.py for an example. By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function. Beside the executed callback, analyzer sends state of all AppVars as information by every change.
@@ -1066,14 +905,30 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        if self._appvar_report_count == 0:
-             self._value_parser(user_callback=callback, cmd="reportappvars", p1="true", user_timeout=custom_timeout)
-        else:
-            self.__recv_thread.register_callbacks(
-                "responseappvars", callback)
-        self._appvar_report_count += 1
-        self.logger.info(
-            f"Callback {callback} for AppVar report added")
+        
+        if len(self._appvar_callbacks) == 0:
+            self._send_request(cmd="reportappvars", p1="true", user_timeout=custom_timeout,check_msg_id=False)
+        
+        self._appvar_callbacks.append(callback)
+        self.logger.info(f"Callback {callback} for AppVar report added")
+
+    def remove_appvar_report_callback(self, callback, custom_timeout=None) -> None:
+        """ Removes specific callback function from AppVar report callback list. By removing all callbacks the report function will be automatically stopped.
+
+        :param callback: Callback function that should be removed from AppVar report functionalities.
+        :type callback: function
+        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
+        :type custom_timeout: int, optional
+        """ 
+        
+        if len(self._appvar_callbacks) > 0:
+            idx = self._appvar_callbacks.index(callback)
+            self._appvar_callbacks.remove(idx)
+        
+            if len(self._appvar_callbacks) == 0:
+                self._send_request(cmd="reportappvars", p1="false", user_timeout=custom_timeout)
+                self.logger.info("Report of AppVar stopped.")
+
 
     def get_process_number(self, custom_timeout=None) -> int:
         """ Returns current process number (active buffer).
@@ -1083,7 +938,7 @@ class AnalyzerRemote():
         :return: Process number of selected process
         :rtype: int
         """ 
-        obj =  self._value_parser(cmd="getprocessnumber", user_timeout=custom_timeout)
+        obj =  self._send_request(cmd="getprocessnumber", user_timeout=custom_timeout)
 
         return obj.get("processnumber")
 
@@ -1097,7 +952,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="createloadproject", p1=project_name, user_timeout=custom_timeout)
+        self._send_request(cmd="createloadproject", p1=project_name, user_timeout=custom_timeout)
 
     def send_appcmd(self, param_one: str, param_two=None, custom_timeout=None) -> None:
         """ General method to send arbitrary AppCmd to analyzer.
@@ -1114,11 +969,11 @@ class AnalyzerRemote():
         """ 
         if param_two:
             if isinstance(param_two, str):
-                 self._value_parser(cmd="AppCmd", p1=param_one, p2=param_two, user_timeout=custom_timeout)
+                 self._send_request(cmd="AppCmd", p1=param_one, p2=param_two, user_timeout=custom_timeout)
             else:
                 raise TypeError("Second parameter has to be a string.")
         else:
-             self._value_parser(cmd="AppCmd", p1=param_one, user_timeout=custom_timeout)
+             self._send_request(cmd="AppCmd", p1=param_one, user_timeout=custom_timeout)
 
     def set_multiplexer(self, channel=Channels.CHANNEL_1, chp=ChannelPorts.CHANNEL_PORT_1, preampport=PreampPorts.PREAMP_PORT_1,
                         fft=True, signal=False, samplerate=Samplerates16Bit.SAMPLERATE_1600_kHz, fftoversampling=FFTOversampling.FFT_OVERSAMPLING_8_TIMES,
@@ -1152,7 +1007,7 @@ class AnalyzerRemote():
         :param subport: Desired Subport (Dropdown). Should only be used with MultiinputPreamps!, defaults to -1
         :type subport: int, optional
         """ 
-        self._value_parser(cmd="setpreamp", expect_response=False, channel=channel, chp=chp, preampport=preampport, fft=fft, signal=signal, samplerate=samplerate,
+        self._send_request(cmd="setpreamp", check_msg_id=False, channel=channel, chp=chp, preampport=preampport, fft=fft, signal=signal, samplerate=samplerate,
                            fftoversampling=fftoversampling, fftwindowing=fftwindowing, fftlogarithmic=fftlogarithmic, filter=filter, gain=gain, subport=subport)
 
     def get_analyzer_versions(self, custom_timeout=None) -> str:
@@ -1163,7 +1018,7 @@ class AnalyzerRemote():
         :return: Information out of info window in analyzer.
         :rtype: str
         """ 
-        val =  self._value_parser(cmd="getversions", user_timeout=custom_timeout)
+        val =  self._send_request(cmd="getversions", user_timeout=custom_timeout, can_fail=False)
         # process response
         analyzer_info = val.get("v")
         while "\\n" in analyzer_info:
@@ -1180,7 +1035,7 @@ class AnalyzerRemote():
         :rtype: dict [with dict.keys() = ['analyzerbcdversion', 'analyzerversion', 'projectid', 'projectname', 'pronameprojectid', 'unixtime']]
 
         """ 
-        project_info =  self._value_parser(cmd="getinfo", user_timeout=custom_timeout)
+        project_info =  self._send_request(cmd="getinfo", user_timeout=custom_timeout,can_fail=False)
 
         # process response
         project_info.pop("v")
@@ -1198,7 +1053,7 @@ class AnalyzerRemote():
         :return: True if message comes back.
         :rtype: bool
         """ 
-        val =  self._value_parser(cmd="heartbeat", user_timeout=custom_timeout)
+        val =  self._send_request(cmd="heartbeat", user_timeout=custom_timeout)
         # process response
         if val:
             self.logger.info("No worries. I'm still alive.")
@@ -1240,7 +1095,7 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         :raises KeyError: if keyword argument "mode" is parsed with invalid values.
         """ 
-        self._value_parser(cmd="startmeasuring", expect_response=False, p1=self.translator[mode])
+        self._send_request(cmd="startmeasuring", check_msg_id=False, p1=self.translator[mode])
         # flags for context manager exit method
         if self.translator[mode] == "true":
             self._measuring_active = True
@@ -1281,7 +1136,7 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         :raises KeyError: if keyword argument "mode" is parsed with invalid values.
         """ 
-        self._value_parser(cmd="startmonitoring", p1=self.translator[mode], user_timeout=custom_timeout)
+        self._send_request(cmd="startmonitoring", p1=self.translator[mode], user_timeout=custom_timeout)
         # flags for context manager exit method
         if self.translator[mode] == "true":
             self._monitoring_active = True
@@ -1304,7 +1159,7 @@ class AnalyzerRemote():
         :return: Calculated maximum amplitude values per band
         :rtype: np.ndarray
         """ 
-        response_dict =  self._value_parser(cmd="calcmaxamplitude", channel=channel, plot=create_plot_buffer, save=save_plot_buffer, amplitudetype=amplitude_type, user_timeout=custom_timeout,)
+        response_dict =  self._send_request(cmd="calcmaxamplitude", channel=channel, plot=create_plot_buffer, save=save_plot_buffer, amplitudetype=amplitude_type, user_timeout=custom_timeout,)
         # extract important information
         max_amp = response_dict.get("p1")
 
@@ -1316,7 +1171,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="loadtestproject", user_timeout=custom_timeout)
+        self._send_request(cmd="loadtestproject", user_timeout=custom_timeout)
 
     def load_last_user_project(self, custom_timeout=None) -> None:
         """ Loads last user project before a test project was loaded.
@@ -1329,7 +1184,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="loaduserproject", user_timeout=custom_timeout)
+        self._send_request(cmd="loaduserproject", user_timeout=custom_timeout)
     
     def load_project(self, project_name:str, part_number:str="", custom_timeout=None) ->None:
         """ Loads project by project name. 
@@ -1341,7 +1196,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """
-        self._value_parser(cmd="loadprojectbyname", p1=project_name, p2=part_number, user_timeout=custom_timeout)
+        self._send_request(cmd="loadprojectbyname", p1=project_name, p2=part_number, user_timeout=custom_timeout)
     
     def load_project_by_IOid(self, project_IOid:Union[str, int], part_number:str="", custom_timeout=None) ->None:
         """ Loads project by set IO id. 
@@ -1353,7 +1208,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """
-        self._value_parser(cmd="loadprojectbyioid", p1=f"{project_IOid}", p2=part_number, user_timeout=custom_timeout)
+        self._send_request(cmd="loadprojectbyioid", p1=f"{project_IOid}", p2=part_number, user_timeout=custom_timeout)
 
     def get_measure_positions(self, custom_timeout=None) -> Dict:
         """ Gets a dictionary with all measure positions and if used an energy value.
@@ -1363,7 +1218,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        response = self._value_parser(cmd="getmaxmeasurepositions", user_timeout=custom_timeout)
+        response = self._send_request(cmd="getmaxmeasurepositions", user_timeout=custom_timeout)
         response.pop("v")
         response.pop("cmd")
 
@@ -1383,7 +1238,7 @@ class AnalyzerRemote():
         :rtype: dict or str [with dict.keys() = ['serial_type','serial_number','S-value']] 
         """ 
         if preamp_port in PreampPorts or preamp_port in range(0, 8):
-            preamp_info =  self._value_parser(cmd="getpreampinfo", user_timeout=custom_timeout, p1=preamp_port)
+            preamp_info =  self._send_request(cmd="getpreampinfo", user_timeout=custom_timeout, p1=preamp_port)
             preamp_info = preamp_info.get('p1')
             if not convert:
                 return preamp_info
@@ -1415,7 +1270,7 @@ class AnalyzerRemote():
         preamp_eeprom = self.get_preamp_info(preamp_port=preampport, convert=False, custom_timeout="never")
         replacement = f"s:{s_value};"
         preamp_eeprom = re.sub("s:-*\d\d*;", replacement, preamp_eeprom)
-        self._value_parser(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, expect_response=True, user_timeout="never")
+        self._send_request(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, user_timeout="never")
 
     def _write_preamp_eeprom(self, preamp_type:Union[PreampType, int], serial_number:int, s_value:int, preampport:Union[PreampPorts, int]=PreampPorts.PREAMP_PORT_1):
         """ Private method to set preamp EEPROM text.
@@ -1430,7 +1285,7 @@ class AnalyzerRemote():
         :type preampport: Union[PreampPorts, int], optional
         """
         preamp_eeprom = f"t:{preamp_type};s/n:{serial_number};s:{s_value};"
-        self._value_parser(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, expect_response=False)
+        self._send_request(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, check_msg_id=False)
 
     def start_operator_function(self, mode: Union[str, bool] = "start", custom_timeout=None) -> None:
         """ Start operator functions.
@@ -1440,7 +1295,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="startoperatorfunctionvalues", user_timeout=custom_timeout, p1=self.translator[mode])
+        self._send_request(cmd="startoperatorfunctionvalues", user_timeout=custom_timeout, p1=self.translator[mode])
         # flags for context manager exit method
         if self.translator[mode] == "true":
             self._operator_functions_active = True
@@ -1453,7 +1308,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="stoppoperatorfunctionvalues", user_timeout=custom_timeout)
+        self._send_request(cmd="stoppoperatorfunctionvalues", user_timeout=custom_timeout)
         # flags for context manager exit method
         self._operator_functions_active = False
 
@@ -1469,7 +1324,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", p1="SetProcessSerial", user_timeout=custom_timeout, p2=f"{process_number} {serial_number}")
+        self._send_request(cmd="AppCmd", p1="SetProcessSerial", user_timeout=custom_timeout, p2=f"{process_number} {serial_number}")
 
     def set_serial_number_pending_process(self, serial_number: int, custom_timeout=None) -> None:
         """ Setting serial number for next process.
@@ -1481,7 +1336,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="setpendingserial", p1=serial_number, user_timeout=custom_timeout)
+        self._send_request(cmd="setpendingserial", p1=serial_number, user_timeout=custom_timeout)
 
     def set_comment_pending_process(self, comment: str, custom_timeout=None) -> None:
         """ Set process comment for pending process.
@@ -1493,18 +1348,8 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="setpendingcomment", p1=comment, user_timeout=custom_timeout)
+        self._send_request(cmd="setpendingcomment", p1=comment, user_timeout=custom_timeout)
 
-    # def set_comment_current_process(self, comment: str, custom_timeout=None) -> None:
-     #   """ Sets comment for current activatet process.
-
-#        Similair to set_proces_comment but as JSON communication Server command.
- #       Comment is saved in database under process.comment
-#
- #       :param comment: Process comment to set
- #       :type comment: str
- #      """ 
- #        self._value_parser(cmd="setcomment", p1=comment, quiet=False, user_timeout=custom_timeout)
 
     def start_operator(self, operator_name: str, operator_setting: str, user_callback=None) -> None:
         """ Manual start of existing operator by name. By adding a callback function,
@@ -1520,10 +1365,11 @@ class AnalyzerRemote():
             Will be called after the operator finishes.
         :type user_callback: function
         """ 
-        if user_callback:
-            self.__recv_thread.register_callbacks(
-                operator_name, user_callback)
-        self._value_parser(expect_response=False, cmd="startoperator", p1=operator_name, p2=operator_setting)
+        # if user_callback:
+        #     self.__recv_thread.register_callbacks(
+        #         operator_name, user_callback)
+            
+        self._send_request(cmd="startoperator", check_msg_id=False,p1=operator_name, p2=operator_setting)
 
     def import_patterns(self, directory_path: str, ) -> None:
         """ Import all pattern files from a optimizer local directory.
@@ -1531,7 +1377,7 @@ class AnalyzerRemote():
         :param directory_path: Directory path to patterns that will be imported.
         :type directory_path: str
         """ 
-        self._value_parser(expect_response=False, cmd="importpatterns", p1=f"\"{directory_path}\"")
+        self._send_request(cmd="importpatterns", p1=f"\"{directory_path}\"",check_msg_id=False)
 
     def import_trigger_list(self, filepath: str, append: bool = False, custom_timeout=None) -> None:
         """ Import a trigger list file from local path. Append option decides already exisitng triggers will be set active or not.
@@ -1547,7 +1393,7 @@ class AnalyzerRemote():
 
         if append:
             p2_string = p2_string + " -a"
-        self._value_parser(cmd="AppCmd", user_timeout=custom_timeout, p1="import", p2=p2_string)
+        self._send_request(cmd="AppCmd", user_timeout=custom_timeout, p1="import", p2=p2_string)
 
     def import_operator_network(self, filepath: str, custom_timeout=None) -> None:
         """ Import local operator network file. Command runs as root import.
@@ -1559,7 +1405,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", user_timeout=custom_timeout, p1="import", p2=f"opnet \"{filepath}\"")
+        self._send_request(cmd="AppCmd", user_timeout=custom_timeout, p1="import", p2=f"opnet \"{filepath}\"")
 
     def import_project_archive(self, filepath: str, project_name: str, keep_original_process_nums: bool = False, overwrite: bool = False) -> None:
         """ Import a complete project archive file (tar.gz). 
@@ -1583,7 +1429,7 @@ class AnalyzerRemote():
         if overwrite:
             p2_string = p2_string + " --overwrite"
 
-        self._value_parser(cmd="AppCmd", expect_response=False, p1="importprojectarchive", p2=p2_string)
+        self._send_request(cmd="AppCmd", check_msg_id=False, p1="importprojectarchive", p2=p2_string)
 
     def export_operator_network(self, target_filepath: str, export: str = "root", custom_timeout=None) -> None:
         """ Exports operator network as JSON file. When in doubt, check documentation.
@@ -1617,7 +1463,7 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         my_translator = {"root": "-r", "all": "-a", "template": "-t"}
-        self._value_parser(cmd="AppCmd", expect_response=True, p1="export", p2=f"opnet \"{target_filepath}\" {my_translator[export]}", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="export", p2=f"opnet \"{target_filepath}\" {my_translator[export]}", user_timeout=custom_timeout)
 
     def export_trigger_list(self, target_filepath: str, custom_timeout=None) -> None:
         """ Exports current trigger list to path. Target filepath should contain new file name.
@@ -1627,7 +1473,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", expect_response=True, p1="export", p2=f"triggerlist \"{target_filepath}\"", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="export", p2=f"triggerlist \"{target_filepath}\"", user_timeout=custom_timeout)
 
     def export_project_archive(self, target_filepath: str, export_name: str, export_process: int = None, export_pengui: bool = True, keep_folder: bool = True) -> None:
         """ Exports current active project to path as tar.gz file. This includes all patterns, trigger list and projects.
@@ -1651,7 +1497,7 @@ class AnalyzerRemote():
         if keep_folder:
             p2_string = p2_string + " --keepfolder"
 
-        self._value_parser(cmd="AppCmd", expect_response=False, p1="exportprojectarchive", p2=p2_string)
+        self._send_request(cmd="AppCmd", check_msg_id=False, p1="exportprojectarchive", p2=p2_string)
 
     # TODO: Test in newest analyzer version
     def flash_preamp_firmware(self, preampport: Union[int, PreampPorts], filepath: str) -> None:
@@ -1665,9 +1511,9 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         preampport += 1
-        self._value_parser(cmd="appfunc", expect_response=False, p1="PreampTool", p2=f"flash {preampport} \"{filepath}\"")
+        self._send_request(cmd="appfunc", check_msg_id=False, p1="PreampTool", p2=f"flash {preampport} \"{filepath}\"")
                            
-        #  self._value_parser(cmd="PreampTool", user_timeout=custom_timeout)
+        #  self._send_request(cmd="PreampTool", user_timeout=custom_timeout)
         #                   p1=f"flash {preampport} {filepath}")
 
     def detect_preamps(self) -> str:
@@ -1677,7 +1523,7 @@ class AnalyzerRemote():
         :rtype: str
         """
         custom_timeout="never"
-        response = self._value_parser(cmd="appfunc", expect_response=True, p1="PreampTool", p2=f"detect", user_timeout=custom_timeout)
+        response = self._send_request(cmd="appfunc", p1="PreampTool", p2=f"detect", user_timeout=custom_timeout)
         return response.get("result")
 
     def get_preamp_firmware(self, preampport: Union[int, PreampPorts], custom_timeout=None)  -> str:
@@ -1691,7 +1537,7 @@ class AnalyzerRemote():
         :rtype: str
         """
         preampport += 1 # c++ analyzer source code handels here preampports between 1 to 8
-        response = self._value_parser(cmd="appfunc", expect_response=True, p1="PreampTool", p2=f"version {preampport}", user_timeout=custom_timeout)
+        response = self._send_request(cmd="appfunc", p1="PreampTool", p2=f"version {preampport}", user_timeout=custom_timeout)
         return response.get("result")
     
     def reboot_preamp(self, preampport: Union[int, PreampPorts])   ->None:
@@ -1704,7 +1550,7 @@ class AnalyzerRemote():
         """
         preampport += 1 # c++ analyzer source code handels here preampports between 1 to 8
         p2_string = f"port {preampport} reboot"
-        self._value_parser(cmd="AppCmd", p1="Preamp", p2=p2_string, user_timeout="never")
+        self._send_request(cmd="AppCmd", p1="Preamp", p2=p2_string, user_timeout="never")
 
     def set_default_project(self, comment: str = None, custom_timeout=None) -> None:
         """ Set current active project as new default template.
@@ -1715,13 +1561,13 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         if comment:
-            self._value_parser(cmd="AppCmd", p1="SaveProjectasDefault", p2=f"-c {comment}", user_timeout=custom_timeout)
+            self._send_request(cmd="AppCmd", p1="SaveProjectasDefault", p2=f"-c {comment}", user_timeout=custom_timeout)
         else:
-            self._value_parser(cmd="AppCmd", p1="SaveProjectasDefault", user_timeout=custom_timeout)
+            self._send_request(cmd="AppCmd", p1="SaveProjectasDefault", user_timeout=custom_timeout)
 
     def remove_default_project(self, custom_timeout=None) -> None:
         """ Removes current project template.""" 
-        self._value_parser(cmd="AppCmd", p1="SaveProjectasDefault", p2=f"-e", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="SaveProjectasDefault", p2=f"-e", user_timeout=custom_timeout)
 
     # TODO: Test
     def start_operator_results(self, mode: Union[str, bool] = "enable", custom_timeout=None) -> None:
@@ -1732,7 +1578,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="startoperatorresults", p1=self.translator[mode], user_timeout=custom_timeout)
+        self._send_request(cmd="startoperatorresults", p1=self.translator[mode], user_timeout=custom_timeout)
                            
     # TODO: Test
     def stop_operator_results(self, custom_timeout=None) -> None:
@@ -1741,7 +1587,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="stopoperatorresults", user_timeout=custom_timeout)
+        self._send_request(cmd="stopoperatorresults", user_timeout=custom_timeout)
 
     def get_io_input(self, custom_timeout=None) -> int:
         """ Current get I/O input register as integer appearance (converted from hex).
@@ -1751,7 +1597,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        val =  self._value_parser(cmd="readioin", user_timeout=custom_timeout)
+        val =  self._send_request(cmd="readioin", user_timeout=custom_timeout)
         return int(val.get("result"))
 
     def get_io_output(self, custom_timeout=None) -> int:
@@ -1762,7 +1608,7 @@ class AnalyzerRemote():
         :return: I/O output register as integer appearance
         :rtype: int
         """ 
-        val =  self._value_parser(cmd="readioout", user_timeout=custom_timeout)
+        val =  self._send_request(cmd="readioout", user_timeout=custom_timeout)
         return int(val.get("result"))
 
     def _shift_binary(self, original_bin: str) -> str:
@@ -1826,7 +1672,7 @@ class AnalyzerRemote():
             if not pattern.match(io_line):
                 raise ValueError(f'The given io_line does not fulfill the expected pattern (e.g. 1.3): {io_line}')
             
-        self._value_parser(cmd="AppCmd", p1="setsimioin", p2=f'{io_line} {state}', user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="setsimioin", p2=f'{io_line} {state}', user_timeout=custom_timeout)
 
     def set_simulated_io_input(self, io: str, custom_timeout=None) -> None:
         """ Set simulated I/O input register. I/0 input register can be set by inverted hexa (smallest significant right)
@@ -1905,7 +1751,7 @@ class AnalyzerRemote():
             raise ValueError(
                 "Given format of I/O input register state is not supported. Please check extended method documentation.")
 
-        self._value_parser(cmd="setsimioin", p1=io_hexa, user_timeout=custom_timeout)
+        self._send_request(cmd="setsimioin", p1=io_hexa, user_timeout=custom_timeout)
                            
     def add_io_report_callback(self, callback, custom_timeout=None) -> None:
         """ Adds callback function to report of I/O register. Everytime I/O register changes, added callback functions will be executed. See networking_example.py for an example.
@@ -1918,26 +1764,30 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        if self._io_report_count == 0:
-             self._value_parser(user_callback=callback, cmd="reportio", p1="true", user_timeout=custom_timeout)         
-        else:
-            self.__recv_thread.register_callbacks("responsereportio", callback)
-        self._io_report_count += 1
+                    
+        if len(self._io_callbacks) == 0:
+            self._send_request(cmd="reportio", p1="true", user_timeout=custom_timeout)
+        
+        self._io_callbacks.append(callback)
         self.logger.info(f"Callback {callback} for I/O report added")
 
+        
     def remove_io_report_callback(self, callback, custom_timeout=None) -> None:
         """ Removes specific callback function from I/O report callback list. By removing all callbacks the report function will be automatically stopped.
 
         :param callback: Callback function that should be removed from I/O report functionalities.
         :type callback: function
         """ 
-        self.__recv_thread.deregister_callbacks(
-            self._recognition_translator("reportio",  callback))
-        self._io_report_count -= 1
-        self.logger.info(f"Callback {callback} for I/O report removed")
-        if self._io_report_count == 0:
-            self._value_parser(cmd="reportio", p1="false", user_timeout=custom_timeout)
-            self.logger.info("I/O report stopped")
+            
+        if len(self._io_callbacks) > 0:
+            idx = self._io_callbacks.index(callback)
+            self._io_callbacks.remove(idx)
+    
+        if len(self._io_callbacks) == 0:
+            self._send_request(cmd="reportio", p1="false", user_timeout=custom_timeout)
+        self.logger.info("I/O report stopped")
+            
+        
 
     def add_process_number_report_callback(self, callback, custom_timeout=None) -> None:
         """ Adds callback function to report of process number. Everytime the process number changes, added callback functions will be executed. See networking_example.py for an example. By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
@@ -1949,14 +1799,32 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        if self._proc_report_count == 0:
-            self._value_parser(user_callback=callback, cmd="reportprocessnumber", user_timeout=custom_timeout, p1="true")
-        else:
-            self.__recv_thread.register_callbacks("responsereportprocessnumber", callback)
-        self._proc_report_count += 1
-        self.logger.info(
-                f"Callback {callback} for process number report added")
+        
+        if len(self._processnumber_callbacks) == 0:
+            self._send_request(cmd="reportprocessnumber", p1="true", user_timeout=custom_timeout)
+        
+        self._processnumber_callbacks.append(callback)
+        self.logger.info(f"Callback {callback} for AppVar report added")
 
+
+                
+    def remove_process_number_report_callback(self, callback, custom_timeout=None) -> None:
+        """ Removes specific callback function from process number report callback list. By removing all callbacks the report function will be automatically stopped.
+
+        :param callback: Callback function that should be removed from process number report functionalities.
+        :type callback: function
+        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
+        :type custom_timeout: int, optional
+        """ 
+            
+        if len(self._processnumber_callbacks) > 0:
+            idx = self._processnumber_callbacks.index(callback)
+            self._processnumber_callbacks.remove(idx)
+        
+            if len(self._processnumber_callbacks) == 0:
+                self._send_request(cmd="reportprocessnumber", p1="false", user_timeout=custom_timeout)
+                self.logger.info("Report of process number stopped.")
+            
     def set_io_output(self, io_line: int, state: bool, custom_timeout=None) -> None:
         """ Sets single I/O ouput line. As parameter only line number of third I/O line is required. When in doubt, check documentation.
 
@@ -1992,24 +1860,9 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(expect_response=False, cmd="appcmd", p1="setioout", p2=f"{io_line} {state}", user_timeout=custom_timeout)
+        self._send_request(cmd="appcmd", p1="setioout", p2=f"{io_line} {state}", user_timeout=custom_timeout)
 
-    def remove_process_number_report_callback(self, callback, custom_timeout=None) -> None:
-        """ Removes specific callback function from process number report callback list. By removing all callbacks the report function will be automatically stopped.
 
-        :param callback: Callback function that should be removed from process number report functionalities.
-        :type callback: function
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        """ 
-        self.__recv_thread.deregister_callbacks(
-            "responsereportprocessnumber", callback)
-        self._proc_report_count -= 1
-        self.logger.info(
-            f"Callback {callback} for process number report removed")
-        if self._proc_report_count == 0:
-            self._value_parser(cmd="reportprocessnumber", p1="false", user_timeout=custom_timeout)
-            self.logger.info("Report of process number stopped.")
 
     # TODO: Test
     def start_script_function(self, function_name: str, function_param: any, custom_timeout=None) -> None:
@@ -2026,7 +1879,7 @@ class AnalyzerRemote():
         :return: Standard Analyzer response. Dict contains result of addressed function as str.
         :rtype: dict
         """ 
-        return self._value_parser(cmd="appfunc", p1=function_name, p2=function_param, user_timeout=custom_timeout)
+        return self._send_request(cmd="appfunc", p1=function_name, p2=function_param, user_timeout=custom_timeout)
                                   
     def set_human_confirmation(self, process_IO=False, **kwargs) -> None:
         """ Send human confiramtion over current process. Score and comment can be parsed over kwargs. When in doubt, check documentation.
@@ -2066,7 +1919,7 @@ class AnalyzerRemote():
             if "score" in kwargs.keys():
                 settings["score"] = kwargs["score"]
 
-        self._value_parser(expect_response=False, **settings)
+        self._send_request(check_msg_id=False, **settings)
 
     def write_to_database(self, result: any, comment=None) -> None:
         """ Writes database query for an entry with current project_id, process, process_id, result and comment as values
@@ -2077,9 +1930,9 @@ class AnalyzerRemote():
         :type comment: str, optional
         """ 
         if comment:
-             self._value_parser(expect_response=False, cmd="humanconfirmationresult", p1=result, p2=comment)
+             self._send_request(check_msg_id=False, cmd="humanconfirmationresult", p1=result, p2=comment)
         else:
-             self._value_parser(expect_response=False, cmd="humanconfirmationresult", p1=result)
+             self._send_request(check_msg_id=False, cmd="humanconfirmationresult", p1=result)
 
     def write_backup(self, custom_timeout=None) -> None:
         """ Creates an automatic Analyzer backup.
@@ -2087,7 +1940,7 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        self._value_parser(cmd="AppCmd", p1="writeBackup", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="writeBackup", user_timeout=custom_timeout)
   
     def set_sys_pengui_config(self, penguifile=None, reload=None, activate_on_load=None, disable_open_gl=None, 
                               disable_buffer_boxes=None, custom_timeout=None):
@@ -2112,7 +1965,7 @@ class AnalyzerRemote():
         if p2_str == "":
             self.logger.info("Method 'set_sys_pengui_config' is not executed because of no valid parameters.")
             return
-        self._value_parser(cmd="AppCmd", p1="sysPenguiConfig", p2=p2_str, user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="sysPenguiConfig", p2=p2_str, user_timeout=custom_timeout)
 
     def set_python_init_hook(self, python_init_hook_path: Union[str, Path]):
         """
@@ -2121,7 +1974,7 @@ class AnalyzerRemote():
         :param str python_init_hook_path: The absolute path to the python script that should be executed during
             the startup phase of the analyzer software.
         """
-        self._value_parser(cmd="AppCmd", p1="sysPathConfig", p2=f"pyinithook \"{str(python_init_hook_path)}\"")
+        self._send_request(cmd="AppCmd", p1="sysPathConfig", p2=f"pyinithook \"{str(python_init_hook_path)}\"")
 
     def reset_failstate(self, set_idle_state:bool=True, clear_all_windows:bool=True,custom_timeout=None) -> None:
         """ Reset failure status of optimizer (activates I/O Ready) 
@@ -2134,7 +1987,7 @@ class AnalyzerRemote():
             p2 = p2 + "-idle"
         if clear_all_windows:
             p2 = p2 + " -a"
-        self._value_parser(cmd="AppCmd", p1="ResetFailstate", p2=p2,user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="ResetFailstate", p2=p2,user_timeout=custom_timeout)
 
     def set_failstate(self, **kwargs):
         """ Set Analyzer4d Software into failstate. If no duration is provided, system stays in failstate (clear I/O ready).
@@ -2155,18 +2008,18 @@ class AnalyzerRemote():
         duration = kwargs.get("duration", None)
         if duration:
             if isinstance(duration, int):
-                self._value_parser(cmd="AppCmd", p1="SetFailstate", p2=f"{duration}")
+                self._send_request(cmd="AppCmd", p1="SetFailstate", p2=f"{duration}")
             else:
                 raise ValueError("Only integer greater 0 are supported for failstate duration")
         else:
-            self._value_parser(cmd="AppCmd", p1="SetFailstate") 
+            self._send_request(cmd="AppCmd", p1="SetFailstate") 
     
     def free_buffer_datablocks(self):
         """ Free all buffer standby datablocks. 
         
         .. warning:: Experts method
         """
-        self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2=f"RAM free-standby")
+        self._send_request(cmd="AppCmd", p1="ExpertCmd", p2=f"RAM free-standby")
     
     def remove_delayed_trigger(self, delay_type:str=None, custom_timeout=None):
         """ Method to remove delayed trigger. 
@@ -2200,7 +2053,7 @@ class AnalyzerRemote():
         
         """
         remove_kinds = {"all":"remove-all", "busy":"remove-busy", "parameter":"remove-delayed"}
-        self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2=f"TRIGGER {remove_kinds[delay_type]}", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="ExpertCmd", p2=f"TRIGGER {remove_kinds[delay_type]}", user_timeout=custom_timeout)
 
     def start_shell_program(self, programm_path:Union[str,Path], detach_from_analyzer:bool=True):
         """ Start an arbitary system process via shell. By detaching start of program and analyzer context, start of programm runs asynchron. If false, analyzer waits for finsihed programm (max to 1 sec)
@@ -2214,7 +2067,7 @@ class AnalyzerRemote():
             sync_param  = "-detach"
         else:
             sync_param = "-noasync"
-        self._value_parser(cmd="AppCmd", p1="StartProgram", p2=f"{sync_param} \"{str(programm_path)}\"")
+        self._send_request(cmd="AppCmd", p1="StartProgram", p2=f"{sync_param} \"{str(programm_path)}\"")
 
     def restart_analyzer(self, wait_time:Union[int,str]=2000, **kwargs):
         """ Restart analyzer4D Software after system stayed a mininum time (= wait_time) in idel state. 
@@ -2244,7 +2097,7 @@ class AnalyzerRemote():
         :raises ValueError: If display_message time is smaller or equal zero
         """
         if isinstance(wait_time, str) and wait_time == "force_now":
-            self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"FORCE_NOW")
+            self._send_request(cmd="AppCmd", p1="RestartAnalyzer", p2=f"FORCE_NOW")
         elif isinstance(wait_time,int):
             if not wait_time > 0:
                 raise ValueError("Display time has to be greater than 0 ms")
@@ -2258,7 +2111,7 @@ class AnalyzerRemote():
                     last_words_display_time = wait_time
                     self.logger.info("Disaply time for analyzer message is set to maximum time before restart (= 'wait_time')")
                 p2  = p2 + f" {last_words_display_time} \"{last_words}\""
-            self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"{p2}")
+            self._send_request(cmd="AppCmd", p1="RestartAnalyzer", p2=f"{p2}")
 
     #TODO: Description
     def set_frequency_mask(self, mask_id:int, measure_config:int):
@@ -2267,14 +2120,14 @@ class AnalyzerRemote():
         :param int mask_id:  ID of desired mask
         :param int measure_config: _description_
         """
-        self._value_parser(cmd="AppCmd", p1="SetFrequencymask", p2=f"{mask_id} {measure_config}")
+        self._send_request(cmd="AppCmd", p1="SetFrequencymask", p2=f"{mask_id} {measure_config}")
     
     def use_frequency_mask(self, mask_id:int):
         """ Use already existing frequnecy mask on process.
 
         :param int mask_id: Use frequency mask with provided ID
         """
-        self._value_parser(cmd="AppCmd", p1="UseFrequencymask", p2=f"{mask_id}")
+        self._send_request(cmd="AppCmd", p1="UseFrequencymask", p2=f"{mask_id}")
     
     def teach_frequency_mask(self, mask_id:int, mask_type:str):
         """ Teach new Frequency mask for loaded measurement.
@@ -2282,7 +2135,7 @@ class AnalyzerRemote():
         :param int mask_id: Frequency mask ID of new mask
         :param str mask_name: Frequency mask type
         """
-        self._value_parser(cmd="AppCmd", p1="TeachFrequencymask", p2=f"{mask_id} {mask_type}")
+        self._send_request(cmd="AppCmd", p1="TeachFrequencymask", p2=f"{mask_id} {mask_type}")
 
     def set_GUI_tools_acitvated(self, show_buffer_bar:bool=True, show_toolbar:bool=True):
         """ Show and Hide buffer buttons and tools in GUI
@@ -2295,7 +2148,7 @@ class AnalyzerRemote():
         else:
             buffer_bar = "hidebufferbuttons"
         
-        self._value_parser(cmd="AppCmd", p1="GuiCMD", p2=f"{buffer_bar}")
+        self._send_request(cmd="AppCmd", p1="GuiCMD", p2=f"{buffer_bar}")
         
     def set_buffer_buttons_visible(self, visible:bool=True):
         """ Set GUI view of buffer buttons enabled/disabled.
@@ -2306,7 +2159,7 @@ class AnalyzerRemote():
             buffer_bar = "showbufferbuttons"
         else:
             buffer_bar = "hidebufferbuttons"
-        self._value_parser(cmd="AppCmd", p1="GuiCMD", p2=f"{buffer_bar}")
+        self._send_request(cmd="AppCmd", p1="GuiCMD", p2=f"{buffer_bar}")
 
     def set_toolbar_visible(self, visible:bool=True):
         """Set GUI view of tool bar enabled/disabled.
@@ -2317,14 +2170,14 @@ class AnalyzerRemote():
             toolbar = "showtools"
         else:
             toolbar = "hidetools"
-        self._value_parser(cmd="AppCmd", p1="GuiCMD", p2=f"{toolbar}")
+        self._send_request(cmd="AppCmd", p1="GuiCMD", p2=f"{toolbar}")
 
     def set_sys_python_path(self, python_sys_path:Union[str,Path]):
         """ Set system python path. [Preferences->Python->sys.path extensions]
         
         :param Union[str,Path] python_sys_path: Python path
         """
-        self._value_parser(cmd="AppCmd", p1="sysPathConfig", p2=f"pysyspaths \"{python_sys_path}\"")
+        self._send_request(cmd="AppCmd", p1="sysPathConfig", p2=f"pysyspaths \"{python_sys_path}\"")
 
     def set_appvar_container_visible(self, visible:bool=True):
         """ Shows AppVar Container in Analyzer4D menu. 
@@ -2335,7 +2188,7 @@ class AnalyzerRemote():
             state = "enable"
         else:
             state = "disable"
-        self._value_parser(cmd="AppCmd", p1="ShowTool", p2=f"APPVARS {state}")    
+        self._send_request(cmd="AppCmd", p1="ShowTool", p2=f"APPVARS {state}")    
     
     def set_frq_mask_container_visible(self, visible:bool=True):
         """Shows Frequency mask manager in Analyzer4D menu. 
@@ -2346,7 +2199,7 @@ class AnalyzerRemote():
             state = "enable"
         else:
             state = "disable"
-        self._value_parser(cmd="AppCmd", p1="ShowTool", p2=f"FRQMASKS {state}") 
+        self._send_request(cmd="AppCmd", p1="ShowTool", p2=f"FRQMASKS {state}") 
 
     def set_classic_menu_view(self, enable:bool=True):
         """ Switch menu view in Analyzer4d Software to classic menu.
@@ -2357,7 +2210,7 @@ class AnalyzerRemote():
             state = "enable"
         else:
             state = "disable"
-        self._value_parser(cmd="AppCmd", p1="ShowTool", p2=f"CLASSICMENU {state}") 
+        self._send_request(cmd="AppCmd", p1="ShowTool", p2=f"CLASSICMENU {state}") 
 
     def set_trigger_list(self, enable:bool=True):
         """ Set trigger list on enabled.
@@ -2368,126 +2221,151 @@ class AnalyzerRemote():
             state = "on"
         else:
             state = "off"
-        self._value_parser(cmd="AppCmd", p1="sysTriggerLoop", p2=f"{state}")
+        self._send_request(cmd="AppCmd", p1="sysTriggerLoop", p2=f"{state}")
 
-    # TODO: profibus
-    # TODO: profibus report
+    
+    def _get_next_msg_id(self):
+        with self._msg_id_lock:
+            self._msg_id += 1
+            return copy.copy(self._msg_id)
         
-    def _recognition_translator(self, cmd: str) ->  str:
-        """ Private method to add "response" to already sended cmd str for later recognition.
+                             
+    def _send_request(self, check_msg_id=True, can_fail=True, user_timeout=None, **kwargs) -> dict:
+        if not self._socket:
+            raise RuntimeError('can not send because socket is closed')
 
-        :param cmd: cmd string which needs to be changend.
-        :type cmd: str
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        :return: cmd string which will be sended by analyzer as response.
-        :rtype: str
-        """ 
-        if cmd == "reportappvars":
-            return "responseappvars"
-        else:
-            # case normal communication server command
-            return "response" + cmd
 
-    def _send(self, command: Dict) ->  None:
-        """ Private method to send commands to analyzer. Command will be encoded to bytestring.
-
-        :param command: Command dict which should be sent to connected analyzer.
-        :type command: Dict
-        """ 
-        # print every sended command
-        self.logger.debug(f"Command sent:{command}")
-        # prepare command
-        cmd_str = json.dumps(command).encode()
-        cmd_str = (len(cmd_str)).to_bytes(2, 'big') + cmd_str
-        # actual sending command
-        self.s.sendall(cmd_str)
-
-    def _value_parser(self, expect_response=True, user_callback=None, user_timeout=None, **kwargs) -> Dict:
-        """ Function to coordinate sending parsed command settings and take back answer from receiver thread. By kwargs specification each command will be set.
-
-        :param expect_response: Flag to not wait for analyzer response, defaults to True
-        :type expect_response: bool, optional
-        :return: Analyzer response
-        :rtype: dict
-        """ 
-        # adding msgid
-        self.msgid += 1
+        msg_id  = self._get_next_msg_id()
 
         # command ground structure
         command = {'cmd': "",
-                   "msgid": self.msgid}
-
-        # specify final command
-        command.update(kwargs)
-        # decide which recognition should be used, if possible use msgid
-        if command['cmd'] == "AppCmd":
-            recognition = self.msgid
-        else:
-            recognition = self._recognition_translator(command['cmd'])
-
-        # if response is expected:
-        # register callback before sending
-        if expect_response and user_callback == None:
-            # use class variabele self.q as queue object
-            def callback(result, queue_var=self.q): return queue_var.put(result)
-            self.__recv_thread.register_callbacks(recognition, callback)
-        elif expect_response:
-            self.__recv_thread.register_callbacks(
-                recognition, user_callback)
-
-        # send command in any case
-        self._send(command)
-
-        # receive response if avaible and expected
-        # reports are handled external
-        if expect_response and user_callback == None:
-            try:
-                if user_timeout:
-                    # handle case that as timeout string "never" is parsed for a non blocking possibility
-                    if isinstance(user_timeout, str) and user_timeout == "never":
-                        user_timeout = None # equals block
-                    # else just take normal parsed timeout as int
-                    function_timeout = user_timeout
-                # if nothing is parsed, take default
-                else:
-                    function_timeout = self.timeout  
-                # get response out of queue for all cases without own custom_callback // handles also receiver thread errors
-                analyzer_response = self.q.get(timeout=function_timeout)
-            except queue.Empty as QueueError: # Raise from None, excludes queue.Empty Error from Traceback 
-                raise ReceiverThreadError(f"Analyzer was not responding in timeout time. Please check if communication between devices is lost or custom timeout method has to be used.") from None
-            # check for message state and also if receiver thread gives back an error, unregister callbacks
-            
-            self._check_response(analyzer_response, recognition)
-            
-            return analyzer_response
+                   "msgid": msg_id}
         
-    def _check_response(self, response:Dict, recognition:str):
-        """ Private method to check received response for ErrorCallback or for analyzer response value under key="ok". If value is True, response is approved. Not ErrorCallbacks will be unregistered.
+        command.update(kwargs)
+        
+        with self._requests_lock:
+            request = futures.Future()
+            self._requests[msg_id] = request
+        
+        payload = json.dumps(command).encode()
+        header = struct.pack('>H',len(payload))
+        data = header+payload
+        print(f'Send: {data}')
+        if self._socket.send(data) != (len(data)):
+            raise RuntimeError('Failed to write bytes')
+        
+        
+        if user_timeout:
 
-        :param response: Response dict from analyzer to check.
-        :type response: dict
-        :param recognition: Recognition for not ErrorCallbacks
-        :type recognition: str
-        :raises AnalyzerError: if command could not be performed, due to false syntax or params out of bounds.
-        :raises ReceiverThreadError: if parsed from Receiver Thread
-        """ 
-        # ErrorCallbacks
-        if 'cmd' in response and response.get('cmd') == "error":
-            origin_error = response.get("kind")
-            self.logger.error(
-                f"Receiver Thread logs an unexpected error from {origin_error}")
-            raise ReceiverThreadError(
-                "Receiver Thread logs an unexpected error") from origin_error
-        # check normal response
-        elif "ok" in response:
-            if response.get("ok") == False:
-                self.logger.error(
-                    "Analyzer4D software could not perform action: check log and documentation.")
-                raise AnalyzerError(
-                    "Analyzer4D software could not perform action: check log and documentation.")
-        # deregister callbacks (ErrorCallback is not deregistered)
-        self.__recv_thread.deregister_callbacks(recognition)
+            if isinstance(user_timeout, str) and user_timeout == "never":
+                user_timeout = None # equals block
+            timeout = user_timeout
+        else:
+            timeout = self.timeout
+            
+        try:
+            if check_msg_id:
+                response : dict = request.result(timeout)
+            else:
+                return None
+            
+        except futures.TimeoutError as e :
+            raise RuntimeError('Do not get a response from Analyzer4D Software') from e
+        finally:
+            with self._requests_lock:
+                self._requests.pop(msg_id)
+
+        if can_fail and not response.get("ok",None):
+            raise AnalyzerError("Analyzer4D software could not perform action: check log and documentation.")
+        
+        return response
+    
+    
+    def _execute_callbacks(self):
+        self._processing_callbacks.set()
+        while self._processing_callbacks.is_set():
+            callback = self._callback_queue.get()
+
+            if callback is None:
+                return
+            try:
+                callback()    
+            except Exception as e:
+                self.logger.exception(e)
+
+    
+    def _receive_data(self):
+        QASS_PROTO_HEADER_SIZE = 2
+        
+        try:
+            self._processing_data.set()
+            buffer = bytearray()
+            
+            parse_header = True
+            bytes_to_read = QASS_PROTO_HEADER_SIZE
+            
+            while self._processing_data.is_set():
+                
+                data = self._socket.recv(bytes_to_read - len(buffer))
+                if not data:  # other side close the connection. E.g quit analyzer4D
+                    break
+                    
+                buffer += data
+                if len(buffer)==bytes_to_read:
+                    if parse_header:
+                        bytes_to_read, = struct.unpack('>H',buffer)
+                        parse_header = False
+                    else:
+                        response = buffer.decode()
+                        response = json.loads(response)
+                        self._process_msg(response)
+                        bytes_to_read = QASS_PROTO_HEADER_SIZE
+                        parse_header = True
+                    buffer.clear()
+                        
+        except Exception as e:
+            self.logger.exception(e)
+            
+        finally:
+            self._callback_queue.put(None)  # Quit callback processing
+            with self._socket_lock:
+                if self._socket:
+                    self._socket.close()
+                    self._socket= None
+                    
+                
+    def _process_msg(self, msg : dict):
+        try:
+            print(f'receive: {msg}')
+            if 'resid' in msg:
+                resid = msg['resid']
+                
+                with self._requests_lock:
+                    if resid in self._requests:
+                        self._requests[resid].set_result(msg)
+                    else:
+                        self.logger.error(f'unknown resid ({resid})')
+
+            elif 'cmd' in msg:
+                cmd = msg['cmd']
+                if cmd in ("reportappvars","responseappvars"):
+                    for cb in self._appvar_callbacks:
+                        self._callback_queue.put(functools.partial(cb,msg))
+                elif cmd == 'responsereportio':
+                    for cb in self._io_callbacks:
+                        self._callback_queue.put(functools.partial(cb,msg))
+                elif cmd == 'responsereportprocessnumber':
+                    for cb in self._processnumber_callbacks:
+                        self._callback_queue.put(functools.partial(cb,msg))
+                else:
+                    self.logger.error(f'Recv unknown package {msg}')
+                        
+            else:
+                  self.logger.error(f'Missing field "cmd" in message')
+            
+        except Exception as e:
+            self.logger.exception(e)
+
 
 class AnalyzerCmd(AnalyzerRemote):
     """ Depricated class naming. Inherit from normal class.

@@ -1,8 +1,9 @@
 [project]
 name = "qass-tools-networking"
-version = "3.3.2"
+version = "3.3.3"
 authors = [
   {name="Oliver Kowollik", email="okowollik@qass.net" },
+  {name="Sammy Joe Lüling", email="slueling@qass.net" }
 ]
 description = "Networking package for qass_tools"
 readme = "README.md"
