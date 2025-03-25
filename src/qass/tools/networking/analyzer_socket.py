@@ -296,7 +296,7 @@ class AnalyzerRemote():
         self._operator_functions_active = False
 
         
-        self._callback_queue : queue.Queue = None
+        self._callback_queue = queue.Queue()
         self._msg_id :int = 0
         self._socket :socket.socket = None
         self._requests : Dict[int,futures.Future] = {}
@@ -315,8 +315,12 @@ class AnalyzerRemote():
         self._appvar_callbacks = []
         self._processnumber_callbacks = []
         
-        self.logger = logging.getLogger("networking")
-   
+        self.logger = logging.getLogger("qass.tools.networking")
+            
+
+    def __del__(self):
+        self.logger.debug("AnalyzerRemote's deconstructor called.")
+    
     def __enter__(self):
         """Method to wrap open method behaviour for working with a contextmanager. Will open the connection to the Analyzer Instance and start a receiver thread.
         """ 
@@ -346,6 +350,7 @@ class AnalyzerRemote():
             tcp_socket.connect((self.ip,self.port))
                 
             self._socket = tcp_socket
+            self.logger.info(f'Connect to {self.ip}:{self.port}')
         
         self._callback_queue = queue.Queue()
         
@@ -357,9 +362,10 @@ class AnalyzerRemote():
             
         if not self._processing_callbacks.is_set():
             self._callback_thread = threading.Thread(name='AnalyzerRemoteCallbackExecutor',
-                                                    target=self._execute_callbacks,
-                                                    daemon=True)
+                                        target=self._execute_callbacks,
+                                        daemon=True)
             self._callback_thread.start()
+
             
     def disconnect(self):
         if self.auto_stop:
@@ -379,20 +385,18 @@ class AnalyzerRemote():
         with self._socket_lock:
             if self._socket:
                 self._socket.shutdown(socket.SHUT_RDWR)
-                
-        # if self._callback_queue:
-        #     self._callback_queue.put(None)
+            self.logger.info(f'Disconnect from {self.ip}:{self.port}')
     
         if self._receiver_thread and self._receiver_thread.is_alive():
-            self._receiver_thread.join(3)
+            self._receiver_thread.join(1)
             if self._receiver_thread.is_alive():
-                self.logger.error('Failed to close "_receiver_thread"')
-        
+                self.logger.error(f'Failed to stop Thread: {self._receiver_thread.name}')
+                
         if self._callback_thread and self._callback_thread.is_alive():
             self._callback_thread.join(3)
             if self._callback_thread.is_alive():
-                self.logger.error('Failed to close "_callback_thread"')
-    
+                self.logger.error(f'Failed to stop Thread: {self._callback_thread.name}')
+        
     
     @deprecated.deprecated(reason="To match the terminology, use 'connect' to establish a connection and 'disconnect' to close it instead of 'open' & 'close'.",version="3.3.3")
     def close(self):
@@ -1095,7 +1099,7 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         :raises KeyError: if keyword argument "mode" is parsed with invalid values.
         """ 
-        self._send_request(cmd="startmeasuring", check_msg_id=False, p1=self.translator[mode])
+        self._send_request(cmd="startmeasuring", check_msg_id=True, p1=self.translator[mode])
         # flags for context manager exit method
         if self.translator[mode] == "true":
             self._measuring_active = True
@@ -1369,7 +1373,7 @@ class AnalyzerRemote():
         #     self.__recv_thread.register_callbacks(
         #         operator_name, user_callback)
             
-        self._send_request(cmd="startoperator", check_msg_id=False,p1=operator_name, p2=operator_setting)
+        self._send_request(cmd="startoperator", check_msg_id=True,p1=operator_name, p2=operator_setting)
 
     def import_patterns(self, directory_path: str, ) -> None:
         """ Import all pattern files from a optimizer local directory.
@@ -2250,7 +2254,7 @@ class AnalyzerRemote():
         payload = json.dumps(command).encode()
         header = struct.pack('>H',len(payload))
         data = header+payload
-        print(f'Send: {data}')
+        self.logger.debug(f'Send:\n{json.dumps(command,indent=2)}')
         if self._socket.send(data) != (len(data)):
             raise RuntimeError('Failed to write bytes')
         
@@ -2287,9 +2291,10 @@ class AnalyzerRemote():
             callback = self._callback_queue.get()
 
             if callback is None:
+                self.logger.debug('Stop Callback Processing')
                 return
             try:
-                callback()    
+                callback()
             except Exception as e:
                 self.logger.exception(e)
 
@@ -2327,16 +2332,16 @@ class AnalyzerRemote():
             self.logger.exception(e)
             
         finally:
-            self._callback_queue.put(None)  # Quit callback processing
+            self._callback_queue.put(None)
             with self._socket_lock:
                 if self._socket:
                     self._socket.close()
                     self._socket= None
-                    
+            self.logger.debug('Stop Receiving data')
                 
     def _process_msg(self, msg : dict):
         try:
-            print(f'receive: {msg}')
+            self.logger.debug(f'Receive:\n{json.dumps(msg,indent=2)}')
             if 'resid' in msg:
                 resid = msg['resid']
                 

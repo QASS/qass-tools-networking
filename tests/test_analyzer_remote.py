@@ -7,7 +7,7 @@ PORT = 17000
 
 """
 Found Bugs:
-    - Report "add_appvar_report_callback" liefert im response keine res_id
+    -  "reportappvars" liefert im response keine res_id
     - "startoperatorfunctionvalues" always return 'ok' == True
     - Vorbedingung: add & remove appvar 'foo'. Danach liefert get_appvar('foo') 'ok' == True aber 'result' fehlt
     - "getversions" liefert kein 'ok' bug?
@@ -124,7 +124,8 @@ def test_operator():
     with AnalyzerRemote(IP) as client:       
         # client.start_operator('TemplateMatching','')
         
-        client.stop_operator_function()
+        with pytest.raises(AnalyzerError):
+            client.start_operator('foobar','')
         
         # client.stop_operator_function()
      
@@ -188,7 +189,7 @@ def test_process_numbers():
             
             if number > 0:
                 client.load_process(number-1)
-            
+            time.sleep(0.5)
             # time.sleep(3)
             
-            assert bar['data']['processnumber'] == number+1
+            assert bar['data']['processnumber'] == number-1
