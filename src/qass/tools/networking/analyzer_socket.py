@@ -384,7 +384,12 @@ class AnalyzerRemote():
         
         with self._socket_lock:
             if self._socket:
-                self._socket.shutdown(socket.SHUT_RDWR)
+                try:
+                    self._socket.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    self.logger.warning('Socket was not closed regulary')
+                    self._socket=None
+                    
             self.logger.info(f'Disconnect from {self.ip}:{self.port}')
     
         if self._receiver_thread and self._receiver_thread.is_alive():
@@ -396,7 +401,7 @@ class AnalyzerRemote():
             self._callback_thread.join(3)
             if self._callback_thread.is_alive():
                 self.logger.error(f'Failed to stop Thread: {self._callback_thread.name}')
-        
+
     
     @deprecated.deprecated(reason="To match the terminology, use 'connect' to establish a connection and 'disconnect' to close it instead of 'open' & 'close'.",version="3.3.3")
     def close(self):
@@ -407,7 +412,11 @@ class AnalyzerRemote():
     @deprecated.deprecated(reason="To match the terminology, use 'connect' to establish a connection and 'disconnect' to close it.",version="3.3.3")
     def _connecting_analyzer(self):
         self.connect()
-
+    
+    @property
+    def connected(self):
+        return self._socket is not None
+    
     @property
     def get_socket_ip(self):
         """ Property that gives out connected IP.
@@ -2334,9 +2343,13 @@ class AnalyzerRemote():
         finally:
             self._callback_queue.put(None)
             with self._socket_lock:
-                if self._socket:
+             if self._socket:
+                try:
                     self._socket.close()
-                    self._socket= None
+                except OSError:
+                    self.logger.warning('socket was not closed regulary')
+                finally:
+                    self._socket = None
             self.logger.debug('Stop Receiving data')
                 
     def _process_msg(self, msg : dict):
