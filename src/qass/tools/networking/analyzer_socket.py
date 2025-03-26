@@ -908,7 +908,7 @@ class AnalyzerRemote():
         """ 
         self._send_request(cmd="clearappvar", p1=appvar_name, user_timeout=custom_timeout)
 
-    def add_appvar_report_callback(self, callback, custom_timeout=None) -> None:
+    def add_appvar_report_callback(self, callback, custom_timeout=None, check_msg_id=True) -> None:
         """ Add callback function to report of AppVar. Everytime a AppVar changes, added callback functions will be executed. See networking_example.py for an example. By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function. Beside the executed callback, analyzer sends state of all AppVars as information by every change.
 
         .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
@@ -916,11 +916,12 @@ class AnalyzerRemote():
         :param callback: Added callback function when report happens.
         :type callback: function
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
+        :param check_msg_id: Check if msgid of request matches the resid of response. Analyzer4D version lower than "2.04.06.02 extended" must set this to False.
         :type custom_timeout: int, optional
         """ 
         
         if len(self._appvar_callbacks) == 0:
-            self._send_request(cmd="reportappvars", p1="true", user_timeout=custom_timeout,check_msg_id=False)
+            self._send_request(cmd="reportappvars", p1="true", user_timeout=custom_timeout,check_msg_id=check_msg_id)
         
         self._appvar_callbacks.append(callback)
         self.logger.info(f"Callback {callback} for AppVar report added")
@@ -2366,13 +2367,20 @@ class AnalyzerRemote():
 
             elif 'cmd' in msg:
                 cmd = msg['cmd']
+                
+                payload = json.dumps({'cmd':'callback_ack'}).encode()
+                data = struct.pack('>H',len(payload)) + payload
+                
                 if cmd in ("reportappvars","responseappvars"):
+                    self._socket.send(data)
                     for cb in self._appvar_callbacks:
                         self._callback_queue.put(functools.partial(cb,msg))
                 elif cmd == 'responsereportio':
+                    self._socket.send(data)
                     for cb in self._io_callbacks:
                         self._callback_queue.put(functools.partial(cb,msg))
                 elif cmd == 'responsereportprocessnumber':
+                    self._socket.send(data)
                     for cb in self._processnumber_callbacks:
                         self._callback_queue.put(functools.partial(cb,msg))
                 else:
