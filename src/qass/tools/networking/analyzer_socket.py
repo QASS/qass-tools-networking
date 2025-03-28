@@ -15,6 +15,7 @@ import copy
 import struct
 import functools
 import deprecated
+import time
 
 class Amplitudes(Enum):
     """ Enum class to list and check available amplitudes in mV to generate sine wave.""" 
@@ -275,7 +276,7 @@ class AnalyzerRemote():
         
         """
         # helper
-        self.ip = ip
+        self.ip = socket.gethostbyname(ip)
         self.port = port
         self.timeout = timeout # seconds
         self.error = False
@@ -314,12 +315,16 @@ class AnalyzerRemote():
         self._io_callbacks = []
         self._appvar_callbacks = []
         self._processnumber_callbacks = []
-        
+
+        self._callback_registered_processnumber = False
+        self._callback_registered_io = False
+        self._callback_registered_appvar = False
+
         self.logger = logging.getLogger("qass.tools.networking")
             
 
-    def __del__(self):
-        self.logger.debug("AnalyzerRemote's deconstructor called.")
+    # def __del__(self):
+    #     self.logger.debug("AnalyzerRemote's deconstructor called.")
     
     def __enter__(self):
         """Method to wrap open method behaviour for working with a contextmanager. Will open the connection to the Analyzer Instance and start a receiver thread.
@@ -346,14 +351,14 @@ class AnalyzerRemote():
                 raise ValueError(f'Already connected with: {self._socket.getpeername()}')
 
             tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            tcp_socket.bind(('', 0))
+            tcp_socket.bind(('0.0.0.0', 0))
             tcp_socket.connect((self.ip,self.port))
-                
+
             self._socket = tcp_socket
-            self.logger.info(f'Connect to {self.ip}:{self.port}')
+            self.logger.info(f'Connect to {self._socket.getpeername()}')
         
         self._callback_queue = queue.Queue()
-        
+
         if not self._processing_data.is_set():
             self._receiver_thread = threading.Thread(name='AnalyzerRemoteDataReceiver',
                                                     target=self._receive_data,
@@ -366,7 +371,25 @@ class AnalyzerRemote():
                                         daemon=True)
             self._callback_thread.start()
 
-            
+        time.sleep(0.1)
+                
+        self._callback_registered_processnumber = False
+        self._callback_registered_io = False
+        self._callback_registered_appvar = False
+
+        try:
+            if len(self._processnumber_callbacks)>0:
+                self._send_request(cmd="reportprocessnumber", p1="true")
+                self._callback_registered_processnumber = True
+            if len(self._io_callbacks) > 0:
+                self._send_request(cmd="reportio", p1="true")
+                self._callback_registered_io = True
+            if len(self._appvar_callbacks) > 0:
+                self._send_request(cmd="reportappvars", p1="true")
+                self._callback_registered_appvar = True
+        except Exception as e:
+            raise ConnectionRefusedError from e
+
     def disconnect(self):
         if self.auto_stop:
             if "all" in self.auto_stop:
@@ -379,7 +402,7 @@ class AnalyzerRemote():
                 self._send_request(cmd="startmonitoring", p1="false")
             if "operatorFunctions" in self.auto_stop and self._operator_functions_active:
                 self._send_request(cmd="stoppoperatorfunctionvalues")
-                
+
         self._processing_data.clear()
         
         with self._socket_lock:
@@ -388,9 +411,6 @@ class AnalyzerRemote():
                     self._socket.shutdown(socket.SHUT_RDWR)
                 except OSError:
                     self.logger.warning('Socket was not closed regulary')
-                    self._socket=None
-                    
-            self.logger.info(f'Disconnect from {self.ip}:{self.port}')
     
         if self._receiver_thread and self._receiver_thread.is_alive():
             self._receiver_thread.join(1)
@@ -416,7 +436,23 @@ class AnalyzerRemote():
     @property
     def connected(self):
         return self._socket is not None
-    
+
+    @property
+    def host_address(self):
+        with self._socket_lock:
+            if self._socket:
+                ip, port = self._socket.getpeername()
+                return f"{ip}:{port}"
+            return ""
+        
+    @property
+    def local_address(self):
+        with self._socket_lock:
+            if self._socket:
+                ip, port = self._socket.getsockname()
+                return f"{ip}:{port}"
+            return ""
+            
     @property
     def get_socket_ip(self):
         """ Property that gives out connected IP.
@@ -432,6 +468,7 @@ class AnalyzerRemote():
         :rtype: int
         """ 
         return self.port
+
 
     @property
     def get_measuring_state(self):
@@ -919,10 +956,11 @@ class AnalyzerRemote():
         :param check_msg_id: Check if msgid of request matches the resid of response. Analyzer4D version lower than "2.04.06.02 extended" must set this to False.
         :type custom_timeout: int, optional
         """ 
-        
-        if len(self._appvar_callbacks) == 0:
+
+        if not self._callback_registered_appvar and self.connected:
             self._send_request(cmd="reportappvars", p1="true", user_timeout=custom_timeout,check_msg_id=check_msg_id)
-        
+            self._callback_registered_appvar = True
+
         self._appvar_callbacks.append(callback)
         self.logger.info(f"Callback {callback} for AppVar report added")
 
@@ -941,6 +979,7 @@ class AnalyzerRemote():
         
             if len(self._appvar_callbacks) == 0:
                 self._send_request(cmd="reportappvars", p1="false", user_timeout=custom_timeout)
+                self._callback_registered_appvar = False
                 self.logger.info("Report of AppVar stopped.")
 
 
@@ -1779,8 +1818,9 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
                     
-        if len(self._io_callbacks) == 0:
+        if not self._callback_registered_io and self.connected:
             self._send_request(cmd="reportio", p1="true", user_timeout=custom_timeout)
+            self._callback_registered_io = True
         
         self._io_callbacks.append(callback)
         self.logger.info(f"Callback {callback} for I/O report added")
@@ -1799,6 +1839,7 @@ class AnalyzerRemote():
     
         if len(self._io_callbacks) == 0:
             self._send_request(cmd="reportio", p1="false", user_timeout=custom_timeout)
+            self._callback_registered_io = False
         self.logger.info("I/O report stopped")
             
         
@@ -1814,12 +1855,12 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         
-        if len(self._processnumber_callbacks) == 0:
+        if not self._callback_registered_processnumber and self.connected:
             self._send_request(cmd="reportprocessnumber", p1="true", user_timeout=custom_timeout)
+            self._callback_registered_processnumber = True
         
         self._processnumber_callbacks.append(callback)
         self.logger.info(f"Callback {callback} for AppVar report added")
-
 
                 
     def remove_process_number_report_callback(self, callback, custom_timeout=None) -> None:
@@ -1837,8 +1878,10 @@ class AnalyzerRemote():
         
             if len(self._processnumber_callbacks) == 0:
                 self._send_request(cmd="reportprocessnumber", p1="false", user_timeout=custom_timeout)
+                self._callback_registered_processnumber = False
                 self.logger.info("Report of process number stopped.")
             
+
     def set_io_output(self, io_line: int, state: bool, custom_timeout=None) -> None:
         """ Sets single I/O ouput line. As parameter only line number of third I/O line is required. When in doubt, check documentation.
 
@@ -2246,8 +2289,7 @@ class AnalyzerRemote():
                              
     def _send_request(self, check_msg_id=True, can_fail=True, user_timeout=None, **kwargs) -> dict:
         if not self._socket:
-            raise RuntimeError('can not send because socket is closed')
-
+            raise RuntimeError(f'can not send because socket is closed {kwargs}')
 
         msg_id  = self._get_next_msg_id()
 
@@ -2265,12 +2307,24 @@ class AnalyzerRemote():
         header = struct.pack('>H',len(payload))
         data = header+payload
         self.logger.debug(f'Send:\n{json.dumps(command,indent=2)}')
-        if self._socket.send(data) != (len(data)):
+
+        try:
+            send_bytes = self._socket.send(data)
+        except OSError as e:
+            self.logger.exception(e)
+            try:
+                if self._socket:
+                    self._socket.shutdown(socket.SHUT_RDWR)
+            except OSError as e:
+                self.logger.exception(e)
+                pass
+            raise
+
+        
+        if send_bytes != (len(data)):
             raise RuntimeError('Failed to write bytes')
         
-        
         if user_timeout:
-
             if isinstance(user_timeout, str) and user_timeout == "never":
                 user_timeout = None # equals block
             timeout = user_timeout
@@ -2302,6 +2356,7 @@ class AnalyzerRemote():
 
             if callback is None:
                 self.logger.debug('Stop Callback Processing')
+                self._processing_callbacks.clear()
                 return
             try:
                 callback()
@@ -2342,6 +2397,7 @@ class AnalyzerRemote():
             self.logger.exception(e)
             
         finally:
+            self._processing_data.clear()
             self._callback_queue.put(None)
             with self._socket_lock:
              if self._socket:
@@ -2351,6 +2407,8 @@ class AnalyzerRemote():
                     self.logger.warning('socket was not closed regulary')
                 finally:
                     self._socket = None
+                    self.logger.info(f'Disconnect from {self.ip}:{self.port}')
+                    # self.logger.info()
             self.logger.debug('Stop Receiving data')
                 
     def _process_msg(self, msg : dict):
