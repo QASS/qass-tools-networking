@@ -2,10 +2,9 @@ import socket
 from pathlib import Path
 import json
 import numpy as np
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, StrEnum
 from collections import defaultdict
-from typing import Any, Dict, List, Union
-import typing
+from typing import Dict, List, Union
 import logging
 import re
 import threading
@@ -224,6 +223,20 @@ class PreampType(IntEnum):
     """ Serial Number Ring for supported Preamp Types."""
     PASSIVE = 2023
     ACTIVE  = 2113
+
+class AnalyzerRunStatus(StrEnum):
+    IDLE = 'IDLE'
+    MEASURE = 'MEASURE'
+    REPLAY = 'REPLAY'
+    SCOPE = 'SCOPE'
+    MONITOR = 'MONITOR'
+    CLEANUP = 'CLEANUP'
+    LOAD = 'LOAD'
+    SAVE = 'SAVE'
+    FAILSTATE = 'FAILSTATE'
+    SIMULATE = 'SIMULATE'
+    PAUSED = 'PAUSED'
+    SELFTEST = 'SELFTEST'
 
 class ReceiverThreadError(Exception):
     def __init__(self, message):
@@ -475,15 +488,14 @@ class AnalyzerRemote():
         """ 
         return self.port
 
-
     @property
     def get_measuring_state(self):
         """ Property that gives out if measuring has been started remotely.
 
         :rtype: boolean
         """ 
-        return self._measuring_active
-
+        return self._measuring_active        
+    
     @property
     def get_monitoring_state(self):
         """ Property that gives out if monitoring has been started remotely.
@@ -516,7 +528,17 @@ class AnalyzerRemote():
         """ 
         return self.translator.keys()
     
-    def get_trigger_loop_state(self) -> bool:
+    def is_measuring(self) -> bool:
+        """ 
+        Check whether the Analyzer4D software is measuring.
+
+        :returns: True, if measuring. False, otherwise.
+        :rtype: boolean
+        """ 
+        response = self._send_request(cmd='AppFunc', p1='Status', p2='trigger')
+        return response['result'] == AnalyzerRunStatus.MEASURE
+    
+    def is_trigger_loop_activated(self) -> bool:
         """
         Get state of trigger loop.
         
@@ -530,8 +552,6 @@ class AnalyzerRemote():
             return False
         else:
             raise ValueError(f'Unexpected result {response["result"]}. Expected "running" or "deactivated"!')
-        
-
 
     def set_global_function_timeout(self, timeout:int) -> None:
         """Sets the global timeout for all function to a higher value. Single function can further be overwritten by custom_timeout."""
