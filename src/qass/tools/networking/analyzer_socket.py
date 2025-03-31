@@ -2451,8 +2451,13 @@ class AnalyzerRemote():
                 
                 if cmd in ("reportappvars","responseappvars"):
                     self._socket.send(data)
-                    for cb in self._all_appvar_callbacks:
-                        self._callback_queue.put(functools.partial(cb,msg))
+                    if len(self._all_appvar_callbacks) > 0:
+                        for cb in self._all_appvar_callbacks:
+                            self._callback_queue.put(functools.partial(cb,msg))
+                    else:
+                        appvar = msg['name']
+                        for cb in self._single_appvar_callbacks[appvar]:
+                            self._callback_queue.put(functools.partial(cb, msg))
                 elif cmd == 'responsereportio':
                     self._socket.send(data)
                     for cb in self._io_callbacks:
