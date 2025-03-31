@@ -238,6 +238,8 @@ class AnalyzerRunStatus(IntEnum):
     PAUSED = 10
     SELFTEST = 11
 
+run_status_mapping = {status.name: status for status in AnalyzerRunStatus}
+
 class ReceiverThreadError(Exception):
     def __init__(self, message):
         self.message = message
@@ -531,7 +533,8 @@ class AnalyzerRemote():
     def get_run_status(self) -> AnalyzerRunStatus:
         """TODO"""
         response = self._send_request(cmd='AppFunc', p1='Status', p2='run')
-        return AnalyzerRunStatus(response['result'])
+
+        return AnalyzerRunStatus(run_status_mapping[response['result']])
     
     def is_measuring(self) -> bool:
         """ 
