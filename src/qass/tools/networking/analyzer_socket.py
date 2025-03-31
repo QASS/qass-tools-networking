@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import numpy as np
 from enum import Enum, IntEnum
+from collections import defaultdict
 from typing import Any, Dict, List, Union
 import typing
 import logging
@@ -16,6 +17,8 @@ import struct
 import functools
 import deprecated
 import time
+
+from traitlets import default
 
 class Amplitudes(Enum):
     """ Enum class to list and check available amplitudes in mV to generate sine wave.""" 
@@ -313,7 +316,8 @@ class AnalyzerRemote():
         self._requests_lock = threading.Lock()
 
         self._io_callbacks = []
-        self._appvar_callbacks = []
+        self._all_appvar_callbacks = []
+        self._single_appvar_callbacks = defaultdict(list)
         self._processnumber_callbacks = []
 
         self._callback_registered_processnumber = False
@@ -384,9 +388,11 @@ class AnalyzerRemote():
             if len(self._io_callbacks) > 0:
                 self._send_request(cmd="reportio", p1="true")
                 self._callback_registered_io = True
-            if len(self._appvar_callbacks) > 0:
+            if len(self._all_appvar_callbacks) > 0:
                 self._send_request(cmd="reportappvars", p1="true")
                 self._callback_registered_appvar = True
+            elif len(self._single_appvar_callbacks) > 0:
+                self._send_request(cmd='reportappvar', p1='add', p2=';'.join(self._single_appvar_callbacks.keys()))
         except Exception as e:
             raise ConnectionRefusedError from e
 
@@ -945,43 +951,59 @@ class AnalyzerRemote():
         """ 
         self._send_request(cmd="clearappvar", p1=appvar_name, user_timeout=custom_timeout)
 
-    def add_appvar_report_callback(self, callback, custom_timeout=None, check_msg_id=True) -> None:
+    def add_appvar_report_callback(self, callback, custom_timeout=None, check_msg_id=True, appvar: str = None) -> None:
         """ Add callback function to report of AppVar. Everytime a AppVar changes, added callback functions will be executed. See networking_example.py for an example. By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function. Beside the executed callback, analyzer sends state of all AppVars as information by every change.
 
         .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
 
+        # TODO add hint on lambda functions!
         :param callback: Added callback function when report happens.
         :type callback: function
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :param check_msg_id: Check if msgid of request matches the resid of response. Analyzer4D version lower than "2.04.06.02 extended" must set this to False.
         :type custom_timeout: int, optional
+        TODO add docstrings for appvar argument
         """ 
+        if appvar is not None:
+            if len(self._all_appvar_callbacks) > 0:
+                raise ValueError(f'AppVar report for single AppVar "{appvar}" requested, but global AppVar reporting is already activated!')
+            if self.connected:
+                self._send_request(cmd='reportappvar', p1='add', p2=appvar)
+            self._single_appvar_callbacks[appvar].append(callback)
 
-        if not self._callback_registered_appvar and self.connected:
-            self._send_request(cmd="reportappvars", p1="true", user_timeout=custom_timeout,check_msg_id=check_msg_id)
-            self._callback_registered_appvar = True
+            self.logger.info(f"Callback {callback.__name__} for AppVar \"{appvar}\" report added.")
+        else:
+            if len(self._single_appvar_callbacks) > 0:
+                raise ValueError(f'Global AppVar reporting requested, but AppVar reporting for single AppVars is already activated!')
+            if self.connected and not self._callback_registered_appvar:
+                self._send_request(cmd="reportappvars", p1="true", user_timeout=custom_timeout,check_msg_id=check_msg_id)
+            self._all_appvar_callbacks.append(callback)
+            
+            self.logger.info(f"Callback {callback.__name__} for AppVar report added.")
 
-        self._appvar_callbacks.append(callback)
-        self.logger.info(f"Callback {callback} for AppVar report added")
-
-    def remove_appvar_report_callback(self, callback, custom_timeout=None) -> None:
+    def remove_appvar_report_callback(self, callback, custom_timeout=None, appvar: str = None) -> None:
         """ Removes specific callback function from AppVar report callback list. By removing all callbacks the report function will be automatically stopped.
 
+        # TODO add hint on lambda functions!
         :param callback: Callback function that should be removed from AppVar report functionalities.
         :type callback: function
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
+        if appvar is not None:
+            if len(self._single_appvar_callbacks[appvar]) > 0:
+                self._single_appvar_callbacks[appvar].remove(callback)
+                if self.connected and len(self._single_appvar_callbacks[appvar]) == 0:
+                    self._send_request(cmd='reportappvar', p1='remove', p2=appvar)
+                    self.logger.info(f"Report of AppVar {appvar} stopped.")
+
+        elif len(self._all_appvar_callbacks) > 0:
+            self._all_appvar_callbacks.remove(callback)
         
-        if len(self._appvar_callbacks) > 0:
-            idx = self._appvar_callbacks.index(callback)
-            self._appvar_callbacks.remove(idx)
-        
-            if len(self._appvar_callbacks) == 0:
+            if len(self._all_appvar_callbacks) == 0:
                 self._send_request(cmd="reportappvars", p1="false", user_timeout=custom_timeout)
                 self._callback_registered_appvar = False
-                self.logger.info("Report of AppVar stopped.")
-
+                self.logger.info("Report of AppVars stopped.")
 
     def get_process_number(self, custom_timeout=None) -> int:
         """ Returns current process number (active buffer).
@@ -1834,8 +1856,7 @@ class AnalyzerRemote():
         """ 
             
         if len(self._io_callbacks) > 0:
-            idx = self._io_callbacks.index(callback)
-            self._io_callbacks.remove(idx)
+            self._io_callbacks.remove(callback)
     
         if len(self._io_callbacks) == 0:
             self._send_request(cmd="reportio", p1="false", user_timeout=custom_timeout)
@@ -1873,8 +1894,7 @@ class AnalyzerRemote():
         """ 
             
         if len(self._processnumber_callbacks) > 0:
-            idx = self._processnumber_callbacks.index(callback)
-            self._processnumber_callbacks.remove(idx)
+            self._processnumber_callbacks.remove(callback)
         
             if len(self._processnumber_callbacks) == 0:
                 self._send_request(cmd="reportprocessnumber", p1="false", user_timeout=custom_timeout)
@@ -2431,7 +2451,7 @@ class AnalyzerRemote():
                 
                 if cmd in ("reportappvars","responseappvars"):
                     self._socket.send(data)
-                    for cb in self._appvar_callbacks:
+                    for cb in self._all_appvar_callbacks:
                         self._callback_queue.put(functools.partial(cb,msg))
                 elif cmd == 'responsereportio':
                     self._socket.send(data)
