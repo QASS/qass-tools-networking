@@ -528,6 +528,11 @@ class AnalyzerRemote():
         """ 
         return self.translator.keys()
     
+    def get_run_status(self) -> AnalyzerRunStatus:
+        """TODO"""
+        response = self._send_request(cmd='AppFunc', p1='Status', p2='run')
+        return AnalyzerRunStatus(response['result'])
+    
     def is_measuring(self) -> bool:
         """ 
         Check whether the Analyzer4D software is measuring.
@@ -535,7 +540,7 @@ class AnalyzerRemote():
         :returns: True, if measuring. False, otherwise.
         :rtype: boolean
         """ 
-        response = self._send_request(cmd='AppFunc', p1='Status', p2='trigger')
+        response = self._send_request(cmd='AppFunc', p1='Status', p2='run')
         return response['result'] == AnalyzerRunStatus.MEASURE.name
     
     def is_trigger_loop_activated(self) -> bool:
