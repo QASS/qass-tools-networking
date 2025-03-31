@@ -2,7 +2,7 @@ import socket
 from pathlib import Path
 import json
 import numpy as np
-from enum import Enum, IntEnum, auto
+from enum import Enum, IntEnum
 from collections import defaultdict
 from typing import Dict, List, Union
 import logging
@@ -225,18 +225,18 @@ class PreampType(IntEnum):
     ACTIVE  = 2113
 
 class AnalyzerRunStatus(IntEnum):
-    IDLE = auto()
-    MEASURE = auto()
-    REPLAY = auto()
-    SCOPE = auto()
-    MONITOR = auto()
-    CLEANUP = auto()
-    LOAD = auto()
-    SAVE = auto()
-    FAILSTATE = auto()
-    SIMULATE = auto()
-    PAUSED = auto()
-    SELFTEST = auto()
+    IDLE = 0
+    MEASURE = 1
+    REPLAY = 2
+    SCOPE = 3
+    MONITOR = 4
+    CLEANUP = 5
+    LOAD = 6
+    SAVE = 7
+    FAILSTATE = 8
+    SIMULATE = 9
+    PAUSED = 10
+    SELFTEST = 11
 
 class ReceiverThreadError(Exception):
     def __init__(self, message):
