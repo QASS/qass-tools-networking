@@ -515,6 +515,23 @@ class AnalyzerRemote():
         :rtype: List
         """ 
         return self.translator.keys()
+    
+    def get_trigger_loop_state(self) -> bool:
+        """
+        Get state of trigger loop.
+        
+        :returns: True, if trigger loop is activated, False otherwise.
+        :rtype: bool
+        """
+        response = self._send_request(cmd='AppFunc', p1='Status', p2='trigger')
+        if response['result'] == 'running':
+            return True
+        elif response['result'] == 'deactivated':
+            return False
+        else:
+            raise ValueError(f'Unexpected result {response["result"]}. Expected "running" or "deactivated"!')
+        
+
 
     def set_global_function_timeout(self, timeout:int) -> None:
         """Sets the global timeout for all function to a higher value. Single function can further be overwritten by custom_timeout."""
