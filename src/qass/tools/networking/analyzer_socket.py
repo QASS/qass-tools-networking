@@ -2,7 +2,7 @@ import socket
 from pathlib import Path
 import json
 import numpy as np
-from enum import Enum, IntEnum, StrEnum
+from enum import Enum, IntEnum, auto
 from collections import defaultdict
 from typing import Dict, List, Union
 import logging
@@ -224,19 +224,19 @@ class PreampType(IntEnum):
     PASSIVE = 2023
     ACTIVE  = 2113
 
-class AnalyzerRunStatus(StrEnum):
-    IDLE = 'IDLE'
-    MEASURE = 'MEASURE'
-    REPLAY = 'REPLAY'
-    SCOPE = 'SCOPE'
-    MONITOR = 'MONITOR'
-    CLEANUP = 'CLEANUP'
-    LOAD = 'LOAD'
-    SAVE = 'SAVE'
-    FAILSTATE = 'FAILSTATE'
-    SIMULATE = 'SIMULATE'
-    PAUSED = 'PAUSED'
-    SELFTEST = 'SELFTEST'
+class AnalyzerRunStatus(IntEnum):
+    IDLE = auto()
+    MEASURE = auto()
+    REPLAY = auto()
+    SCOPE = auto()
+    MONITOR = auto()
+    CLEANUP = auto()
+    LOAD = auto()
+    SAVE = auto()
+    FAILSTATE = auto()
+    SIMULATE = auto()
+    PAUSED = auto()
+    SELFTEST = auto()
 
 class ReceiverThreadError(Exception):
     def __init__(self, message):
@@ -536,7 +536,7 @@ class AnalyzerRemote():
         :rtype: boolean
         """ 
         response = self._send_request(cmd='AppFunc', p1='Status', p2='trigger')
-        return response['result'] == AnalyzerRunStatus.MEASURE
+        return response['result'] == AnalyzerRunStatus.MEASURE.name
     
     def is_trigger_loop_activated(self) -> bool:
         """
