@@ -17,8 +17,6 @@ import functools
 import deprecated
 import time
 
-from traitlets import default
-
 class Amplitudes(Enum):
     """ Enum class to list and check available amplitudes in mV to generate sine wave.""" 
     AMP_64_mV = 64
