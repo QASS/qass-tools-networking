@@ -14,7 +14,6 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "PySide2",                    # Python Server client
     "tqdm>=4.64.0",               # Analyzer_SSH
     "retry",                      # Analyzer_Remote
     "paramiko",                   # Analyzer_SSH
