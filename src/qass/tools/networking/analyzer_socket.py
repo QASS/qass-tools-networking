@@ -2,19 +2,17 @@ import socket
 from pathlib import Path
 import json
 import numpy as np
-from enum import Enum, IntEnum
+from enum import Enum
 from collections import defaultdict
 from typing import Dict, List, Union
 import logging
 import re
 import threading
 import queue
-import warnings
 from concurrent import futures
 import copy
 import struct
 import functools
-import deprecated
 import time
 
 from qass.tools.networking.errors import *
@@ -24,7 +22,7 @@ from qass.tools.networking.constants import *
 class AnalyzerRemote():
     """ Class provides methods for external analyzer control (system operator independant) over a TCP socket. Every method that gets a response is able to set a custom timeout for analyzer reponse. Should any kind of bugs happen without TCP socket crashing, Queue timeout will run into failstate. """ 
 
-    def __init__(self, ip: str, port:int=17000, debug_mode:bool=False, timeout:int=1, suppress_cb_exceptions:bool=True, auto_stop:List=None):
+    def __init__(self, ip: str, port:int=17000, timeout:int=1, suppress_cb_exceptions:bool=True, auto_stop:List=None):
         """ Constructor provides helper and creates logger module.
 
         :param ip: Analyzer IP in network.
@@ -141,7 +139,7 @@ class AnalyzerRemote():
         self._callback_registered_appvar = False
 
         try:
-            if len(self._processnumber_callbacks)>0:
+            if len(self._processnumber_callbacks) > 0:
                 self._send_request(cmd="reportprocessnumber", p1="true")
                 self._callback_registered_processnumber = True
             if len(self._io_callbacks) > 0:
