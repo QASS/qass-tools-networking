@@ -62,9 +62,14 @@ class AnalyzerRemote():
                            False: "false", "stop": "false", "end": "false", "disabled": "false",
                            "false": "false", "disable": "false", "off": "false", "monitor": "monitor"}
 
+        auto_stop_options = ['measuring', 'sineGen', 'monitoring', 'operatorFunctions']
+        if not all(command in auto_stop_options for command in auto_stop):
+            raise ValueError(f'Got invalid auto stop commands {auto_stop}! Valid options are {['all'] + auto_stop_options}')
 
-
-        self.auto_stop = auto_stop
+        if 'all' in auto_stop:
+            self.auto_stop = auto_stop_options
+        else:
+            self.auto_stop = auto_stop
 
         self._measuring_active = False
         self._sine_gen_active = False
@@ -155,9 +160,7 @@ class AnalyzerRemote():
 
 
     def disconnect(self):
-        if self.auto_stop:
-            if "all" in self.auto_stop:
-                self.auto_stop = ["sineGen", "measuring", "monitoring", "operatorFunctions"]
+        if len(self.auto_stop) > 0:
             if "sineGen" in self.auto_stop and self._sine_gen_active:
                 self._send_request(cmd="AppCmd", p1="StopSineGen")
             if "measuring" in self.auto_stop and self._measuring_active:
