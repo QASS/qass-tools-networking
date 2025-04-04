@@ -1052,30 +1052,6 @@ class AnalyzerRemote():
         preamp_eeprom = f"t:{preamp_type};s/n:{serial_number};s:{s_value};"
         self._send_request(cmd="writepreampinfo", p1=preampport, p2=preamp_eeprom, check_msg_id=False)
 
-    def start_operator_function(self, mode: Union[str, bool] = "start", custom_timeout=None) -> None:
-        """ Start operator functions.
-
-        :param mode: Function can start or end operator function by changing mode to a stopping key, defaults to "start". For more allowed keys look up translator dict.
-        :type mode: str, bool, optional
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        """ 
-        self._send_request(cmd="startoperatorfunctionvalues", user_timeout=custom_timeout, p1=self.translator[mode])
-        # flags for context manager exit method
-        if self.translator[mode] == "true":
-            self._operator_functions_active = True
-        elif self.translator[mode] == "false":
-            self._operator_functions_active = False
-
-    def stop_operator_function(self, custom_timeout=None) -> None:
-        """ Stop of running operator function.
-        
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        """ 
-        self._send_request(cmd="stoppoperatorfunctionvalues", user_timeout=custom_timeout)
-        # flags for context manager exit method
-        self._operator_functions_active = False
 
     def set_serial_number(self, serial_number: int, process_number: int, custom_timeout=None) -> None:
         """ Setting serial number for arbitary process.
@@ -1334,25 +1310,6 @@ class AnalyzerRemote():
         """ Removes current project template.""" 
         self._send_request(cmd="AppCmd", p1="SaveProjectasDefault", p2=f"-e", user_timeout=custom_timeout)
 
-    # TODO: Test
-    def start_operator_results(self, mode: Union[str, bool] = "enable", custom_timeout=None) -> None:
-        """ Sets enable flag to send ot operator results if avaible. Results will be sended separately
-
-        :param mode: Enables start or stops by "disable", defaults to "enable"
-        :type mode: str, optional
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        """ 
-        self._send_request(cmd="startoperatorresults", p1=self.translator[mode], user_timeout=custom_timeout)
-                           
-    # TODO: Test
-    def stop_operator_results(self, custom_timeout=None) -> None:
-        """ Sets operator results to stop.
-        
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        """ 
-        self._send_request(cmd="stopoperatorresults", user_timeout=custom_timeout)
 
     def get_io_input(self, custom_timeout=None) -> int:
         """ Current get I/O input register as integer appearance (converted from hex).
