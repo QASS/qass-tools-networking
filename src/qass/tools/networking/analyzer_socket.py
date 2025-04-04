@@ -73,7 +73,6 @@ class AnalyzerRemote():
         self._monitoring_active = False
         self._operator_functions_active = False
 
-        
         self._callback_queue = queue.Queue()
         self._msg_id :int = 0
         self._socket :socket.socket = None
@@ -99,34 +98,23 @@ class AnalyzerRemote():
         self._callback_registered_appvar = False
 
         self.logger = logging.getLogger("qass.tools.networking")
-            
 
-    # def __del__(self):
-    #     self.logger.debug("AnalyzerRemote's deconstructor called.")
     
     def __enter__(self):
-        """Method to wrap open method behaviour for working with a contextmanager. Will open the connection to the Analyzer Instance and start a receiver thread.
-        """ 
         self.connect()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        """ If contextmanager is left, close method is called.
-        """ 
-        if exc_value:
-            self.logger.exception(exc_value)
-            
-        self.disconnect()   
 
-    @deprecated.deprecated(reason="A socket cannot be 'opened' in a technical sense. Use 'connect' to establish a connection instead.",version="3.3.3")
-    def open(self):
-        self.connect()
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_value is not None:
+            self.logger.exception(exc_value)
+        self.disconnect()   
         
         
     def connect(self):
         with self._socket_lock:
             if self._socket:
-                raise ValueError(f'Already connected with: {self._socket.getpeername()}')
+                raise ConnectionError(f'Already connected with: {self._socket.getpeername()}')
 
             tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             tcp_socket.bind(('0.0.0.0', 0))
@@ -135,22 +123,19 @@ class AnalyzerRemote():
             self._socket = tcp_socket
             self.logger.info(f'Connect to {self._socket.getpeername()}')
         
+        # reset callback queue in case that the connection is reused
         self._callback_queue = queue.Queue()
 
         if not self._processing_data.is_set():
-            self._receiver_thread = threading.Thread(name='AnalyzerRemoteDataReceiver',
-                                                    target=self._receive_data,
-                                                    daemon=True)
+            self._receiver_thread = threading.Thread(name='AnalyzerRemoteDataReceiver', target=self._receive_data, daemon=True)
             self._receiver_thread.start()
             
         if not self._processing_callbacks.is_set():
-            self._callback_thread = threading.Thread(name='AnalyzerRemoteCallbackExecutor',
-                                        target=self._execute_callbacks,
-                                        daemon=True)
+            self._callback_thread = threading.Thread(name='AnalyzerRemoteCallbackExecutor', target=self._execute_callbacks, daemon=True)
             self._callback_thread.start()
 
         time.sleep(0.1)
-                
+
         self._callback_registered_processnumber = False
         self._callback_registered_io = False
         self._callback_registered_appvar = False
@@ -170,10 +155,11 @@ class AnalyzerRemote():
         except Exception as e:
             raise ConnectionRefusedError from e
 
+
     def disconnect(self):
         if self.auto_stop:
             if "all" in self.auto_stop:
-                self.auto_stop = ["sineGen","measuring","monitoring","operatorFunctions"]
+                self.auto_stop = ["sineGen", "measuring", "monitoring", "operatorFunctions"]
             if "sineGen" in self.auto_stop and self._sine_gen_active:
                 self._send_request(cmd="AppCmd", p1="StopSineGen")
             if "measuring" in self.auto_stop and self._measuring_active:
@@ -202,17 +188,7 @@ class AnalyzerRemote():
             if self._callback_thread.is_alive():
                 self.logger.error(f'Failed to stop Thread: {self._callback_thread.name}')
 
-    
-    @deprecated.deprecated(reason="To match the terminology, use 'connect' to establish a connection and 'disconnect' to close it instead of 'open' & 'close'.",version="3.3.3")
-    def close(self):
-        """ Method to close the TCP socket and stop the receiver thread. Settet flags will be checked for safe closing of all started analyzer features."""
-        self.disconnect()        
-        
-    # @retry(ConnectionError, tries=4, delay=1)
-    @deprecated.deprecated(reason="To match the terminology, use 'connect' to establish a connection and 'disconnect' to close it.",version="3.3.3")
-    def _connecting_analyzer(self):
-        self.connect()
-    
+
     @property
     def connected(self):
         return self._socket is not None
@@ -225,6 +201,7 @@ class AnalyzerRemote():
                 return f"{ip}:{port}"
             return ""
         
+
     @property
     def local_address(self):
         with self._socket_lock:
@@ -232,22 +209,7 @@ class AnalyzerRemote():
                 ip, port = self._socket.getsockname()
                 return f"{ip}:{port}"
             return ""
-            
-    @property
-    def get_socket_ip(self):
-        """ Property that gives out connected IP.
-
-        :rtype: str
-        """ 
-        return self.ip
-
-    @property
-    def get_socket_port(self):
-        """ Property that gives out connected Port.
-
-        :rtype: int
-        """ 
-        return self.port
+        
 
     @property
     def get_measuring_state(self):
@@ -289,12 +251,14 @@ class AnalyzerRemote():
         """ 
         return self.translator.keys()
     
+
     def get_run_status(self) -> AnalyzerRunStatus:
         """TODO"""
         response = self._send_request(cmd='AppFunc', p1='Status', p2='run')
 
         return AnalyzerRunStatus(run_status_mapping[response['result']])
     
+
     def is_measuring(self) -> bool:
         """ 
         Check whether the Analyzer4D software is measuring.
@@ -305,6 +269,7 @@ class AnalyzerRemote():
         response = self._send_request(cmd='AppFunc', p1='Status', p2='run')
         return response['result'] == AnalyzerRunStatus.MEASURE.name
     
+
     def is_trigger_loop_activated(self) -> bool:
         """
         Get state of trigger loop.
@@ -320,9 +285,11 @@ class AnalyzerRemote():
         else:
             raise ValueError(f'Unexpected result {response["result"]}. Expected "running" or "deactivated"!')
 
+
     def set_global_function_timeout(self, timeout:int) -> None:
         """Sets the global timeout for all function to a higher value. Single function can further be overwritten by custom_timeout."""
         self.timeout = timeout
+
 
     def start_measuring(self, custom_timeout=None) -> None:
         """ Method sends a command to the connected analyzer to start a measuring process.
@@ -333,6 +300,7 @@ class AnalyzerRemote():
         
         self._send_request(cmd="AppCmd", p1="startMeasuring", user_timeout=custom_timeout)
         self._measuring_active = True
+
 
     def start_sineGenerator(self, frequency: int, amplitude: Union[int, str, Amplitudes], expert:bool=False, custom_timeout=None) -> None:
         """ Method to start sine wave generation with custom frequency and amplitude settings.
@@ -383,6 +351,7 @@ class AnalyzerRemote():
         self.logger.info(f"Sine generator started with f={frequency}Hz and {amplitude}mV amplitude.")
         self._sine_gen_active = True
         
+
     def stop_sineGenerator(self, custom_timeout=None) -> None:
         """ Stops generating sine waves.
         
@@ -2279,18 +2248,3 @@ class AnalyzerRemote():
         except Exception as e:
             self.logger.exception(e)
 
-
-class AnalyzerCmd(AnalyzerRemote):
-    """ Depricated class naming. Inherit from normal class.
-
-    .. deprecated:: since 1.1
-    Use :class:`AnalyzerRemote` class instead.
-
-    :param AnalyzerRemote: Inherited class
-    :type AnalyzerRemote: class
-    """ 
-
-    def __init__(self, ip: str, port=17000, debug_mode=False):
-        super().__init__(ip, port, debug_mode)
-        warnings.warn(
-            f"Class Name AnalyzerCmd is deprecated. Please use AnalyzerRemote!")
