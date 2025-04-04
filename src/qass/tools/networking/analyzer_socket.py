@@ -46,7 +46,6 @@ class AnalyzerRemote():
         measuring           Activate service to stop remote started measuring
         sineGen             Activate service to stop remote started sine generator
         monitoring          Activate service to stop remote started monitoring
-        operatorFunctions   Activate service to stop remote started operator function output
         ==================  ========================================================================================================================================== 
         
         """
@@ -62,7 +61,7 @@ class AnalyzerRemote():
                            False: "false", "stop": "false", "end": "false", "disabled": "false",
                            "false": "false", "disable": "false", "off": "false", "monitor": "monitor"}
 
-        auto_stop_options = ['measuring', 'sineGen', 'monitoring', 'operatorFunctions']
+        auto_stop_options = ['measuring', 'sineGen', 'monitoring']
         auto_stop = [] if auto_stop is None else auto_stop
         if not all(command in auto_stop_options for command in auto_stop):
             raise ValueError(f'Got invalid auto stop commands {auto_stop}! Valid options are {['all'] + auto_stop_options}')
@@ -73,7 +72,6 @@ class AnalyzerRemote():
             self.auto_stop = auto_stop
 
         self._sine_gen_active = False
-        self._operator_functions_active = False
 
         self._callback_queue = queue.Queue()
         self._msg_id :int = 0
@@ -166,8 +164,6 @@ class AnalyzerRemote():
                 self.stop_measuring()
             if "monitoring" in self.auto_stop and self.is_monitoring():
                 self.stop_monitoring()
-            if "operatorFunctions" in self.auto_stop and self._operator_functions_active:
-                self._send_request(cmd="stoppoperatorfunctionvalues")
 
         self._processing_data.clear()
         
@@ -215,14 +211,6 @@ class AnalyzerRemote():
         :rtype: boolean
         """ 
         return self._sine_gen_active
-
-    @property
-    def get_operator_functions_state(self):
-        """ Property that gives out if operator functions has been activated remotely.
-
-        :rtype: boolean
-        """ 
-        return self._operator_functions_active
 
     @property
     def get_translator(self):
