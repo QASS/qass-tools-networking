@@ -188,7 +188,6 @@ class AnalyzerRemote():
             if self._callback_thread.is_alive():
                 self.logger.error(f'Failed to stop Thread: {self._callback_thread.name}')
 
-
     @property
     def connected(self):
         return self._socket is not None
@@ -199,8 +198,7 @@ class AnalyzerRemote():
             if self._socket:
                 ip, port = self._socket.getpeername()
                 return f"{ip}:{port}"
-            return ""
-        
+            return ""        
 
     @property
     def local_address(self):
@@ -236,9 +234,7 @@ class AnalyzerRemote():
     
 
     def get_run_status(self) -> AnalyzerRunStatus:
-        """TODO"""
         response = self._send_request(cmd='AppFunc', p1='Status', p2='run')
-
         return AnalyzerRunStatus(run_status_mapping[response['result']])
     
 
@@ -278,6 +274,14 @@ class AnalyzerRemote():
             return False
         else:
             raise ValueError(f'Unexpected result {response["result"]}. Expected "running" or "deactivated"!')
+
+
+    def enable_automation(self):
+        self._send_request(cmd='AppCmd', p1='sysAutomation', p2='on')
+
+
+    def disable_automation(self):
+        self._send_request(cmd='AppCmd', p1='sysAutomation', p2='off')
 
 
     def set_global_function_timeout(self, timeout:int) -> None:
