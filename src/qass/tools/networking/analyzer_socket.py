@@ -71,7 +71,6 @@ class AnalyzerRemote():
         else:
             self.auto_stop = auto_stop
 
-        self._measuring_active = False
         self._sine_gen_active = False
         self._monitoring_active = False
         self._operator_functions_active = False
@@ -210,15 +209,6 @@ class AnalyzerRemote():
                 ip, port = self._socket.getsockname()
                 return f"{ip}:{port}"
             return ""
-        
-
-    @property
-    def get_measuring_state(self):
-        """ Property that gives out if measuring has been started remotely.
-
-        :rtype: boolean
-        """ 
-        return self._measuring_active        
     
     @property
     def get_monitoring_state(self):
@@ -300,7 +290,6 @@ class AnalyzerRemote():
         """ 
         
         self._send_request(cmd="AppCmd", p1="startMeasuring", user_timeout=custom_timeout)
-        self._measuring_active = True
 
 
     def start_sineGenerator(self, frequency: int, amplitude: Union[int, str, Amplitudes], expert:bool=False, custom_timeout=None) -> None:
@@ -369,7 +358,6 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         self._send_request(cmd="AppCmd", p1="stopMeasuring", user_timeout=custom_timeout)
-        self._measuring_active = False
 
     def set_process_comment(self, proc_number:int, proc_comment: str, custom_timeout=None) -> None:
         """ Set a process comment for the parsed process. Parsed string will be saved in database under entry: process.comment
@@ -907,51 +895,6 @@ class AnalyzerRemote():
         if val:
             self.logger.info("No worries. I'm still alive.")
             return True
-
-    def set_measuring_mode(self, mode: Union[bool, str]) -> None:
-        """ Start or stop a measurement. Additionally mode provides possibility to start monitoring mode.
-
-        Supported 'mode' keys: True, bool     | Start measuring
-        Supported 'mode' keys: False, bool    | Stop measuring
-        Supported 'mode' keys: 'monitor', str | Start monitoring
-
-        .. list-table:: Supported modes
-            :widths: 15 10 25
-            :header-rows: 1
-
-            * - Key
-              - Value datatype
-              - Measuring mode
-            * - True
-              - bool
-              - Start measuring
-            * - False
-              - bool
-              - Stop measuring
-            * - "monitor"
-              - bool
-              - Start monitoring
-            * - ["start", "true", "beginn", "enabled", "enable", "on"]        
-              - str
-              - Start measuring
-            * - ["stop", "false", "end", "disabled", "disable", "off"]
-              - str
-              - Stop measuring 
-
-        :param mode: Choosen measuring mode out of table above.
-        :type mode: str, bool
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        :raises KeyError: if keyword argument "mode" is parsed with invalid values.
-        """ 
-        self._send_request(cmd="startmeasuring", check_msg_id=True, p1=self.translator[mode])
-        # flags for context manager exit method
-        if self.translator[mode] == "true":
-            self._measuring_active = True
-        elif self.translator[mode] == "false":
-            self._measuring_active = False
-        elif self.translator[mode] == "monitor":
-            self._monitoring_active = True
 
     def set_monitoring_mode(self, mode: Union[bool, str], custom_timeout=None) -> None:
         """ Start or stop monitoring modus. When in doubt, check documentation.
