@@ -4,7 +4,7 @@ import json
 import numpy as np
 from enum import Enum
 from collections import defaultdict
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 import logging
 import re
 import threading
@@ -22,7 +22,7 @@ from qass.tools.networking.constants import *
 class AnalyzerRemote():
     """ Class provides methods for external analyzer control (system operator independant) over a TCP socket. Every method that gets a response is able to set a custom timeout for analyzer reponse. Should any kind of bugs happen without TCP socket crashing, Queue timeout will run into failstate. """ 
 
-    def __init__(self, ip: str, port:int=17000, timeout:int=1, suppress_cb_exceptions:bool=True, auto_stop:List=None):
+    def __init__(self, ip: str, port: int = 17000, timeout: int = 1, auto_stop: Optional[List] = None):
         """ Constructor provides helper and creates logger module.
 
         :param ip: Analyzer IP in network.
@@ -53,8 +53,7 @@ class AnalyzerRemote():
         self.ip = socket.gethostbyname(ip)
         self.port = port
         self.timeout = timeout # seconds
-        self.error = False
-        self.suppress_cb_exceptions = suppress_cb_exceptions
+
         # message ID to assign command to analyzer and specific response
         self.translator = {True: "true", "start": "true", "true": "true",
                            "beginn": "true", "enabled": "true", "enable": "true", "on": "true",
@@ -211,14 +210,6 @@ class AnalyzerRemote():
         :rtype: boolean
         """ 
         return self._sine_gen_active
-
-    @property
-    def get_translator(self):
-        """ Returns supported keys from translator
-
-        :rtype: List
-        """ 
-        return self.translator.keys()
     
 
     def get_run_status(self) -> AnalyzerRunStatus:
@@ -262,6 +253,13 @@ class AnalyzerRemote():
             return False
         else:
             raise ValueError(f'Unexpected result {response["result"]}. Expected "running" or "deactivated"!')
+        
+    def enable_trigger_loop(self):
+        self._send_request(cmd="AppCmd", p1="sysTriggerLoop", p2="on")
+
+    
+    def disable_trigger_loop(self):
+        self._send_request(cmd="AppCmd", p1="sysTriggerLoop", p2=f"off")
 
 
     def enable_automation(self):
@@ -1927,17 +1925,6 @@ class AnalyzerRemote():
         else:
             state = "disable"
         self._send_request(cmd="AppCmd", p1="ShowTool", p2=f"CLASSICMENU {state}") 
-
-    def set_trigger_list(self, enable:bool=True):
-        """ Set trigger list on enabled.
-
-        :param bool enable: enable/disable trigger list, defaults to True
-        """
-        if enable:
-            state = "on"
-        else:
-            state = "off"
-        self._send_request(cmd="AppCmd", p1="sysTriggerLoop", p2=f"{state}")
 
     
     def _get_next_msg_id(self):
