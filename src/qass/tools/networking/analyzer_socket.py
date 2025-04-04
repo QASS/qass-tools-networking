@@ -63,6 +63,7 @@ class AnalyzerRemote():
                            "false": "false", "disable": "false", "off": "false", "monitor": "monitor"}
 
         auto_stop_options = ['measuring', 'sineGen', 'monitoring', 'operatorFunctions']
+        auto_stop = [] if auto_stop is None else auto_stop
         if not all(command in auto_stop_options for command in auto_stop):
             raise ValueError(f'Got invalid auto stop commands {auto_stop}! Valid options are {['all'] + auto_stop_options}')
 
@@ -72,7 +73,6 @@ class AnalyzerRemote():
             self.auto_stop = auto_stop
 
         self._sine_gen_active = False
-        self._monitoring_active = False
         self._operator_functions_active = False
 
         self._callback_queue = queue.Queue()
@@ -162,10 +162,10 @@ class AnalyzerRemote():
         if len(self.auto_stop) > 0:
             if "sineGen" in self.auto_stop and self._sine_gen_active:
                 self._send_request(cmd="AppCmd", p1="StopSineGen")
-            if "measuring" in self.auto_stop and self._measuring_active:
-                self._send_request(cmd="AppCmd", p1="stopMeasuring")
-            if "monitoring" in self.auto_stop and self._monitoring_active:
-                self._send_request(cmd="startmonitoring", p1="false")
+            if "measuring" in self.auto_stop and self.is_measuring():
+                self.stop_measuring()
+            if "monitoring" in self.auto_stop and self.is_monitoring():
+                self.stop_monitoring()
             if "operatorFunctions" in self.auto_stop and self._operator_functions_active:
                 self._send_request(cmd="stoppoperatorfunctionvalues")
 
@@ -209,14 +209,6 @@ class AnalyzerRemote():
                 ip, port = self._socket.getsockname()
                 return f"{ip}:{port}"
             return ""
-    
-    @property
-    def get_monitoring_state(self):
-        """ Property that gives out if monitoring has been started remotely.
-
-        :rtype: boolean
-        """ 
-        return self._monitoring_active
 
     @property
     def get_sine_gen_state(self):
@@ -261,6 +253,17 @@ class AnalyzerRemote():
         return response['result'] == AnalyzerRunStatus.MEASURE.name
     
 
+    def is_monitoring(self) -> bool:
+        """ 
+        Check whether the Analyzer4D software is monitoring.
+
+        :returns: True, if monitoring. False, otherwise.
+        :rtype: boolean
+        """ 
+        response = self._send_request(cmd='AppFunc', p1='Status', p2='run')
+        return response['result'] == AnalyzerRunStatus.MONITOR.name
+    
+
     def is_trigger_loop_activated(self) -> bool:
         """
         Get state of trigger loop.
@@ -288,8 +291,11 @@ class AnalyzerRemote():
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
-        
         self._send_request(cmd="AppCmd", p1="startMeasuring", user_timeout=custom_timeout)
+
+
+    def start_monitoring(self, custom_timeout=None):
+        self._send_request(cmd="AppCmd", p1="startMonitoring", user_timeout=custom_timeout)
 
 
     def start_sineGenerator(self, frequency: int, amplitude: Union[int, str, Amplitudes], expert:bool=False, custom_timeout=None) -> None:
@@ -358,6 +364,11 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         self._send_request(cmd="AppCmd", p1="stopMeasuring", user_timeout=custom_timeout)
+
+    
+    def stop_monitoring(self, custom_timeout=None):
+        self._send_request(cmd="AppCmd", p1="stopMonitoring", user_timeout=custom_timeout)
+
 
     def set_process_comment(self, proc_number:int, proc_comment: str, custom_timeout=None) -> None:
         """ Set a process comment for the parsed process. Parsed string will be saved in database under entry: process.comment
@@ -896,44 +907,6 @@ class AnalyzerRemote():
             self.logger.info("No worries. I'm still alive.")
             return True
 
-    def set_monitoring_mode(self, mode: Union[bool, str], custom_timeout=None) -> None:
-        """ Start or stop monitoring modus. When in doubt, check documentation.
-
-        Supported 'mode' keys: True, bool     | Start monitoring
-        Supported 'mode' keys: 'False', bool  | Stop monitoring
-
-        .. list-table:: Supported modes
-            :widths: 15 10 25
-            :header-rows: 1
-
-            * - Key
-              - Value datatype
-              - Measuring mode
-            * - True
-              - bool
-              - Start monitoring
-            * - False
-              - bool
-              - Stop monitoring
-            * - ["start", "true", "beginn", "enabled", "enable", "on"]        
-              - str
-              - Start monitoring
-            * - ["stop", "false", "end", "disabled", "disable", "off"]
-              - str
-              - Stop monitoring 
-
-        :param mode: Switch between start monitoring (True) or stop monitoring (False). For supported keys see translator.
-        :type mode: str, bool
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        :raises KeyError: if keyword argument "mode" is parsed with invalid values.
-        """ 
-        self._send_request(cmd="startmonitoring", p1=self.translator[mode], user_timeout=custom_timeout)
-        # flags for context manager exit method
-        if self.translator[mode] == "true":
-            self._monitoring_active = True
-        elif self.translator[mode] == "false":
-            self._monitoring_active = False
 
     def get_max_amp_per_band(self, channel=Channels.CHANNEL_1, create_plot_buffer: bool = True, save_plot_buffer: bool = False, amplitude_type=SysAmplitudesType.AMPLITUDE_DEFAULT, custom_timeout=None) -> np.ndarray:
         """ Method to return maximum amplitude per band of current active buffer.
