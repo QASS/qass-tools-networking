@@ -385,8 +385,8 @@ class AnalyzerRemote():
         if 0 < split <= 4:
             self._send_request(user_timeout=custom_timeout, cmd="AppCmd", p1="SetAreaViews", p2=split)
         else:
-            self.logger.error("Split amount vor view is out of bounds.")
-            raise ValueError("Split amount vor view is out of bounds.")
+            self.logger.error("Split amount for view is out of bounds.")
+            raise ValueError("Split amount for view is out of bounds.")
 
     def save_area_view(self, template_num: int, custom_timeout=None) -> None:
         """ Saves current area view settings under template number. Each template can be set differently.
