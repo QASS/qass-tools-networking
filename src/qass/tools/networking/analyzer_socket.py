@@ -13,6 +13,7 @@ import queue
 from collections import defaultdict
 from retry import retry
 import warnings
+from packaging import version
 
 
 class Amplitudes(Enum):
@@ -434,6 +435,7 @@ class AnalyzerRemote():
         sineGen             Activate service to stop remote started sine generator
         monitoring          Activate service to stop remote started monitoring
         operatorFunctions   Activate service to stop remote started operator function output
+        analyzer_version    Version number of connected Analyzer
         ==================  ========================================================================================================================================== 
         
         """
@@ -458,6 +460,7 @@ class AnalyzerRemote():
         self._sine_gen_active = False
         self._monitoring_active = False
         self._operator_functions_active = False
+        self._analyzer_version = None
         self.q = queue.Queue()
         
         # short solution logger to sys.stdout
@@ -605,9 +608,49 @@ class AnalyzerRemote():
         """ 
         return self.translator.keys()
 
+    
     def set_global_function_timeout(self, timeout:int) -> None:
         """Sets the global timeout for all function to a higher value. Single function can further be overwritten by custom_timeout."""
         self.timeout = timeout
+
+    def get_analyzer_version(self):
+        """
+        Checks if analyzer version is already determined and saved in self._analyzer_version.
+        Otherwise get_project_info() is used to determine the analyzer version
+
+        :raises ConnectionError: Raises if determination of version number fails
+        :rtype: str
+
+        """
+        if self._analyzer_version is None:
+            project_info = self.get_project_info()
+            if 'analyzerversion' in project_info:
+                self._analyzer_version = project_info['analyzerversion']
+            else:
+                raise ConnectionError("Analyzer Version determination failed!")
+        return self._analyzer_version
+
+    def check_version(self, minimum_needed_version:Union[str,None]=None, maximum_supported_version:Union[str,None]=None):
+        """ Method checks if the version of the connected Analyzer is larger equal to the minimum_needed_version and smaller equal the maximum_supported_version. Ignores minimum_needed_version or maximum_supported_version when they are None.  Determines the analyzer version with get_analyzer_version() 
+        
+        :param minimum_needed_version: minimum Analyzer Version needed to use feature. can have different structure than actual version(more or less numbers). 
+        :type project_name: str, optional
+
+        :param maximum_supported_version: maximum Analyzer Version that supports feature. can have different structure than actual version(more or less numbers). 
+        :type project_name: str, optional
+        
+        :rtype: bool
+        """     
+        version_analyzer = version.parse(self.get_analyzer_version())
+        if minimum_needed_version is not None:
+            if version_analyzer < version.parse(minimum_needed_version):
+                return False
+        if maximum_supported_version is not None:
+            if version_analyzer > version.parse(maximum_supported_version):
+                return False
+
+        return True
+
 
     def start_measuring(self, custom_timeout=None) -> None:
         """ Method sends a command to the connected analyzer to start a measuring process.
@@ -2090,16 +2133,18 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", p1="writeBackup", user_timeout=custom_timeout)
   
     def set_sys_pengui_config(self, penguifile=None, reload=None, activate_on_load=None, disable_open_gl=None, 
-                              disable_buffer_boxes=None, custom_timeout=None):
+                              disable_buffer_boxes=None, keepIfNotChanged=None, custom_timeout=None):
         """ Sets the entries under Preferences -> GUI -> Custom User Interface.
-        This incorporates the behaviour of the qml GUI.
+        This incorporates the behaviour of the qml GUI. It is probably no good idea to set reload and keepIfNotChanged both to True.
         
         :param str penguifile: The absolute path to the qml file that should be loaded.
         :param bool reload: Whether or not to reload the qml file whenever a project is loaded
         :param bool activate_on_load: Whether to display the qml GUI on program startup.
         :param bool disable_open_gl: Disable the openGL view whenever a qml GUI is actively displayed.
         :param bool disable_buffer_boxes: Disable Buffer bounding boxes.
+        :param bool keepIfNotChanged: Do not reload qml GUI when the project is changed and the new project uses the same QML. Just available for Analyzer with Version >= "2.04.12.05", otherwise this attribute is ignored and a warning occures
         """
+        
         #build p2 string for use of different optionm -> Analyzer searches for subcmd and then boolean value
         activated_params= []
         for key, value in [("penguifile", penguifile),  ("reload", reload),
@@ -2108,6 +2153,15 @@ class AnalyzerRemote():
                                                         ("disableBufferBoxes", disable_buffer_boxes)]:
             if value is not None:
                 activated_params.append(f"{key} \"{self.translator.get(value,value)}\" ")
+        
+        if keepIfNotChanged is not None:
+            # check version
+            if self.check_version(minimum_needed_version="2.04.12.05"):
+                
+                activated_params.append(f"keepIfNotChanged \"{self.translator.get(keepIfNotChanged,keepIfNotChanged)}\" ")
+            else:
+                self.logger.warning(f"keepIfNotChanged is no available attribute for method sysPenguiConfig because AnalyzerVersion {self._analyzer_version} is smaller than 2.04.12.05! Change attribute manually in Settings -> GUI or update Analyzer Version!")
+
         p2_str = "".join(activated_params)
         if p2_str == "":
             self.logger.info("Method 'set_sys_pengui_config' is not executed because of no valid parameters.")
