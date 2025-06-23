@@ -2609,9 +2609,9 @@ class AnalyzerRemote():
             tool accepts an argument called `appvar`.
         :type paras: list[str] | str | None
         """
-        assert processes is None or processes >= 0, ("The processes parameter must be greater than zero "
+        assert processes is None or processes >= 0, ("The processes parameter must be greater than or equal to zero "
                                                      f"but was {processes}")
-        assert minutes is None or minutes >= 0, ("The minutes parameter must be greater than zero "
+        assert minutes is None or minutes >= 0, ("The minutes parameter must be greater than or equal to zero "
                                                      f"but was {minutes}")
         if isinstance(paras, list):
             paras = " ".join(paras)
