@@ -29,8 +29,8 @@ def required_version(min_: str | None = None, max_: str | None = None):
         def wrapper(*args, **kwargs):
             conn = args[0]
             assert isinstance(conn, AnalyzerRemote), "First argument was not an AnalyzerRemote object"
-            current_version = conn.get_analyzer_version()
             if not conn.check_version(min_, max_):
+                current_version = conn.get_analyzer_version()
                 raise AnalyzerVersionError("For this command the Analyzer4D version must be "
                                            f"{'>=' + min_ if min_ is not None else ''}"
                                            f"{' ' if min_ is not None else ''}"
