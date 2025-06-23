@@ -1,6 +1,7 @@
 # fmt: off
 import socket
 from pathlib import Path
+from functools import wraps
 import json
 import numpy as np
 from enum import Enum, IntEnum
@@ -15,6 +16,31 @@ from retry import retry
 import warnings
 from packaging import version
 
+def required_version(min_: str | None = None, max_: str | None = None):
+    """Wrapper to check the Analyzer4D version before executing a command
+    This wrapper only works for methods of the AnalyzerRemote class and will
+    throw an error if used in other objects.
+
+    :param min_: The minimum version as a string in the format "01.01.01.01"
+    :param max_: The maximum version as a string in the format "01.01.01.01"
+    """
+    def inner(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            conn = args[0]
+            assert isinstance(conn, AnalyzerRemote), "First argument was not an AnalyzerRemote object"
+            current_version = conn.get_analyzer_version()
+            if not conn.check_version(min_, max_):
+                raise AnalyzerVersionError("For this command the Analyzer4D version must be "
+                                           f"{'>=' + min_ if min_ is not None else ''}"
+                                           f"{' ' if min_ is not None else ''}"
+                                           f"{'<=' + max_ if max_ is not None else ''}"
+                                           f"{' ' if max_ is not None else ''}"
+                                           f"but was {current_version}")
+            res = f(*args, **kwargs)
+            return res
+        return wrapper
+    return inner
 
 class Amplitudes(Enum):
     """ Enum class to list and check available amplitudes in mV to generate sine wave.""" 
@@ -2549,6 +2575,7 @@ class AnalyzerRemote():
         self.__recv_thread.deregister_callbacks(recognition)
 
 
+    @required_version("2.06.02.04")
     def set_ect_config(
             self,
             toolpath: str | None = None,
@@ -2586,13 +2613,6 @@ class AnalyzerRemote():
                                                      f"but was {processes}")
         assert minutes is None or minutes >= 0, ("The minutes parameter must be greater than zero "
                                                      f"but was {minutes}")
-        minimum_version = "2.06.02.04"
-        if not self.check_version(minimum_needed_version=minimum_version):
-            current_version = self.get_analyzer_version()
-            raise AnalyzerVersionError(
-                "The minimum required Analyzer4D version is"
-                f"{minimum_version} but found was {current_version}"
-            )
         if isinstance(paras, list):
             paras = " ".join(paras)
         active_params = []
