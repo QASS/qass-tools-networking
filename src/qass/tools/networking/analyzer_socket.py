@@ -2556,6 +2556,32 @@ class AnalyzerRemote():
             minutes: float | int | None = None,
             paras: str | list[str] | None = None,
             ):
+        """Set the parameters for the external cleanup tool under
+        Configuration -> Preferences -> Cleanup Tool
+
+        The minimal required Analyzer4D version is: 2.06.02.04.
+        
+        .. important::
+            Make sure that you have the service parameter `pUseModExternalCleanupTool`
+            enabled before using this function!
+
+        :param toolpath: The path to the tool. This is the path that you are using
+            when executing the tool from the command line. You can use substitions like
+            `$HOMEPATH` which are available in the Analyzer4D software but using the
+            absolute path to the tool should always work. The tool is always called with
+            the parameters `--projectid` and `--process`
+        :type toolpath: str | None
+        :param processes: The amount of processes or measurements after which the tool
+            should be executed by the Analyzer4D software
+        :type processes: int | None
+        :param minutes: The amount of minutes the Analzyer4D software has to idle before 
+            the tool is executed by the Analyzer4D software
+        :type minutes: int | None
+        :param paras: Extra parameters to append to the call like `--extra-arg1 --extra-arg2`.
+            Here you can also use appvar subsitions like `--appvar $$my_appvar` if your
+            tool accepts an argument called `appvar`.
+        :type paras: list[str] | str | None
+        """
         assert processes is None or processes >= 0, ("The processes parameter must be greater than zero "
                                                      f"but was {processes}")
         assert minutes is None or minutes >= 0, ("The minutes parameter must be greater than zero "
