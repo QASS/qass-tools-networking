@@ -1,10 +1,10 @@
+# fmt: off
 import socket
 from pathlib import Path
 import json
 import numpy as np
-import time
 from enum import Enum, IntEnum
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 import logging
 import sys
 import re
@@ -241,6 +241,11 @@ class AnalyzerError(RuntimeError):
         
     def __str__(self):
         return self.message  
+
+
+class AnalyzerVersionError(Exception):
+    pass
+
    
 class ReceiveThread(threading.Thread):
     """ Receiving thread which runs due to contextmanager the whole time and listens to analyzer socket for responses.
@@ -1438,7 +1443,7 @@ class AnalyzerRemote():
                 preamp = {
                     "serial_type": serial_ring[serial_ring_idx+1:], "serial_number": serial_num[serial_num_idx+1:], "S-value": s_value[s_value_idx+1:]}
                 return preamp
-            except ValueError as e:
+            except ValueError:
                 self.logger.warning("The provided Preamp is not configurated properly. Please contact a QASS Service Technician to solve that.")
                 return None
         else:
@@ -1720,7 +1725,7 @@ class AnalyzerRemote():
         :rtype: str
         """
         custom_timeout="never"
-        response = self._value_parser(cmd="appfunc", expect_response=True, p1="PreampTool", p2=f"detect", user_timeout=custom_timeout)
+        response = self._value_parser(cmd="appfunc", expect_response=True, p1="PreampTool", p2="detect", user_timeout=custom_timeout)
         return response.get("result")
 
     def get_preamp_firmware(self, preampport: Union[int, PreampPorts], custom_timeout=None)  -> str:
@@ -1764,7 +1769,7 @@ class AnalyzerRemote():
 
     def remove_default_project(self, custom_timeout=None) -> None:
         """ Removes current project template.""" 
-        self._value_parser(cmd="AppCmd", p1="SaveProjectasDefault", p2=f"-e", user_timeout=custom_timeout)
+        self._value_parser(cmd="AppCmd", p1="SaveProjectasDefault", p2="-e", user_timeout=custom_timeout)
 
     # TODO: Test
     def start_operator_results(self, mode: Union[str, bool] = "enable", custom_timeout=None) -> None:
@@ -2220,7 +2225,7 @@ class AnalyzerRemote():
         
         .. warning:: Experts method
         """
-        self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2=f"RAM free-standby")
+        self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2="RAM free-standby")
     
     def remove_delayed_trigger(self, delay_type:str=None, custom_timeout=None):
         """ Method to remove delayed trigger. 
@@ -2298,7 +2303,7 @@ class AnalyzerRemote():
         :raises ValueError: If display_message time is smaller or equal zero
         """
         if isinstance(wait_time, str) and wait_time == "force_now":
-            self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"FORCE_NOW")
+            self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2="FORCE_NOW")
         elif isinstance(wait_time,int):
             if not wait_time > 0:
                 raise ValueError("Display time has to be greater than 0 ms")
@@ -2508,8 +2513,8 @@ class AnalyzerRemote():
                     function_timeout = self.timeout  
                 # get response out of queue for all cases without own custom_callback // handles also receiver thread errors
                 analyzer_response = self.q.get(timeout=function_timeout)
-            except queue.Empty as QueueError: # Raise from None, excludes queue.Empty Error from Traceback 
-                raise ReceiverThreadError(f"Analyzer was not responding in timeout time. Please check if communication between devices is lost or custom timeout method has to be used.") from None
+            except queue.Empty: # Raise from None, excludes queue.Empty Error from Traceback 
+                raise ReceiverThreadError("Analyzer was not responding in timeout time. Please check if communication between devices is lost or custom timeout method has to be used.") from None
             # check for message state and also if receiver thread gives back an error, unregister callbacks
             
             self._check_response(analyzer_response, recognition)
@@ -2543,6 +2548,45 @@ class AnalyzerRemote():
         # deregister callbacks (ErrorCallback is not deregistered)
         self.__recv_thread.deregister_callbacks(recognition)
 
+
+    def set_ect_config(
+            self,
+            toolpath: str | None = None,
+            processes: int | None = None,
+            minutes: float | int | None = None,
+            paras: str | list[str] | None = None,
+            ):
+        assert processes is None or processes >= 0, ("The processes parameter must be greater than zero "
+                                                     f"but was {processes}")
+        assert minutes is None or minutes >= 0, ("The minutes parameter must be greater than zero "
+                                                     f"but was {minutes}")
+        minimum_version = "2.06.02.04"
+        if not self.check_version(minimum_needed_version=minimum_version):
+            current_version = self.get_analyzer_version()
+            raise AnalyzerVersionError(
+                "The minimum required Analyzer4D version is"
+                f"{minimum_version} but found was {current_version}"
+            )
+        if isinstance(paras, list):
+            paras = " ".join(paras)
+        active_params = []
+        for key, value in [
+            ("toolpath", toolpath),
+            ("processes", processes),
+            ("minutes", minutes),
+            ("paras", paras),
+        ]:
+            if value is None:
+                continue
+            active_params.append(f'{key} "{value}" ')
+        if len(active_params) == 0:
+            self.logger.info(
+                "Method 'set_sys_pengui_config' is not executed because of no valid parameters."
+            )
+            return
+        p2_str = "".join(active_params)
+        self._value_parser(cmd="AppCmd", p1="sysECTConfig", p2=p2_str)
+
 class AnalyzerCmd(AnalyzerRemote):
     """ Depricated class naming. Inherit from normal class.
 
@@ -2556,4 +2600,4 @@ class AnalyzerCmd(AnalyzerRemote):
     def __init__(self, ip: str, port=17000, debug_mode=False):
         super().__init__(ip, port, debug_mode)
         warnings.warn(
-            f"Class Name AnalyzerCmd is deprecated. Please use AnalyzerRemote!")
+            "Class Name AnalyzerCmd is deprecated. Please use AnalyzerRemote!")
