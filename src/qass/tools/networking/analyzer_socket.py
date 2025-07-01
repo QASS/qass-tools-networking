@@ -2581,7 +2581,7 @@ class AnalyzerRemote():
             toolpath: Union[str, None] = None,
             processes: Union[int, None] = None,
             minutes: Union[float, int, None] = None,
-            paras: Union[str, list[str], None] = None,
+            paras: Union[str, List[str], None] = None,
             ):
         """Set the parameters for the external cleanup tool under
         Configuration -> Preferences -> Cleanup Tool
@@ -2607,7 +2607,7 @@ class AnalyzerRemote():
         :param paras: Extra parameters to append to the call like `--extra-arg1 --extra-arg2`.
             Here you can also use appvar subsitions like `--appvar $$my_appvar` if your
             tool accepts an argument called `appvar`.
-        :type paras: Union[list[str], str, None]
+        :type paras: Union[List[str], str, None]
         """
         assert processes is None or processes >= 0, ("The processes parameter must be greater than or equal to zero "
                                                      f"but was {processes}")
