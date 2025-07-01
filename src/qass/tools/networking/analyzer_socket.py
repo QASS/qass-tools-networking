@@ -1,10 +1,11 @@
+# fmt: off
 import socket
 from pathlib import Path
+from functools import wraps
 import json
 import numpy as np
-import time
 from enum import Enum, IntEnum
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 import logging
 import sys
 import re
@@ -15,6 +16,31 @@ from retry import retry
 import warnings
 from packaging import version
 
+def required_version(min_: Union[str, None] = None, max_: Union[str, None] = None):
+    """Wrapper to check the Analyzer4D version before executing a command
+    This wrapper only works for methods of the AnalyzerRemote class and will
+    throw an error if used in other objects.
+
+    :param min_: The minimum version as a string in the format "01.01.01.01"
+    :param max_: The maximum version as a string in the format "01.01.01.01"
+    """
+    def inner(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            conn = args[0]
+            assert isinstance(conn, AnalyzerRemote), "First argument was not an AnalyzerRemote object"
+            if not conn.check_version(min_, max_):
+                current_version = conn.get_analyzer_version()
+                raise AnalyzerVersionError("For this command the Analyzer4D version must be "
+                                           f"{'>=' + min_ if min_ is not None else ''}"
+                                           f"{' ' if min_ is not None else ''}"
+                                           f"{'<=' + max_ if max_ is not None else ''}"
+                                           f"{' ' if max_ is not None else ''}"
+                                           f"but was {current_version}")
+            res = f(*args, **kwargs)
+            return res
+        return wrapper
+    return inner
 
 class Amplitudes(Enum):
     """ Enum class to list and check available amplitudes in mV to generate sine wave.""" 
@@ -241,6 +267,11 @@ class AnalyzerError(RuntimeError):
         
     def __str__(self):
         return self.message  
+
+
+class AnalyzerVersionError(Exception):
+    pass
+
    
 class ReceiveThread(threading.Thread):
     """ Receiving thread which runs due to contextmanager the whole time and listens to analyzer socket for responses.
@@ -1438,7 +1469,7 @@ class AnalyzerRemote():
                 preamp = {
                     "serial_type": serial_ring[serial_ring_idx+1:], "serial_number": serial_num[serial_num_idx+1:], "S-value": s_value[s_value_idx+1:]}
                 return preamp
-            except ValueError as e:
+            except ValueError:
                 self.logger.warning("The provided Preamp is not configurated properly. Please contact a QASS Service Technician to solve that.")
                 return None
         else:
@@ -1720,7 +1751,7 @@ class AnalyzerRemote():
         :rtype: str
         """
         custom_timeout="never"
-        response = self._value_parser(cmd="appfunc", expect_response=True, p1="PreampTool", p2=f"detect", user_timeout=custom_timeout)
+        response = self._value_parser(cmd="appfunc", expect_response=True, p1="PreampTool", p2="detect", user_timeout=custom_timeout)
         return response.get("result")
 
     def get_preamp_firmware(self, preampport: Union[int, PreampPorts], custom_timeout=None)  -> str:
@@ -1764,7 +1795,7 @@ class AnalyzerRemote():
 
     def remove_default_project(self, custom_timeout=None) -> None:
         """ Removes current project template.""" 
-        self._value_parser(cmd="AppCmd", p1="SaveProjectasDefault", p2=f"-e", user_timeout=custom_timeout)
+        self._value_parser(cmd="AppCmd", p1="SaveProjectasDefault", p2="-e", user_timeout=custom_timeout)
 
     # TODO: Test
     def start_operator_results(self, mode: Union[str, bool] = "enable", custom_timeout=None) -> None:
@@ -2220,7 +2251,7 @@ class AnalyzerRemote():
         
         .. warning:: Experts method
         """
-        self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2=f"RAM free-standby")
+        self._value_parser(cmd="AppCmd", p1="ExpertCmd", p2="RAM free-standby")
     
     def remove_delayed_trigger(self, delay_type:str=None, custom_timeout=None):
         """ Method to remove delayed trigger. 
@@ -2298,7 +2329,7 @@ class AnalyzerRemote():
         :raises ValueError: If display_message time is smaller or equal zero
         """
         if isinstance(wait_time, str) and wait_time == "force_now":
-            self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2=f"FORCE_NOW")
+            self._value_parser(cmd="AppCmd", p1="RestartAnalyzer", p2="FORCE_NOW")
         elif isinstance(wait_time,int):
             if not wait_time > 0:
                 raise ValueError("Display time has to be greater than 0 ms")
@@ -2508,8 +2539,8 @@ class AnalyzerRemote():
                     function_timeout = self.timeout  
                 # get response out of queue for all cases without own custom_callback // handles also receiver thread errors
                 analyzer_response = self.q.get(timeout=function_timeout)
-            except queue.Empty as QueueError: # Raise from None, excludes queue.Empty Error from Traceback 
-                raise ReceiverThreadError(f"Analyzer was not responding in timeout time. Please check if communication between devices is lost or custom timeout method has to be used.") from None
+            except queue.Empty: # Raise from None, excludes queue.Empty Error from Traceback 
+                raise ReceiverThreadError("Analyzer was not responding in timeout time. Please check if communication between devices is lost or custom timeout method has to be used.") from None
             # check for message state and also if receiver thread gives back an error, unregister callbacks
             
             self._check_response(analyzer_response, recognition)
@@ -2543,6 +2574,65 @@ class AnalyzerRemote():
         # deregister callbacks (ErrorCallback is not deregistered)
         self.__recv_thread.deregister_callbacks(recognition)
 
+
+    @required_version("2.06.02.04")
+    def set_ect_config(
+            self,
+            toolpath: Union[str, None] = None,
+            processes: Union[int, None] = None,
+            minutes: Union[float, int, None] = None,
+            paras: Union[str, List[str], None] = None,
+            ):
+        """Set the parameters for the external cleanup tool under
+        Configuration -> Preferences -> Cleanup Tool
+
+        The minimal required Analyzer4D version is: 2.06.02.04.
+        
+        .. important::
+            Make sure that you have the service parameter `pUseModExternalCleanupTool`
+            enabled before using this function!
+
+        :param toolpath: The path to the tool. This is the path that you are using
+            when executing the tool from the command line. You can use substitions like
+            `$HOMEPATH` which are available in the Analyzer4D software but using the
+            absolute path to the tool should always work. The tool is always called with
+            the parameters `--projectid` and `--process`
+        :type toolpath: Union[str, None]
+        :param processes: The amount of processes or measurements after which the tool
+            should be executed by the Analyzer4D software
+        :type processes: Union[int, None]
+        :param minutes: The amount of minutes the Analzyer4D software has to idle before 
+            the tool is executed by the Analyzer4D software
+        :type minutes: Union[int, None]
+        :param paras: Extra parameters to append to the call like `--extra-arg1 --extra-arg2`.
+            Here you can also use appvar subsitions like `--appvar $$my_appvar` if your
+            tool accepts an argument called `appvar`.
+        :type paras: Union[List[str], str, None]
+        """
+        assert processes is None or processes >= 0, ("The processes parameter must be greater than or equal to zero "
+                                                     f"but was {processes}")
+        assert minutes is None or minutes >= 0, ("The minutes parameter must be greater than or equal to zero "
+                                                     f"but was {minutes}")
+        if isinstance(paras, list):
+            paras = " ".join(paras)
+        active_params = []
+        for key, value in [
+            ("toolpath", toolpath),
+            ("processes", processes),
+            ("minutes", minutes),
+            ("paras", paras),
+        ]:
+            if value is None:
+                continue
+            active_params.append(f'{key} "{value}" ')
+        if len(active_params) == 0:
+            self.logger.info(
+                "Method 'set_ect_config' is not executed because of no valid parameters."
+            )
+            return
+        p2_str = "".join(active_params)
+        self._value_parser(cmd="AppCmd", p1="sysECTConfig", p2=p2_str)
+
 class AnalyzerCmd(AnalyzerRemote):
     """ Depricated class naming. Inherit from normal class.
 
@@ -2556,4 +2646,4 @@ class AnalyzerCmd(AnalyzerRemote):
     def __init__(self, ip: str, port=17000, debug_mode=False):
         super().__init__(ip, port, debug_mode)
         warnings.warn(
-            f"Class Name AnalyzerCmd is deprecated. Please use AnalyzerRemote!")
+            "Class Name AnalyzerCmd is deprecated. Please use AnalyzerRemote!")
