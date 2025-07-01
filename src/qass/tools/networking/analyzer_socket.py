@@ -16,7 +16,7 @@ from retry import retry
 import warnings
 from packaging import version
 
-def required_version(min_: str | None = None, max_: str | None = None):
+def required_version(min_: Union[str, None] = None, max_: Union[str, None] = None):
     """Wrapper to check the Analyzer4D version before executing a command
     This wrapper only works for methods of the AnalyzerRemote class and will
     throw an error if used in other objects.
@@ -2578,10 +2578,10 @@ class AnalyzerRemote():
     @required_version("2.06.02.04")
     def set_ect_config(
             self,
-            toolpath: str | None = None,
-            processes: int | None = None,
-            minutes: float | int | None = None,
-            paras: str | list[str] | None = None,
+            toolpath: Union[str, None] = None,
+            processes: Union[int, None] = None,
+            minutes: Union[float, int, None] = None,
+            paras: Union[str, list[str], None] = None,
             ):
         """Set the parameters for the external cleanup tool under
         Configuration -> Preferences -> Cleanup Tool
@@ -2597,17 +2597,17 @@ class AnalyzerRemote():
             `$HOMEPATH` which are available in the Analyzer4D software but using the
             absolute path to the tool should always work. The tool is always called with
             the parameters `--projectid` and `--process`
-        :type toolpath: str | None
+        :type toolpath: Union[str, None]
         :param processes: The amount of processes or measurements after which the tool
             should be executed by the Analyzer4D software
-        :type processes: int | None
+        :type processes: Union[int, None]
         :param minutes: The amount of minutes the Analzyer4D software has to idle before 
             the tool is executed by the Analyzer4D software
-        :type minutes: int | None
+        :type minutes: Union[int, None]
         :param paras: Extra parameters to append to the call like `--extra-arg1 --extra-arg2`.
             Here you can also use appvar subsitions like `--appvar $$my_appvar` if your
             tool accepts an argument called `appvar`.
-        :type paras: list[str] | str | None
+        :type paras: Union[list[str], str, None]
         """
         assert processes is None or processes >= 0, ("The processes parameter must be greater than or equal to zero "
                                                      f"but was {processes}")
@@ -2627,7 +2627,7 @@ class AnalyzerRemote():
             active_params.append(f'{key} "{value}" ')
         if len(active_params) == 0:
             self.logger.info(
-                "Method 'set_sys_pengui_config' is not executed because of no valid parameters."
+                "Method 'set_ect_config' is not executed because of no valid parameters."
             )
             return
         p2_str = "".join(active_params)
