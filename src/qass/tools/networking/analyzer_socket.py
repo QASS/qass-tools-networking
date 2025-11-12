@@ -63,7 +63,7 @@ class AnalyzerRemote():
         auto_stop_options = ['measuring', 'sineGen', 'monitoring']
         auto_stop = [] if auto_stop is None else auto_stop
         if not all(command in auto_stop_options for command in auto_stop):
-            raise ValueError(f'Got invalid auto stop commands {auto_stop}! Valid options are {['all'] + auto_stop_options}')
+            raise ValueError(f'Got invalid auto stop commands {auto_stop}! Valid options are {["all"] + auto_stop_options}')
 
         if 'all' in auto_stop:
             self.auto_stop = auto_stop_options
