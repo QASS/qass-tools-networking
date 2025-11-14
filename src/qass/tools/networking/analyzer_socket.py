@@ -63,7 +63,7 @@ class AnalyzerRemote():
         auto_stop_options = ['measuring', 'sineGen', 'monitoring']
         auto_stop = [] if auto_stop is None else auto_stop
         if not all(command in auto_stop_options for command in auto_stop):
-            raise ValueError(f'Got invalid auto stop commands {auto_stop}! Valid options are {['all'] + auto_stop_options}')
+            raise ValueError(f'Got invalid auto stop commands {auto_stop}! Valid options are {["all"] + auto_stop_options}')
 
         if 'all' in auto_stop:
             self.auto_stop = auto_stop_options
@@ -92,9 +92,15 @@ class AnalyzerRemote():
         self._single_appvar_callbacks = defaultdict(list)
         self._processnumber_callbacks = []
 
+        self._fieldbus_input_callbacks = []
+        self._fieldbus_output_callbacks = []
+
+
         self._callback_registered_processnumber = False
         self._callback_registered_io = False
         self._callback_registered_appvar = False
+        self._callback_registered_fieldbus_input = False
+        self._callback_registered_fieldbus_output = False
 
         self.logger = logging.getLogger("qass.tools.networking")
 
@@ -105,8 +111,8 @@ class AnalyzerRemote():
 
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if exc_value is not None:
-            self.logger.exception(exc_value)
+        # if exc_value is not None:
+        #     self.logger.exception(exc_value)
         self.disconnect()   
         
         
@@ -138,6 +144,8 @@ class AnalyzerRemote():
         self._callback_registered_processnumber = False
         self._callback_registered_io = False
         self._callback_registered_appvar = False
+        self._callback_registered_fieldbus_input = False
+        self._callback_registered_fieldbus_output = False
 
         try:
             if len(self._processnumber_callbacks) > 0:
@@ -149,6 +157,14 @@ class AnalyzerRemote():
             if len(self._all_appvar_callbacks) > 0:
                 self._send_request(cmd="reportappvars", p1="true")
                 self._callback_registered_appvar = True
+
+            if len(self._fieldbus_input_callbacks) > 0:
+                self._send_request(cmd="reportprofibus", p1="true",p2="rx")
+                self._callback_registered_fieldbus_input = True
+            if len(self._fieldbus_output_callbacks) > 0:
+                self._send_request(cmd="reportprofibus", p1="true",p2="tx")
+                self._callback_registered_fieldbus_output = True
+
             elif len(self._single_appvar_callbacks) > 0:
                 self._send_request(cmd='reportappvar', p1='add', p2=';'.join(self._single_appvar_callbacks.keys()))
         except Exception as e:
@@ -1500,7 +1516,49 @@ class AnalyzerRemote():
             self._callback_registered_io = False
         self.logger.info("I/O report stopped")
             
+    def write_fieldbus_input(self, data:bytearray,custom_timeout=None) -> None:
+        if not isinstance(data,bytearray):
+            raise ValueError('data must be of type bytearray')
+        self._send_request(cmd="profibusmsg", p1=data.hex(), user_timeout=custom_timeout)
+
+    def register_fieldbus_input_callback(self, callback, custom_timeout=None) -> None:
+        """ Adds callback function to report of I/O register. Everytime I/O register changes, added callback functions will be executed. See networking_example.py for an example.
+        By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
+
+        .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
+
+        :param callback: Added callback function when report happens.
+        :type callback: function
+        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
+        :type custom_timeout: int, optional
+        """ 
+                    
+        if not self._callback_registered_fieldbus_input and self.connected:
+            self._send_request(cmd="reportprofibus", p1="true",p2="rx", user_timeout=custom_timeout)
+            self._callback_registered_fieldbus_input = True
         
+        self._fieldbus_input_callbacks.append(callback)
+        self.logger.info(f"Callback for fieldbus input report added")
+
+    def register_fieldbus_output_callback(self, callback, custom_timeout=None) -> None:
+        """ Adds callback function to report of I/O register. Everytime I/O register changes, added callback functions will be executed. See networking_example.py for an example.
+        By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
+
+        .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
+
+        :param callback: Added callback function when report happens.
+        :type callback: function
+        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
+        :type custom_timeout: int, optional
+        """ 
+                    
+        if not self._callback_registered_fieldbus_output and self.connected:
+            self._send_request(cmd="reportprofibus", p1="true",p2="tx", user_timeout=custom_timeout)
+            self._callback_registered_fieldbus_output = True
+        
+        self._fieldbus_output_callbacks.append(callback)
+        self.logger.info(f"Callback for fieldbus input report added")
+
 
     def add_process_number_report_callback(self, callback, custom_timeout=None) -> None:
         """ Adds callback function to report of process number. Everytime the process number changes, added callback functions will be executed. See networking_example.py for an example. By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
@@ -1990,7 +2048,11 @@ class AnalyzerRemote():
                 self._requests.pop(msg_id)
 
         if can_fail and not response.get("ok",None):
-            raise AnalyzerError("Analyzer4D software could not perform action: check log and documentation.")
+            raise AnalyzerError(
+                f"Analyzer4D software failed to execute cmd:'{command['cmd']}\n"
+                f"Request:{json.dumps(command,indent=2)}\n"
+                f"Response:{json.dumps(response,indent=2)}'."
+                )
         
         return response
     
@@ -2092,6 +2154,21 @@ class AnalyzerRemote():
                     self._socket.send(data)
                     for cb in self._processnumber_callbacks:
                         self._callback_queue.put(functools.partial(cb,msg))
+                elif cmd == 'responsereportprofibus':
+                    # self._socket.send(data)
+                    pbrx = msg.get("pbrx",None)
+                    pbtx = msg.get("pbtx",None)
+
+                    if pbrx is not None:
+                        data = bytes.fromhex(pbrx)
+                        for cb in self._fieldbus_input_callbacks:
+                            self._callback_queue.put(functools.partial(cb,data))    
+                    elif pbtx is not None:
+                        data = bytes.fromhex(pbtx)
+                        for cb in self._fieldbus_output_callbacks:
+                            self._callback_queue.put(functools.partial(cb,data))    
+                    else:
+                        self.logger.error(f'Recv unknown package {msg}')
                 else:
                     self.logger.error(f'Recv unknown package {msg}')
                         
