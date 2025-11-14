@@ -1521,18 +1521,7 @@ class AnalyzerRemote():
             raise ValueError('data must be of type bytearray')
         self._send_request(cmd="profibusmsg", p1=data.hex(), user_timeout=custom_timeout)
 
-    def register_fieldbus_input_callback(self, callback, custom_timeout=None) -> None:
-        """ Adds callback function to report of I/O register. Everytime I/O register changes, added callback functions will be executed. See networking_example.py for an example.
-        By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
-
-        .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
-
-        :param callback: Added callback function when report happens.
-        :type callback: function
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        """ 
-                    
+    def register_fieldbus_input_callback(self, callback, custom_timeout=None) -> None:   
         if not self._callback_registered_fieldbus_input and self.connected:
             self._send_request(cmd="reportprofibus", p1="true",p2="rx", user_timeout=custom_timeout)
             self._callback_registered_fieldbus_input = True
@@ -1541,17 +1530,6 @@ class AnalyzerRemote():
         self.logger.info(f"Callback for fieldbus input report added")
 
     def register_fieldbus_output_callback(self, callback, custom_timeout=None) -> None:
-        """ Adds callback function to report of I/O register. Everytime I/O register changes, added callback functions will be executed. See networking_example.py for an example.
-        By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function.
-
-        .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
-
-        :param callback: Added callback function when report happens.
-        :type callback: function
-        :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
-        :type custom_timeout: int, optional
-        """ 
-                    
         if not self._callback_registered_fieldbus_output and self.connected:
             self._send_request(cmd="reportprofibus", p1="true",p2="tx", user_timeout=custom_timeout)
             self._callback_registered_fieldbus_output = True
