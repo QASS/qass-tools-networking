@@ -1521,6 +1521,14 @@ class AnalyzerRemote():
             raise ValueError('data must be of type bytearray')
         self._send_request(cmd="profibusmsg", p1=data.hex(), user_timeout=custom_timeout)
 
+    def write_fieldbus_output(self, addr:int, size:int, value:int ,custom_timeout=None) -> None:
+        self._send_request(cmd="AppCmd",p1="pbSendDWord", p2=f"{value} {size} {addr} ", user_timeout=custom_timeout)
+
+
+    def read_fieldbus_input(self, addr:int, size:int, custom_timeout=None):
+        response =  self._send_request(cmd="AppFunc", p1="pbReadDWord",p2=f"{size} {addr}", user_timeout=custom_timeout)
+        return response.get("result")
+
     def register_fieldbus_input_callback(self, callback, custom_timeout=None) -> None:   
         if not self._callback_registered_fieldbus_input and self.connected:
             self._send_request(cmd="reportprofibus", p1="true",p2="rx", user_timeout=custom_timeout)
@@ -1629,7 +1637,7 @@ class AnalyzerRemote():
         :return: Standard Analyzer response. Dict contains result of addressed function as str.
         :rtype: dict
         """ 
-        return self._send_request(cmd="appfunc", p1=function_name, p2=function_param, user_timeout=custom_timeout)
+        return self._send_request(cmd="AppFunc", p1=function_name, p2=function_param, user_timeout=custom_timeout)
                                   
     def set_human_confirmation(self, process_IO=False, **kwargs) -> None:
         """ Send human confiramtion over current process. Score and comment can be parsed over kwargs. When in doubt, check documentation.
