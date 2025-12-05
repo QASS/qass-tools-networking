@@ -1,5 +1,6 @@
 # fmt: off
 import socket
+from typing import Any
 from pathlib import Path
 from functools import wraps
 import json
@@ -1073,7 +1074,7 @@ class AnalyzerRemote():
         self._value_parser(cmd="AppCmd", p1="sysSleep", p2=time, user_timeout=custom_timeout)
         self.logger.info("Analyzer tired. Analyzer sleep.")
 
-    def set_appvar(self, appvar_name: str, appvar_value: any, custom_timeout=None) -> None:
+    def set_appvar(self, appvar_name: str, appvar_value: Any, custom_timeout=None, storeevent: bool = False) -> None:
         """ Set the value of an AppVar by using the name of the AppVar. The prefix `pro_` will result in the AppVar being saved in the project and persist between restarts. The prefix `sys_` will result in the AppVar being saved globally and made available over all projects.
 
         If the AppVar doesn't exist yet it will be created.
@@ -1081,11 +1082,15 @@ class AnalyzerRemote():
         :param app_var_name: Name of the AppVar.
         :type app_var_name: str
         :param app_var_value: Value of AppVar. The type can be every datatype supported by python (e.g. float, int, str, json, ...).
-        :type app_var_value: any
+        :type app_var_value: Any
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
+        :param storeevent: Whether to save this update as a process event in the Analyzer4D database (Only available for Analyzer4D > V2.07.14.00)
+            The eventtype will be the name of the appvar and the eventdata the value. Every write to the appvar will result in a process event,
+            even if the value did not change.
+        :type storeevent: bool, optional
         """ 
-        self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value, user_timeout=custom_timeout)
+        self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value, storeevent=storeevent, user_timeout=custom_timeout)
 
     def get_appvar(self, appvar_name: str, custom_timeout=None) -> str:
         """ Get AppVar value by name.
