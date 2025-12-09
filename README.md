@@ -1,6 +1,6 @@
 # Networking package for Qass Tools
 
-Networking package to remotely control the Analyzer4D software.
+Networking package to remotely control the Analyzer4D software. Checkout the latest documentation: [QASS TOOLS NETWORKING DOCUMENTATION][https://qass.github.io/qass-tools-networking/]
 
 ## Install as developer
 
