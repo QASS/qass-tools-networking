@@ -1,6 +1,6 @@
 [project]
 name = "qass-tools-networking"
-version = "3.6"
+version = "3.7"
 authors = [
   {name="Oliver Kowollik", email="okowollik@qass.net" },
 ]
@@ -13,10 +13,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [                   
-    "tqdm>=4.64.0",               # Analyzer_SSH
     "retry",                      # Analyzer_Remote
-    "paramiko",                   # Analyzer_SSH
     "numpy >=1.19.5",             # Analyzer_Remote
+    "packaging"
 ]
 
 [project.optional-dependencies]
