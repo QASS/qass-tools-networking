@@ -18,12 +18,6 @@ If you run into a bug or compatibility problems please contact ewiebelitz@qass.n
 
 .. toctree::
    :maxdepth: 6
-   :caption: SSH Terminal
-   
-   analyzer_ssh
-
-.. toctree::
-   :maxdepth: 6
    :caption: Package Changelog
    
    changelog

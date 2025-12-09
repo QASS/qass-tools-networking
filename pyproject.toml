@@ -1,6 +1,6 @@
 [project]
 name = "qass-tools-networking"
-version = "3.6"
+version = "3.7"
 authors = [
   {name="Oliver Kowollik", email="okowollik@qass.net" },
 ]
@@ -13,18 +13,21 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [                   
-    "tqdm>=4.64.0",               # Analyzer_SSH
     "retry",                      # Analyzer_Remote
-    "paramiko",                   # Analyzer_SSH
     "numpy >=1.19.5",             # Analyzer_Remote
+    "packaging"
 ]
 
 [project.optional-dependencies]
 # development dependency groups
 developers = [
-    "pytest >= 7.1.2",
+    "pytest",
     "enum-tools",
     "Sphinx",
+    "sphinx_toolbox",
+    "sphinx_design",
+    "sphinx-rtd-theme"
+
 ]
 gui = ["PySide2"]                 # Python Server client
 # here can be later added another more specified group e.g. only testing test =[]

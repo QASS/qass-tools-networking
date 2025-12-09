@@ -11,6 +11,18 @@ Planned changes for next releases will be noted here. If you have any suggestion
 - Set io as line in set_simulated_io_input(args) 
 - Save project function
 
+3.7.0
+=====
+:Date: December 09, 2025
+
+:AnalyzerVersion: -
+
+:Contributor: Oliver Kowollik
+
+.. tab-set::
+  .. tab-item:: Changes
+
+    - Remove :mod:`AnalyzerSSH` module
 
 3.3.1
 =====
