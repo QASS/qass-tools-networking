@@ -25,11 +25,6 @@ variables:
   # so we need to copy instead of using hard links.
   UV_LINK_MODE: copy
 
-uv:
-  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
-  script:
-    # your `uv` commands
-
 image: python:3.9
 
 test-build-docs:
