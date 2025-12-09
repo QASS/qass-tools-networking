@@ -21,7 +21,7 @@ dependencies = [
 [project.optional-dependencies]
 # development dependency groups
 developers = [
-    "pytest >= 7.1.2",
+    "pytest",
     "enum-tools",
     "Sphinx",
     "sphinx_toolbox",
