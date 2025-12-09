@@ -17,7 +17,29 @@
 ## You should have received a copy of the GNU Lesser General Public License
 ## along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+variables:
+  UV_VERSION: "0.9.16"
+  PYTHON_VERSION: "3.9"
+  BASE_LAYER: bookworm-slim
+  # GitLab CI creates a separate mountpoint for the build directory,
+  # so we need to copy instead of using hard links.
+  UV_LINK_MODE: copy
+
+uv:
+  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
+  script:
+    # your `uv` commands
+
 image: python:3.9
+
+test-build-docs:
+  stage: test
+  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
+  script:
+    - uv sync --frozen --all-extras
+    - uv run sphinx-build -b html ./docs/sources public  
+  only:
+    - merge_requests
 
 build-package:
   stage: deploy
@@ -35,12 +57,10 @@ build-package:
 
 pages:
   stage: deploy
+  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
   script:
-    - pip install sphinx
-    - pip install sphinx_rtd_theme numpy retry enum-tools
-    - pip install --no-deps .
-    - mkdir ./docs/source/_static
-    - sphinx-build -b html ./docs/source public
+    - uv sync --frozen --all-extras
+    - uv run sphinx-build -b html ./docs/sources public  
   artifacts:
     paths:
       - public
