@@ -13,28 +13,27 @@ classifiers = [
     "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
     "Operating System :: OS Independent",
 ]
-dependencies = [
-    "tqdm>=4.64.0",               # Analyzer_SSH
-    "retry",                      # Analyzer_Remote
-    "paramiko",                   # Analyzer_SSH
-    "numpy >=1.19.5",             # Analyzer_Remote
+dependencies = [                   
+    "numpy>=1.19.5",
+    "packaging"
 ]
 
 [project.optional-dependencies]
 # development dependency groups
 developers = [
-    "pytest >= 7.1.2",
-    "enum-tools",
-    "Sphinx",
+    "pytest",
+    "sphinx",
+    "sphinx_toolbox",
+    "sphinx_design",
+    "sphinx-rtd-theme"
 ]
-# here can be later added another more specified group e.g. only testing test =[]
-# and developer can reference that 'my-package[test]',
+
 [project.urls]
 Homepage = "https://qass.github.io/"
 
 [build-system]
 requires = [
     "setuptools>=42",
-    "wheel",
+    "wheel"
 ]
 build-backend = "setuptools.build_meta"

@@ -14,7 +14,7 @@ sys.path.append(os.path.abspath("./_ext"))
 project = 'Qass Tools Networking'
 copyright = '2022, QASS GmbH'
 author = 'QASS GmbH'
-release = '3.3.2'
+release = '3.7'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

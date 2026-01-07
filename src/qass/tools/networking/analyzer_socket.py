@@ -1,5 +1,7 @@
 import socket
+from typing import Any
 from pathlib import Path
+from functools import wraps
 import json
 import numpy as np
 from enum import Enum
@@ -15,10 +17,37 @@ import struct
 import functools
 import time
 
-from qass.tools.networking.errors import *
+from qass.tools.networking.errors import ConnectionError, AnalyzerError, AnalyzerVersionError
 from qass.tools.networking.constants import *
-    
-    
+from packaging import version
+
+
+def required_version(min_: Union[str, None] = None, max_: Union[str, None] = None):
+    """Wrapper to check the Analyzer4D version before executing a command
+    This wrapper only works for methods of the AnalyzerRemote class and will
+    throw an error if used in other objects.
+
+    :param min_: The minimum version as a string in the format "01.01.01.01"
+    :param max_: The maximum version as a string in the format "01.01.01.01"
+    """
+    def inner(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            conn = args[0]
+            assert isinstance(conn, AnalyzerRemote), "First argument was not an AnalyzerRemote object"
+            if not conn.check_version(min_, max_):
+                current_version = conn.get_analyzer_version()
+                raise AnalyzerVersionError("For this command the Analyzer4D version must be "
+                                           f"{'>=' + min_ if min_ is not None else ''}"
+                                           f"{' ' if min_ is not None else ''}"
+                                           f"{'<=' + max_ if max_ is not None else ''}"
+                                           f"{' ' if max_ is not None else ''}"
+                                           f"but was {current_version}")
+            res = f(*args, **kwargs)
+            return res
+        return wrapper
+    return inner
+
 class AnalyzerRemote():
     """ Class provides methods for external analyzer control (system operator independant) over a TCP socket. Every method that gets a response is able to set a custom timeout for analyzer reponse. Should any kind of bugs happen without TCP socket crashing, Queue timeout will run into failstate. """ 
 
@@ -46,8 +75,9 @@ class AnalyzerRemote():
         measuring           Activate service to stop remote started measuring
         sineGen             Activate service to stop remote started sine generator
         monitoring          Activate service to stop remote started monitoring
+        operatorFunctions   Activate service to stop remote started operator function output
+        analyzer_version    Version number of connected Analyzer
         ==================  ========================================================================================================================================== 
-        
         """
         # helper
         self.ip = socket.gethostbyname(ip)
@@ -59,14 +89,21 @@ class AnalyzerRemote():
                            "beginn": "true", "enabled": "true", "enable": "true", "on": "true",
                            False: "false", "stop": "false", "end": "false", "disabled": "false",
                            "false": "false", "disable": "false", "off": "false", "monitor": "monitor"}
-
-        auto_stop_options = ['measuring', 'sineGen', 'monitoring']
-        auto_stop = [] if auto_stop is None else auto_stop
-        if not all(command in auto_stop_options for command in auto_stop):
-            raise ValueError(f'Got invalid auto stop commands {auto_stop}! Valid options are {["all"] + auto_stop_options}')
-
-        if 'all' in auto_stop:
-            self.auto_stop = auto_stop_options
+        # flags for exit method of context manager
+        self._io_report_count = 0
+        self.auto_stop = auto_stop
+        self._proc_report_count = 0
+        self._appvar_report_count = 0
+        self._measuring_active = False
+        self._sine_gen_active = False
+        self._monitoring_active = False
+        self._operator_functions_active = False
+        self._analyzer_version = None
+        self.q = queue.Queue()
+        
+        # short solution logger to sys.stdout
+        if debug_mode:
+            logging_level = logging.DEBUG
         else:
             self.auto_stop = auto_stop
 
@@ -275,7 +312,7 @@ class AnalyzerRemote():
 
     
     def disable_trigger_loop(self):
-        self._send_request(cmd="AppCmd", p1="sysTriggerLoop", p2=f"off")
+        self._send_request(cmd="AppCmd", p1="sysTriggerLoop", p2="off")
 
 
     def enable_automation(self):
@@ -286,9 +323,48 @@ class AnalyzerRemote():
         self._send_request(cmd='AppCmd', p1='sysAutomation', p2='off')
 
 
+    
     def set_global_function_timeout(self, timeout:int) -> None:
         """Sets the global timeout for all function to a higher value. Single function can further be overwritten by custom_timeout."""
         self.timeout = timeout
+
+    def get_analyzer_version(self):
+        """
+        Checks if analyzer version is already determined and saved in self._analyzer_version.
+        Otherwise get_project_info() is used to determine the analyzer version
+
+        :raises ConnectionError: Raises if determination of version number fails
+        :rtype: str
+
+        """
+        if self._analyzer_version is None:
+            project_info = self.get_project_info()
+            if 'analyzerversion' in project_info:
+                self._analyzer_version = project_info['analyzerversion']
+            else:
+                raise ConnectionError("Analyzer Version determination failed!")
+        return self._analyzer_version
+
+    def check_version(self, minimum_needed_version:Union[str,None]=None, maximum_supported_version:Union[str,None]=None):
+        """ Method checks if the version of the connected Analyzer is larger equal to the minimum_needed_version and smaller equal the maximum_supported_version. Ignores minimum_needed_version or maximum_supported_version when they are None.  Determines the analyzer version with get_analyzer_version() 
+        
+        :param minimum_needed_version: minimum Analyzer Version needed to use feature. can have different structure than actual version(more or less numbers). 
+        :type project_name: str, optional
+
+        :param maximum_supported_version: maximum Analyzer Version that supports feature. can have different structure than actual version(more or less numbers). 
+        :type project_name: str, optional
+        
+        :rtype: bool
+        """     
+        version_analyzer = version.parse(self.get_analyzer_version())
+        if minimum_needed_version is not None:
+            if version_analyzer < version.parse(minimum_needed_version):
+                return False
+        if maximum_supported_version is not None:
+            if version_analyzer > version.parse(maximum_supported_version):
+                return False
+
+        return True
 
 
     def start_measuring(self, custom_timeout=None) -> None:
@@ -690,7 +766,7 @@ class AnalyzerRemote():
         self._send_request(cmd="AppCmd", p1="sysSleep", p2=time, user_timeout=custom_timeout)
         self.logger.info("Analyzer tired. Analyzer sleep.")
 
-    def set_appvar(self, appvar_name: str, appvar_value: any, custom_timeout=None) -> None:
+    def set_appvar(self, appvar_name: str, appvar_value: Any, custom_timeout=None, storeevent: bool = False) -> None:
         """ Set the value of an AppVar by using the name of the AppVar. The prefix `pro_` will result in the AppVar being saved in the project and persist between restarts. The prefix `sys_` will result in the AppVar being saved globally and made available over all projects.
 
         If the AppVar doesn't exist yet it will be created.
@@ -698,11 +774,15 @@ class AnalyzerRemote():
         :param app_var_name: Name of the AppVar.
         :type app_var_name: str
         :param app_var_value: Value of AppVar. The type can be every datatype supported by python (e.g. float, int, str, json, ...).
-        :type app_var_value: any
+        :type app_var_value: Any
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
+        :param storeevent: Whether to save this update as a process event in the Analyzer4D database (Only available for Analyzer4D > V2.07.14.00)
+            The eventtype will be the name of the appvar and the eventdata the value. Every write to the appvar will result in a process event,
+            even if the value did not change.
+        :type storeevent: bool, optional
         """ 
-        self._send_request(cmd="setappvar", p1=appvar_name, p2=appvar_value, user_timeout=custom_timeout)
+        self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value, storeevent=storeevent, user_timeout=custom_timeout)
 
     def get_appvar(self, appvar_name: str, custom_timeout=None) -> str:
         """ Get AppVar value by name.
@@ -1021,7 +1101,7 @@ class AnalyzerRemote():
                 preamp = {
                     "serial_type": serial_ring[serial_ring_idx+1:], "serial_number": serial_num[serial_num_idx+1:], "S-value": s_value[s_value_idx+1:]}
                 return preamp
-            except ValueError as e:
+            except ValueError:
                 self.logger.warning("The provided Preamp is not configurated properly. Please contact a QASS Service Technician to solve that.")
                 return None
         else:
@@ -1270,7 +1350,7 @@ class AnalyzerRemote():
         :rtype: str
         """
         custom_timeout="never"
-        response = self._send_request(cmd="appfunc", p1="PreampTool", p2=f"detect", user_timeout=custom_timeout)
+        response = self._send_request(cmd="appfunc", p1="PreampTool", p2="detect", user_timeout=custom_timeout)
         return response.get("result")
 
     def get_preamp_firmware(self, preampport: Union[int, PreampPorts], custom_timeout=None)  -> str:
@@ -1314,7 +1394,7 @@ class AnalyzerRemote():
 
     def remove_default_project(self, custom_timeout=None) -> None:
         """ Removes current project template.""" 
-        self._send_request(cmd="AppCmd", p1="SaveProjectasDefault", p2=f"-e", user_timeout=custom_timeout)
+        self._send_request(cmd="AppCmd", p1="SaveProjectasDefault", p2="-e", user_timeout=custom_timeout)
 
 
     def get_io_input(self, custom_timeout=None) -> int:
@@ -1535,7 +1615,7 @@ class AnalyzerRemote():
             self._callback_registered_fieldbus_input = True
         
         self._fieldbus_input_callbacks.append(callback)
-        self.logger.info(f"Callback for fieldbus input report added")
+        self.logger.info("Callback for fieldbus input report added")
 
     def register_fieldbus_output_callback(self, callback, custom_timeout=None) -> None:
         if not self._callback_registered_fieldbus_output and self.connected:
@@ -1543,7 +1623,7 @@ class AnalyzerRemote():
             self._callback_registered_fieldbus_output = True
         
         self._fieldbus_output_callbacks.append(callback)
-        self.logger.info(f"Callback for fieldbus input report added")
+        self.logger.info("Callback for fieldbus input report added")
 
 
     def add_process_number_report_callback(self, callback, custom_timeout=None) -> None:
@@ -1701,16 +1781,18 @@ class AnalyzerRemote():
         self._send_request(cmd="AppCmd", p1="writeBackup", user_timeout=custom_timeout)
   
     def set_sys_pengui_config(self, penguifile=None, reload=None, activate_on_load=None, disable_open_gl=None, 
-                              disable_buffer_boxes=None, custom_timeout=None):
+                              disable_buffer_boxes=None, keepIfNotChanged=None, custom_timeout=None):
         """ Sets the entries under Preferences -> GUI -> Custom User Interface.
-        This incorporates the behaviour of the qml GUI.
+        This incorporates the behaviour of the qml GUI. It is probably no good idea to set reload and keepIfNotChanged both to True.
         
         :param str penguifile: The absolute path to the qml file that should be loaded.
         :param bool reload: Whether or not to reload the qml file whenever a project is loaded
         :param bool activate_on_load: Whether to display the qml GUI on program startup.
         :param bool disable_open_gl: Disable the openGL view whenever a qml GUI is actively displayed.
         :param bool disable_buffer_boxes: Disable Buffer bounding boxes.
+        :param bool keepIfNotChanged: Do not reload qml GUI when the project is changed and the new project uses the same QML. Just available for Analyzer with Version >= "2.04.12.05", otherwise this attribute is ignored and a warning occures
         """
+        
         #build p2 string for use of different optionm -> Analyzer searches for subcmd and then boolean value
         activated_params= []
         for key, value in [("penguifile", penguifile),  ("reload", reload),
@@ -1719,6 +1801,15 @@ class AnalyzerRemote():
                                                         ("disableBufferBoxes", disable_buffer_boxes)]:
             if value is not None:
                 activated_params.append(f"{key} \"{self.translator.get(value,value)}\" ")
+        
+        if keepIfNotChanged is not None:
+            # check version
+            if self.check_version(minimum_needed_version="2.04.12.05"):
+                
+                activated_params.append(f"keepIfNotChanged \"{self.translator.get(keepIfNotChanged,keepIfNotChanged)}\" ")
+            else:
+                self.logger.warning(f"keepIfNotChanged is no available attribute for method sysPenguiConfig because AnalyzerVersion {self._analyzer_version} is smaller than 2.04.12.05! Change attribute manually in Settings -> GUI or update Analyzer Version!")
+
         p2_str = "".join(activated_params)
         if p2_str == "":
             self.logger.info("Method 'set_sys_pengui_config' is not executed because of no valid parameters.")
@@ -1777,7 +1868,7 @@ class AnalyzerRemote():
         
         .. warning:: Experts method
         """
-        self._send_request(cmd="AppCmd", p1="ExpertCmd", p2=f"RAM free-standby")
+        self._send_request(cmd="AppCmd", p1="ExpertCmd", p2="RAM free-standby")
     
     def remove_delayed_trigger(self, delay_type:str=None, custom_timeout=None):
         """ Method to remove delayed trigger. 
@@ -1855,7 +1946,7 @@ class AnalyzerRemote():
         :raises ValueError: If display_message time is smaller or equal zero
         """
         if isinstance(wait_time, str) and wait_time == "force_now":
-            self._send_request(cmd="AppCmd", p1="RestartAnalyzer", p2=f"FORCE_NOW")
+            self._send_request(cmd="AppCmd", p1="RestartAnalyzer", p2="FORCE_NOW")
         elif isinstance(wait_time,int):
             if not wait_time > 0:
                 raise ValueError("Display time has to be greater than 0 ms")
@@ -2009,7 +2100,6 @@ class AnalyzerRemote():
                 self.logger.exception(e)
                 pass
             raise
-
         
         if send_bytes != (len(data)):
             raise RuntimeError('Failed to write bytes')
@@ -2141,7 +2231,6 @@ class AnalyzerRemote():
                     for cb in self._processnumber_callbacks:
                         self._callback_queue.put(functools.partial(cb,msg))
                 elif cmd == 'responsereportprofibus':
-                    # self._socket.send(data)
                     pbrx = msg.get("pbrx",None)
                     pbtx = msg.get("pbtx",None)
 
@@ -2159,8 +2248,7 @@ class AnalyzerRemote():
                     self.logger.error(f'Recv unknown package {msg}')
                         
             else:
-                  self.logger.error(f'Missing field "cmd" in message')
+                  self.logger.error('Missing field "cmd" in message')
             
         except Exception as e:
             self.logger.exception(e)
-
