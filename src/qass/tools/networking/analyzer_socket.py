@@ -18,7 +18,21 @@ import functools
 import time
 
 from qass.tools.networking.errors import ConnectionError, AnalyzerError, AnalyzerVersionError
-from qass.tools.networking.constants import *
+from qass.tools.networking.constants import (
+    Amplitudes, 
+    AnalyzerRunStatus, 
+    ChannelPorts,
+    Channels, 
+    FFTLogarithmic, 
+    FFTOversampling, 
+    FFTWindowing,
+    MultiPreampInput,
+    PreampPorts,
+    PreampType,
+    Samplerates16Bit,
+    SysAmplitudesType,
+    run_status_mapping
+)
 from packaging import version
 
 
@@ -99,26 +113,19 @@ class AnalyzerRemote():
         self._monitoring_active = False
         self._operator_functions_active = False
         self._analyzer_version = None
-        self.q = queue.Queue()
-        
-        # short solution logger to sys.stdout
-        if debug_mode:
-            logging_level = logging.DEBUG
-        else:
-            self.auto_stop = auto_stop
 
         self._sine_gen_active = False
 
         self._callback_queue = queue.Queue()
         self._msg_id :int = 0
-        self._socket :socket.socket = None
+        self._socket : Optional[socket.socket] = None
         self._requests : Dict[int,futures.Future] = {}
         
         self._processing_data = threading.Event()
         self._processing_callbacks = threading.Event()
         
-        self._receiver_thread : threading.Thread = None
-        self._callback_thread : threading.Thread = None
+        self._receiver_thread : Optional[threading.Thread] = None
+        self._callback_thread : Optional[threading.Thread] = None
             
         self._msg_id_lock = threading.Lock()
         self._socket_lock = threading.Lock()
@@ -148,8 +155,6 @@ class AnalyzerRemote():
 
 
     def __exit__(self, exc_type, exc_value, traceback):
-        # if exc_value is not None:
-        #     self.logger.exception(exc_value)
         self.disconnect()   
         
         
@@ -209,7 +214,7 @@ class AnalyzerRemote():
 
 
     def disconnect(self):
-        if len(self.auto_stop) > 0:
+        if self.auto_stop is not None and len(self.auto_stop) > 0:
             if "sineGen" in self.auto_stop and self._sine_gen_active:
                 self._send_request(cmd="AppCmd", p1="StopSineGen")
             if "measuring" in self.auto_stop and self.is_measuring():
@@ -399,7 +404,7 @@ class AnalyzerRemote():
             min_frequency = 50
             max_frequency = 1200
 
-            if (frequency >= min_frequency and frequency <= max_frequency) != True:
+            if not (frequency >= min_frequency and frequency <= max_frequency):
                 self.logger.error(f'SineGenerator will not be started! Frequency of {frequency}Hz is not in the range of {min_frequency}Hz...{max_frequency}Hz.')
                 raise ValueError
 
@@ -536,7 +541,7 @@ class AnalyzerRemote():
         if channel_number == "all":
             self._send_request(cmd="AppCmd", p1="SimulationBuffer", p2=f"path {self.translator[mode]}", user_timeout=custom_timeout)
         else:
-            channel_number += 1
+            channel_number = int(channel_number) + 1
             self._send_request(cmd="AppCmd", p1="SimulationBuffer", p2=f"channel {channel_number} {self.translator[mode]}", user_timeout=custom_timeout)
 
     def start_pulsetest_channel(self, channel_number: Union[int, Channels], gain: int = 800, count: int = 1, delay: int = 0, custom_timeout=None) -> None:
@@ -724,7 +729,7 @@ class AnalyzerRemote():
         """ 
         self._send_request(cmd="AppCmd", p1="LoadProcess", p2=f"{process_number} {start_time}", user_timeout=custom_timeout)
                            
-    def get_service_parameter(self, param_setting: str, custom_timeout=None) -> str:
+    def get_service_parameter(self, param_setting: str, custom_timeout=None) -> Union[str, None]:
         """ Get Values from Service Parameter (Configuration->Settings->Parameter)
         
         .. note:: Only avaible for user level 8 or higher!
@@ -737,9 +742,13 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         settings =  self._send_request(cmd="appfunc", p1="GetServiceParameter", p2=param_setting, user_timeout=custom_timeout)
-        return settings.get("result")
+        result = settings.get("result")
+        if result is not None:
+            result = str(result)
 
-    def set_service_parameter(self, param_setting: str, param_value: any, custom_timeout=None) -> None:
+        return result
+
+    def set_service_parameter(self, param_setting: str, param_value: Any, custom_timeout=None) -> None:
         """ Set Parameter in Service Parameter (Configuration->Settings->Parameter)
         
         .. note:: Only avaible for user level 8 or higher!
@@ -747,7 +756,7 @@ class AnalyzerRemote():
         :param param_setting: Service parameter that should be set
         :type param_setting: str
         :param param_value: New value of choosen service parameter
-        :type param_value: any
+        :type param_value: Any
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
         :type custom_timeout: int, optional
         """ 
@@ -782,9 +791,9 @@ class AnalyzerRemote():
             even if the value did not change.
         :type storeevent: bool, optional
         """ 
-        self._value_parser(cmd="setappvar", p1=appvar_name, p2=appvar_value, storeevent=storeevent, user_timeout=custom_timeout)
+        self._send_request(cmd="setappvar", p1=appvar_name, p2=appvar_value, storeevent=storeevent, user_timeout=custom_timeout)
 
-    def get_appvar(self, appvar_name: str, custom_timeout=None) -> str:
+    def get_appvar(self, appvar_name: str, custom_timeout=None) -> Union[str, None]:
         """ Get AppVar value by name.
         
         .. note: If requested Appvar is a json, the parsed value will be changed due to string escape.
@@ -797,8 +806,11 @@ class AnalyzerRemote():
         :rtype: str
         """ 
         val =  self._send_request(cmd="getappvar", p1=appvar_name, user_timeout=custom_timeout)
+        result = val.get('result')
+        if result is not None:
+            result = str(result)
 
-        return val.get('result')
+        return result
 
     def remove_appvar(self, appvar_name: str, custom_timeout=None) -> None:
         """ Clear and remove AppVar by name.
@@ -810,7 +822,7 @@ class AnalyzerRemote():
         """ 
         self._send_request(cmd="clearappvar", p1=appvar_name, user_timeout=custom_timeout)
 
-    def add_appvar_report_callback(self, callback, custom_timeout=None, check_msg_id=True, appvar: str = None) -> None:
+    def add_appvar_report_callback(self, callback, custom_timeout=None, check_msg_id=True, appvar: Optional[str] = None) -> None:
         """ Add callback function to report of AppVar. Everytime a AppVar changes, added callback functions will be executed. See networking_example.py for an example. By adding first callback the report start automatically und will be stopped by removing all callbacks due to remove function. Beside the executed callback, analyzer sends state of all AppVars as information by every change.
 
         .. warning:: All callbacks need as first param "result" to catch analyzer response, if used or not.
@@ -833,14 +845,14 @@ class AnalyzerRemote():
             self.logger.info(f"Callback {callback.__name__} for AppVar \"{appvar}\" report added.")
         else:
             if len(self._single_appvar_callbacks) > 0:
-                raise ValueError(f'Global AppVar reporting requested, but AppVar reporting for single AppVars is already activated!')
+                raise ValueError('Global AppVar reporting requested, but AppVar reporting for single AppVars is already activated!')
             if self.connected and not self._callback_registered_appvar:
                 self._send_request(cmd="reportappvars", p1="true", user_timeout=custom_timeout,check_msg_id=check_msg_id)
             self._all_appvar_callbacks.append(callback)
             
             self.logger.info(f"Callback {callback.__name__} for AppVar report added.")
 
-    def remove_appvar_report_callback(self, callback, custom_timeout=None, appvar: str = None) -> None:
+    def remove_appvar_report_callback(self, callback, custom_timeout=None, appvar: Optional[str] = None) -> None:
         """ Removes specific callback function from AppVar report callback list. By removing all callbacks the report function will be automatically stopped.
 
         # TODO add hint on lambda functions!
@@ -864,7 +876,7 @@ class AnalyzerRemote():
                 self._callback_registered_appvar = False
                 self.logger.info("Report of AppVars stopped.")
 
-    def get_process_number(self, custom_timeout=None) -> int:
+    def get_process_number(self, custom_timeout=None) -> Union[int, None]:
         """ Returns current process number (active buffer).
 
         :param custom_timeout: Custom timeout flag to get a response, defaults to None. For more information see class description.
@@ -873,8 +885,11 @@ class AnalyzerRemote():
         :rtype: int
         """ 
         obj =  self._send_request(cmd="getprocessnumber", user_timeout=custom_timeout)
+        process = obj.get("processnumber")
+        if process is not None:
+            process = int(process)
 
-        return obj.get("processnumber")
+        return process
 
     def create_project(self, project_name: str, custom_timeout=None) -> None:
         """ Create new project after used template with custom name.
@@ -953,8 +968,12 @@ class AnalyzerRemote():
         :rtype: str
         """ 
         val =  self._send_request(cmd="getversions", user_timeout=custom_timeout, can_fail=False)
+        
         # process response
         analyzer_info = val.get("v")
+        if analyzer_info is None:
+            raise AnalyzerVersionError('Cannot get analyzer version!')
+
         while "\\n" in analyzer_info:
             analyzer_info = analyzer_info.replace("\\n", "\n")
 
@@ -992,6 +1011,8 @@ class AnalyzerRemote():
         if val:
             self.logger.info("No worries. I'm still alive.")
             return True
+        
+        return False
 
 
     def get_max_amp_per_band(self, channel=Channels.CHANNEL_1, create_plot_buffer: bool = True, save_plot_buffer: bool = False, amplitude_type=SysAmplitudesType.AMPLITUDE_DEFAULT, custom_timeout=None) -> np.ndarray:
@@ -1013,6 +1034,8 @@ class AnalyzerRemote():
         response_dict =  self._send_request(cmd="calcmaxamplitude", channel=channel, plot=create_plot_buffer, save=save_plot_buffer, amplitudetype=amplitude_type, user_timeout=custom_timeout,)
         # extract important information
         max_amp = response_dict.get("p1")
+        if max_amp is None:
+            raise AnalyzerError('Unable to get maximum amplitude per band!')
 
         return np.fromstring(max_amp, sep=',')
 
@@ -1075,7 +1098,7 @@ class AnalyzerRemote():
 
         return response
 
-    def get_preamp_info(self, preamp_port: Union[PreampPorts, int], convert:bool=True, custom_timeout=None) -> Union[Dict,str]:
+    def get_preamp_info(self, preamp_port: Union[PreampPorts, int], convert:bool=True, custom_timeout=None) -> Union[Dict,str, None]:
         """ By default returns a dictionary with preamp serial ring and number as the set s value. If convert is set to False the string is parsed as str without putting values into dictionary.
 
         :param preamp_port: Preamp port with connected preamp.
@@ -1091,6 +1114,9 @@ class AnalyzerRemote():
         if preamp_port in PreampPorts or preamp_port in range(0, 8):
             preamp_info =  self._send_request(cmd="getpreampinfo", user_timeout=custom_timeout, p1=preamp_port)
             preamp_info = preamp_info.get('p1')
+            if preamp_info is None:
+                raise AnalyzerError('Unable to get preamp information!')
+            
             if not convert:
                 return preamp_info
             try:
