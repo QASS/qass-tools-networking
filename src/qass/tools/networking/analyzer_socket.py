@@ -1,12 +1,11 @@
 import socket
-from typing import Any
 from pathlib import Path
 from functools import wraps
 import json
 import numpy as np
 from enum import Enum
 from collections import defaultdict
-from typing import Dict, List, Union, Optional
+from typing import Any, Literal, Dict, List, Union, Optional
 import logging
 import re
 import threading
@@ -1217,11 +1216,7 @@ class AnalyzerRemote():
         :param user_callback: function receiving the response as a parameter.
             Will be called after the operator finishes.
         :type user_callback: function
-        """ 
-        # if user_callback:
-        #     self.__recv_thread.register_callbacks(
-        #         operator_name, user_callback)
-            
+        """
         self._send_request(cmd="startoperator", check_msg_id=True,p1=operator_name, p2=operator_setting)
 
     def import_patterns(self, directory_path: str, ) -> None:
@@ -1328,7 +1323,7 @@ class AnalyzerRemote():
         """ 
         self._send_request(cmd="AppCmd", p1="export", p2=f"triggerlist \"{target_filepath}\"", user_timeout=custom_timeout)
 
-    def export_project_archive(self, target_filepath: str, export_name: str, export_process: int = None, export_pengui: bool = True, keep_folder: bool = True) -> None:
+    def export_project_archive(self, target_filepath: str, export_name: str, export_process: Optional[int] = None, export_pengui: bool = True, keep_folder: bool = True) -> None:
         """ Exports current active project to path as tar.gz file. This includes all patterns, trigger list and projects.
 
         :param target_filepath: Target folder path
@@ -1343,7 +1338,7 @@ class AnalyzerRemote():
         :type keep_folder: bool, optional
         """ 
         p2_string = f"\"{target_filepath}\" {export_name}"
-        if export_process:
+        if export_process is not None:
             p2_string = p2_string + f" --process {export_process}"
         if export_pengui:
             p2_string = p2_string + " --pengui"
@@ -1377,7 +1372,11 @@ class AnalyzerRemote():
         """
         custom_timeout="never"
         response = self._send_request(cmd="appfunc", p1="PreampTool", p2="detect", user_timeout=custom_timeout)
-        return response.get("result")
+        detected_preamps = response.get('result')
+        if detected_preamps is None:
+            raise AnalyzerError('Unable to detect preamps!')
+
+        return detected_preamps
 
     def get_preamp_firmware(self, preampport: Union[int, PreampPorts], custom_timeout=None)  -> str:
         """ Returns preamp firmware version.
@@ -1391,7 +1390,10 @@ class AnalyzerRemote():
         """
         preampport += 1 # c++ analyzer source code handels here preampports between 1 to 8
         response = self._send_request(cmd="appfunc", p1="PreampTool", p2=f"version {preampport}", user_timeout=custom_timeout)
-        return response.get("result")
+        firmware_version = response.get("result")
+        if firmware_version is None:
+            raise AnalyzerError('Unable to get firmware version!')
+        return firmware_version
     
     def reboot_preamp(self, preampport: Union[int, PreampPorts])   ->None:
         """ Reboots preamp for one second.
@@ -1405,7 +1407,7 @@ class AnalyzerRemote():
         p2_string = f"port {preampport} reboot"
         self._send_request(cmd="AppCmd", p1="Preamp", p2=p2_string, user_timeout="never")
 
-    def set_default_project(self, comment: str = None, custom_timeout=None) -> None:
+    def set_default_project(self, comment: Optional[str] = None, custom_timeout=None) -> None:
         """ Set current active project as new default template.
 
         :param comment: Comment to describe template, defaults to None
@@ -1432,7 +1434,11 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         """ 
         val =  self._send_request(cmd="readioin", user_timeout=custom_timeout)
-        return int(val.get("result"))
+        io_input = val.get('result')
+        if io_input is None:
+            raise AnalyzerError('Unable to get IO inputs!')
+        
+        return int(io_input)
 
     def get_io_output(self, custom_timeout=None) -> int:
         """ Returns get I/O output register as integer appearance (converted from hex).
@@ -1443,7 +1449,11 @@ class AnalyzerRemote():
         :rtype: int
         """ 
         val =  self._send_request(cmd="readioout", user_timeout=custom_timeout)
-        return int(val.get("result"))
+        io_output = val.get('result')
+        if io_output is None:
+            raise AnalyzerError('Unable to get IO outputs!')
+        
+        return int(io_output)
 
     def _shift_binary(self, original_bin: str) -> str:
         """ Helper method to convert incoming binary to least significant digit on the right side
@@ -1453,7 +1463,7 @@ class AnalyzerRemote():
         :return str: Shifted binary
         """ 
         # helper list
-        new_val = [0] * len(original_bin)
+        new_val: list = [0] * len(original_bin)
 
         # save current val to shifted position in list
         for (i, bit) in enumerate(original_bin):
@@ -1496,12 +1506,10 @@ class AnalyzerRemote():
         elif state in false_states:
             state = 'off'
         
-        from numbers import Number
-        if isinstance(io_line, Number):
+        if isinstance(io_line, int):
             if not (1 <= io_line <= 24):
                 raise ValueError(f'The given io_line is out of range (1<=io_line<=24): {io_line}')
         else:
-            import re
             pattern = re.compile(r'^[124]\.[12345678]$')
             if not pattern.match(io_line):
                 raise ValueError(f'The given io_line does not fulfill the expected pattern (e.g. 1.3): {io_line}')
@@ -1727,9 +1735,7 @@ class AnalyzerRemote():
         self._send_request(cmd="appcmd", p1="setioout", p2=f"{io_line} {state}", user_timeout=custom_timeout)
 
 
-
-    # TODO: Test
-    def start_script_function(self, function_name: str, function_param: any, custom_timeout=None) -> None:
+    def start_script_function(self, function_name: str, function_param: Any, custom_timeout=None) -> dict:
         """ General syntax to start script function. Response is depending on called function.
 
         .. warning:: Service function, should not be used without prior kmowledge about remote scripts
@@ -1742,11 +1748,11 @@ class AnalyzerRemote():
         :type custom_timeout: int, optional
         :return: Standard Analyzer response. Dict contains result of addressed function as str.
         :rtype: dict
-        """ 
+        """
         return self._send_request(cmd="AppFunc", p1=function_name, p2=function_param, user_timeout=custom_timeout)
                                   
     def set_human_confirmation(self, process_IO=False, **kwargs) -> None:
-        """ Send human confiramtion over current process. Score and comment can be parsed over kwargs. When in doubt, check documentation.
+        """ Send human confirmation over current process. Score and comment can be parsed over kwargs. When in doubt, check documentation.
             
         Supported Kwargs Key: "comment", str | Human comment for confirmation
         Supported Kwargs Key: "score", int   | Score value for confirmation
@@ -1785,7 +1791,7 @@ class AnalyzerRemote():
 
         self._send_request(check_msg_id=False, **settings)
 
-    def write_to_database(self, result: any, comment=None) -> None:
+    def write_to_database(self, result: Any, comment=None) -> None:
         """ Writes database query for an entry with current project_id, process, process_id, result and comment as values
 
         :param result: Result which should be saved in database
@@ -1896,7 +1902,7 @@ class AnalyzerRemote():
         """
         self._send_request(cmd="AppCmd", p1="ExpertCmd", p2="RAM free-standby")
     
-    def remove_delayed_trigger(self, delay_type:str=None, custom_timeout=None):
+    def remove_delayed_trigger(self, delay_type: Literal['all', 'busy', 'parameter'], custom_timeout=None):
         """ Method to remove delayed trigger. 
 
         Supported key: "all", str        | Remove all delayed trigger commands from queue
@@ -2094,7 +2100,7 @@ class AnalyzerRemote():
             return copy.copy(self._msg_id)
         
                              
-    def _send_request(self, check_msg_id=True, can_fail=True, user_timeout=None, **kwargs) -> dict:
+    def _send_request(self, check_msg_id: bool = True, can_fail: bool = True, user_timeout: Optional[int] = None, **kwargs) -> dict:
         if not self._socket:
             raise RuntimeError(f'can not send because socket is closed {kwargs}')
 
