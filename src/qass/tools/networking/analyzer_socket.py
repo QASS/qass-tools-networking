@@ -5,7 +5,7 @@ import json
 import numpy as np
 from enum import Enum
 from collections import defaultdict
-from typing import Any, Literal, Dict, List, Union, Optional
+from typing import Any, Literal, Dict, List, Union, Optional, Callable
 import logging
 import re
 import threading
@@ -138,9 +138,9 @@ class AnalyzerRemote():
         self._fieldbus_input_callbacks = []
         self._fieldbus_output_callbacks = []
 
-
         self._callback_registered_processnumber = False
         self._callback_registered_io = False
+        self._callback_registered_operator = False
         self._callback_registered_appvar = False
         self._callback_registered_fieldbus_input = False
         self._callback_registered_fieldbus_output = False
@@ -184,6 +184,7 @@ class AnalyzerRemote():
 
         self._callback_registered_processnumber = False
         self._callback_registered_io = False
+        self._callback_registered_operator = False
         self._callback_registered_appvar = False
         self._callback_registered_fieldbus_input = False
         self._callback_registered_fieldbus_output = False
@@ -1203,7 +1204,7 @@ class AnalyzerRemote():
         self._send_request(cmd="setpendingcomment", p1=comment, user_timeout=custom_timeout)
 
 
-    def start_operator(self, operator_name: str, operator_setting: str, user_callback=None) -> None:
+    def start_operator(self, operator_name: str, operator_setting: str, user_callback: Optional[Callable]=None) -> None:
         """ Manual start of existing operator by name. By adding a callback function,
         software will execute callback when operator finish.
 
@@ -1213,9 +1214,8 @@ class AnalyzerRemote():
         :type operator_name: str
         :param operator_setting: Operator settings like "loop from 0 to -1 simulation 2"
         :type operator_setting: str
-        :param user_callback: function receiving the response as a parameter.
-            Will be called after the operator finishes.
-        :type user_callback: function
+        :param user_callback: Not implemented yet!
+        :type user_callback: Optional[Callable]
         """
         self._send_request(cmd="startoperator", check_msg_id=True,p1=operator_name, p2=operator_setting)
 
