@@ -2242,11 +2242,7 @@ class AnalyzerRemote():
             elif 'cmd' in msg:
                 cmd = msg['cmd']
                 
-                payload = json.dumps({'cmd':'callback_ack'}).encode()
-                data = struct.pack('>H',len(payload)) + payload
-                
                 if cmd in ("reportappvars","responseappvars"):
-                    self._socket.send(data)
                     if len(self._all_appvar_callbacks) > 0:
                         for cb in self._all_appvar_callbacks:
                             self._callback_queue.put(functools.partial(cb,msg))
@@ -2255,11 +2251,9 @@ class AnalyzerRemote():
                         for cb in self._single_appvar_callbacks[appvar]:
                             self._callback_queue.put(functools.partial(cb, msg))
                 elif cmd == 'responsereportio':
-                    self._socket.send(data)
                     for cb in self._io_callbacks:
                         self._callback_queue.put(functools.partial(cb,msg))
                 elif cmd == 'responsereportprocessnumber':
-                    self._socket.send(data)
                     for cb in self._processnumber_callbacks:
                         self._callback_queue.put(functools.partial(cb,msg))
                 elif cmd == 'responsereportprofibus':
