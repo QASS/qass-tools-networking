@@ -21,8 +21,7 @@ release = '3.7'
 
 
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'enum_tools.autoenum',
-              'sphinx.ext.coverage', 'sphinx.ext.napoleon', 'sphinx_design',]
-              #'autointenum']
+              'sphinx.ext.coverage', 'sphinx.ext.napoleon', 'sphinx_design']
 
 templates_path = ['_templates']
 exclude_patterns = []
