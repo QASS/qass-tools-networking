@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://qass.github.io/"
+Homepage = "https://github.com/QASS/qass-tools-networking"
 
 [build-system]
 requires = [
