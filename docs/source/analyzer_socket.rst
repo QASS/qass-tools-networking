@@ -125,32 +125,32 @@ AnalyzerRemote
 AnalyzerRemote Helper Classes
 *****************************
 
-.. autoenum:: qass.tools.networking.analyzer_socket.Amplitudes
+.. autoenum:: qass.tools.networking.constants.Amplitudes
 
-.. autoenum:: qass.tools.networking.analyzer_socket.Channels
+.. autoenum:: qass.tools.networking.constants.Channels
 
-.. autoenum:: qass.tools.networking.analyzer_socket.ChannelPorts
+.. autoenum:: qass.tools.networking.constants.ChannelPorts
 
-.. autoenum:: qass.tools.networking.analyzer_socket.PreampPorts
+.. autoenum:: qass.tools.networking.constants.PreampPorts
 
-.. autoenum:: qass.tools.networking.analyzer_socket.Samplerates16Bit
+.. autoenum:: qass.tools.networking.constants.Samplerates16Bit
 
-.. autoenum:: qass.tools.networking.analyzer_socket.ExactSamplerates16Bit
+.. autoenum:: qass.tools.networking.constants.ExactSamplerates16Bit
 
-.. autoenum:: qass.tools.networking.analyzer_socket.ExactSamplerates24Bit
+.. autoenum:: qass.tools.networking.constants.ExactSamplerates24Bit
 
-.. autoenum:: qass.tools.networking.analyzer_socket.FFTOversampling
+.. autoenum:: qass.tools.networking.constants.FFTOversampling
 
-.. autoenum:: qass.tools.networking.analyzer_socket.FFTWindowing
+.. autoenum:: qass.tools.networking.constants.FFTWindowing
 
-.. autoenum:: qass.tools.networking.analyzer_socket.FFTLogarithmic
+.. autoenum:: qass.tools.networking.constants.FFTLogarithmic
 
-.. autoenum:: qass.tools.networking.analyzer_socket.SysAmplitudesType
+.. autoenum:: qass.tools.networking.constants.SysAmplitudesType
 
-.. autoenum:: qass.tools.networking.analyzer_socket.AreaViews
+.. autoenum:: qass.tools.networking.constants.AreaViews
 
-.. autoenum:: qass.tools.networking.analyzer_socket.SysSettingsClass
+.. autoenum:: qass.tools.networking.constants.SysSettingsClass
 
-.. autoenum:: qass.tools.networking.analyzer_socket.MultiPreampInput
+.. autoenum:: qass.tools.networking.constants.MultiPreampInput
 
-.. autoenum:: qass.tools.networking.analyzer_socket.PreampType 
+.. autoenum:: qass.tools.networking.constants.PreampType 

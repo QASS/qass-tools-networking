@@ -28,17 +28,6 @@ If you run into a bug or compatibility problems please contact ewiebelitz@qass.n
    
    contributing_guide
 
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Python Server Client
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Remote Request Operator
-
-
-
 Indices and tables
 ==================
 
