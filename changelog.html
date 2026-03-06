@@ -1,0 +1,536 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelog &mdash; Qass Tools Networking 3.7 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=da8737de"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Overview" href="contributing_guide.html" />
+    <link rel="prev" title="Overview" href="analyzer_socket.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Qass Tools Networking
+              <img src="_static/QASS_Logo_neu.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Remote Control and Supervising</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="analyzer_socket.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analyzer_socket.html#examples">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analyzer_socket.html#analyzerremote">AnalyzerRemote</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analyzer_socket.html#analyzerremote-helper-classes">AnalyzerRemote Helper Classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Package Changelog</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#unreleased">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">3.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">3.3.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">3.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">3.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id5">3.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id6">3.0.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id7">2.1.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id8">2.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id9">2.0.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id10">2.0.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id11">2.0.0</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contributing Guidlines</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#i-don-t-want-to-read-this-whole-thing-i-just-have-a-question">I don’t want to read this whole thing, I just have a question!!!</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#how-do-i-contribute">How do I Contribute?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#important-notes-for-functionality">Important notes for functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#testing">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#documentation">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#releasing-a-new-package-version">Releasing a new package version</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Qass Tools Networking</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Changelog</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/changelog.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="analyzer_socket.html" class="btn btn-neutral float-left" title="Overview" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contributing_guide.html" class="btn btn-neutral float-right" title="Overview" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading"></a></h1>
+<section id="unreleased">
+<span id="changelog-networking"></span><h2>Unreleased<a class="headerlink" href="#unreleased" title="Link to this heading"></a></h2>
+<p>Planned changes for next releases will be noted here. If you have any suggestions, please contact: <a class="reference external" href="mailto:okowollik&#37;&#52;&#48;qass&#46;net">okowollik<span>&#64;</span>qass<span>&#46;</span>net</a></p>
+<ul class="simple">
+<li><p>Set io as line in set_simulated_io_input(args)</p></li>
+<li><p>Save project function</p></li>
+</ul>
+</section>
+<section id="id1">
+<h2>3.7.0<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>December 09, 2025</p>
+</dd>
+<dt class="field-even">AnalyzerVersion<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li></li>
+</ul>
+</dd>
+<dt class="field-odd">Contributor<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Oliver Kowollik</p>
+</dd>
+</dl>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-0">
+Changes</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Remove <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerSSH</span></code> module</p></li>
+</ul>
+</div>
+</div>
+</section>
+<section id="id2">
+<h2>3.3.1<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>May 13, 2024</p>
+</dd>
+<dt class="field-even">AnalyzerVersion<span class="colon">:</span></dt>
+<dd class="field-even"><p>V2.03.99.13 optimierter Aufbau (11 Mär 2024)</p>
+</dd>
+<dt class="field-odd">Contributor<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Oliver Kowollik</p>
+</dd>
+</dl>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-1" name="sd-tab-set-1" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-1">
+New Features</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Expert keyword argument for <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.start_sineGenerator()</span></code> method</p></li>
+</ul>
+</div>
+</div>
+</section>
+<section id="id3">
+<h2>3.3.0<a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>April 11, 2024</p>
+</dd>
+<dt class="field-even">AnalyzerVersion<span class="colon">:</span></dt>
+<dd class="field-even"><p>V2.03.99.13 optimierter Aufbau (11 Mär 2024)</p>
+</dd>
+<dt class="field-odd">Contributor<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Oliver Kowollik</p>
+</dd>
+</dl>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-2" name="sd-tab-set-2" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-2">
+New Features</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Added a contribution guideline</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.set_frequency_mask()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.use_frequency_mask()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.teach_frequency_mask()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.restart_analyzer()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.start_shell_program()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.remove_delayed_trigger()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.free_buffer_datablocks()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.set_python_init_hook()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.set_sys_pengui_config()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.set_failstate()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.set_sys_python_path()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.set_frq_mask_container_visible()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.set_appvar_container_visible()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.set_GUI_tools_activated()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.set_classic_menu_view()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.set_trigger_list()</span></code> method</p></li>
+</ul>
+</div>
+<input id="sd-tab-item-3" name="sd-tab-set-2" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-3">
+Fixes</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Paths are now supported to contain whitespaces</p></li>
+<li><p>Fix <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.set_process_comment</span></code> method. A process number is now needed as first arguemnt.</p></li>
+</ul>
+</div>
+</div>
+</section>
+<section id="id4">
+<h2>3.2.0<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>November 15, 2023</p>
+</dd>
+<dt class="field-even">AnalyzerVersion<span class="colon">:</span></dt>
+<dd class="field-even"><p>V2.03.30.00 (31 Mai 2023)</p>
+</dd>
+<dt class="field-odd">Contributor<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Oliver Kowollik</p>
+</dd>
+</dl>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-4" name="sd-tab-set-3" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-4">
+New Features</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>New custom exception class <code class="xref py py-class docutils literal notranslate"><span class="pre">ConnectionError</span></code></p></li>
+<li><p>Add service to auto stopp certain remote startet methods parsing command list to constructor under <cite>auto_stop</cite></p></li>
+</ul>
+</div>
+<input id="sd-tab-item-5" name="sd-tab-set-3" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-5">
+Changes</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Extend <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.reset_failstate</span></code> method by keywords to set application idle and clear notifcation pop-ups</p></li>
+</ul>
+</div>
+</div>
+</section>
+<section id="id5">
+<h2>3.1.0<a class="headerlink" href="#id5" title="Link to this heading"></a></h2>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-6" name="sd-tab-set-4" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-6">
+New Features</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.write_preamp_s_value()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.write_preamp_s_value()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.load_project()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.load_project_by_IOid()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.detect_preamp()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.get_preamp_firmware()</span></code> method</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.reboot_preamp()</span></code> method</p></li>
+<li><p>Additional convert flag to <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.get_preamp_info()</span></code></p></li>
+<li><p>New IntEnum <code class="xref py py-class docutils literal notranslate"><span class="pre">PreampTypes()</span></code> class</p></li>
+<li><p>Add dependancies</p></li>
+</ul>
+</div>
+<input id="sd-tab-item-7" name="sd-tab-set-4" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-7">
+Changes</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Documentation <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.get_preamp_info()</span></code></p></li>
+<li><p>Rework <code class="xref py py-class docutils literal notranslate"><span class="pre">ReceiverThread</span></code> handling</p></li>
+</ul>
+</div>
+<input id="sd-tab-item-8" name="sd-tab-set-4" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-8">
+Fixes</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Bug in <code class="xref py py-class docutils literal notranslate"><span class="pre">ReceiverThread</span></code></p></li>
+</ul>
+</div>
+</div>
+</section>
+<section id="id6">
+<h2>3.0.0<a class="headerlink" href="#id6" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>May 10, 2023</p>
+</dd>
+<dt class="field-even">AnalyzerVersion<span class="colon">:</span></dt>
+<dd class="field-even"><p>V2.03.22.90 (10 Juni 2022)</p>
+</dd>
+<dt class="field-odd">Contributor<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Oliver Kowollik</p>
+</dd>
+</dl>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-9" name="sd-tab-set-5" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-9">
+New Features</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Timeout for each queue item</p></li>
+<li><p>Most methods from <code class="xref py py-class docutils literal notranslate"><span class="pre">AnalyzerRemote</span></code> now contain a <code class="docutils literal notranslate"><span class="pre">custom_timeout</span></code> keywordargument, which overwirittes the timeout control for each queue block</p></li>
+<li><p>Constructor contains new keywordargument <code class="docutils literal notranslate"><span class="pre">timeout</span></code> for setting global timeout, default is 2</p></li>
+<li><p>New custom <code class="xref py py-class docutils literal notranslate"><span class="pre">ReceivingThreadError</span></code> Exception class added</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.open()</span></code> method to use socket without a context manager</p></li>
+<li><p>New <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.close()</span></code> method to use socket without a context manager</p></li>
+</ul>
+</div>
+<input id="sd-tab-item-10" name="sd-tab-set-5" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-10">
+Fixes</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Documentation <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.get_io_input()</span></code></p></li>
+<li><p>Documentation <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.get_io_output()</span></code></p></li>
+</ul>
+</div>
+<input id="sd-tab-item-11" name="sd-tab-set-5" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-11">
+Removed</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Custom exception <code class="xref py py-class docutils literal notranslate"><span class="pre">ConnectionError</span></code> removed</p></li>
+</ul>
+</div>
+<input id="sd-tab-item-12" name="sd-tab-set-5" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-12">
+Changes</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Custom exception <code class="docutils literal notranslate"><span class="pre">AnalyzerSyntaxError</span></code> to <code class="xref py py-class docutils literal notranslate"><span class="pre">AnalyzerError</span></code></p></li>
+</ul>
+</div>
+</div>
+</section>
+<section id="id7">
+<h2>2.1.1<a class="headerlink" href="#id7" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>May 05, 2023</p>
+</dd>
+<dt class="field-even">AnalyzerVersion<span class="colon">:</span></dt>
+<dd class="field-even"><p>V2.03.22.90 (10 Juni 2022)</p>
+</dd>
+<dt class="field-odd">Contributor<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Oliver Kowollik</p>
+</dd>
+</dl>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-13" name="sd-tab-set-6" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-13">
+Fixes</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Update documentation of <code class="xref py py-class docutils literal notranslate"><span class="pre">AnalyzerSSH</span></code></p></li>
+<li><p>In <code class="xref py py-class docutils literal notranslate"><span class="pre">AnalyzerRemote</span></code> Deactivation of SineGen as Flag is raised properly</p></li>
+</ul>
+</div>
+<input id="sd-tab-item-14" name="sd-tab-set-6" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-14">
+Changes</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Optimized range control in <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.start_sineGenerator()</span></code></p></li>
+<li><p>Changend name of <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.AreaViews()</span></code> attributes</p></li>
+<li><p>New package requirement of paramiko</p></li>
+</ul>
+</div>
+</div>
+</section>
+<section id="id8">
+<h2>2.1.0<a class="headerlink" href="#id8" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>March 29, 2023</p>
+</dd>
+<dt class="field-even">AnalyzerVersion<span class="colon">:</span></dt>
+<dd class="field-even"><p>V2.03.22.90 (10 Juni 2022)</p>
+</dd>
+<dt class="field-odd">Contributor<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Oliver Kowollik</p>
+</dd>
+</dl>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-15" name="sd-tab-set-7" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-15">
+New Features</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>New tool added for SSH linux terminal control in python context: <code class="xref py py-class docutils literal notranslate"><span class="pre">AnalyzerSSH</span></code></p></li>
+</ul>
+</div>
+<input id="sd-tab-item-16" name="sd-tab-set-7" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-16">
+Fixes</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Update documentation</p></li>
+</ul>
+</div>
+</div>
+</section>
+<section id="id9">
+<h2>2.0.2<a class="headerlink" href="#id9" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>January 23, 2023</p>
+</dd>
+<dt class="field-even">AnalyzerVersion<span class="colon">:</span></dt>
+<dd class="field-even"><p>V2.03.22.90 (10 Juni 2022)</p>
+</dd>
+<dt class="field-odd">Contributor<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Oliver Kowollik</p>
+</dd>
+</dl>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-17" name="sd-tab-set-8" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-17">
+New Features</label><div class="sd-tab-content docutils">
+<ul>
+<li><p>Custom role <code class="docutils literal notranslate"><span class="pre">Contributor</span></code> now avaible as sphinx supported docstring type</p>
+<p>Example:
+<code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">:Contributor:</span> <span class="pre">Oliver</span> <span class="pre">Kowollik</span>
+<span class="pre">`</span></code></p>
+</li>
+</ul>
+</div>
+<input id="sd-tab-item-18" name="sd-tab-set-8" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-18">
+Fixes</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Changelog entries extended by <code class="xref py py-mod docutils literal notranslate"><span class="pre">Contributor</span></code> Tag</p></li>
+</ul>
+</div>
+</div>
+</section>
+<section id="id10">
+<h2>2.0.1<a class="headerlink" href="#id10" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>January 23, 2023</p>
+</dd>
+<dt class="field-even">AnalyzerVersion<span class="colon">:</span></dt>
+<dd class="field-even"><p>V2.03.22.90 (10 Juni 2022)</p>
+</dd>
+<dt class="field-odd">Contributor<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Oliver Kowollik</p>
+</dd>
+</dl>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-19" name="sd-tab-set-9" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-19">
+New Features</label><div class="sd-tab-content docutils">
+<ul>
+<li><p>Custom role <code class="docutils literal notranslate"><span class="pre">AnalyzerVersion</span></code> now avaible as sphinx supported docstring type</p>
+<p>Example:
+<code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">:AnalyzerVersion:</span> <span class="pre">QASS</span> <span class="pre">optimizer4D</span> <span class="pre">sysV11b</span> <span class="pre">(2022-05-18)</span>
+<span class="pre">`</span></code></p>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="id11">
+<h2>2.0.0<a class="headerlink" href="#id11" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>January 23, 2023</p>
+</dd>
+<dt class="field-even">AnalyzerVersion<span class="colon">:</span></dt>
+<dd class="field-even"><p>V2.03.22.90 (10 Juni 2022)</p>
+</dd>
+<dt class="field-odd">Contributor<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Oliver Kowollik</p>
+</dd>
+</dl>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-20" name="sd-tab-set-10" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-20">
+New Features</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ExactSamplerates16Bit</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ExactSamplerates24Bit</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalyzerRemote.set_io_ouput()</span></code></p></li>
+</ul>
+</div>
+<input id="sd-tab-item-21" name="sd-tab-set-10" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-21">
+New Features</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Keyword changed from <code class="docutils literal notranslate"><span class="pre">create_data_buffer</span></code> to <code class="docutils literal notranslate"><span class="pre">save_plot_buffer</span></code> in <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.get_max_amp_per_band()</span></code></p></li>
+<li><p>Classname change from <code class="docutils literal notranslate"><span class="pre">Samplerates</span></code> to <code class="xref py py-class docutils literal notranslate"><span class="pre">Samplerates16Bit</span></code></p></li>
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.get_preamp_info()</span></code> Changes return value from <code class="docutils literal notranslate"><span class="pre">Tuple</span></code> to <code class="docutils literal notranslate"><span class="pre">Dict</span></code>:</p></li>
+</ul>
+</div>
+<input id="sd-tab-item-22" name="sd-tab-set-10" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-22">
+New Features</label><div class="sd-tab-content docutils">
+<ul class="simple">
+<li><p>Exception <code class="xref py py-class docutils literal notranslate"><span class="pre">KeyBoardInterruption</span></code> now properly raised</p></li>
+<li><p>Documentation typo in <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.set_multiplexer()</span></code></p></li>
+<li><p>Fix automatic set of MultiPreampInput after use of function <code class="xref py py-mod docutils literal notranslate"><span class="pre">AnalyzerRemote.set_multiplexer()</span></code>
+<code class="docutils literal notranslate"><span class="pre">Subport</span></code> keyword is now set to <code class="docutils literal notranslate"><span class="pre">-1</span></code> by default</p></li>
+</ul>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="analyzer_socket.html" class="btn btn-neutral float-left" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contributing_guide.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, QASS GmbH.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

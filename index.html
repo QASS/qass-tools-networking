@@ -1,0 +1,479 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to QASS Tools Networking’s documentation! &mdash; Qass Tools Networking 3.7 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=da8737de"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Overview" href="analyzer_socket.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            Qass Tools Networking
+              <img src="_static/QASS_Logo_neu.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Remote Control and Supervising</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="analyzer_socket.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analyzer_socket.html#examples">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analyzer_socket.html#analyzerremote">AnalyzerRemote</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analyzer_socket.html#analyzerremote-helper-classes">AnalyzerRemote Helper Classes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Package Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contributing Guidlines</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#i-don-t-want-to-read-this-whole-thing-i-just-have-a-question">I don’t want to read this whole thing, I just have a question!!!</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#how-do-i-contribute">How do I Contribute?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#important-notes-for-functionality">Important notes for functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#testing">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#documentation">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#releasing-a-new-package-version">Releasing a new package version</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Qass Tools Networking</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Welcome to QASS Tools Networking’s documentation!</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="analyzer_socket.html" class="btn btn-neutral float-right" title="Overview" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="welcome-to-qass-tools-networking-s-documentation">
+<h1>Welcome to QASS Tools Networking’s documentation!<a class="headerlink" href="#welcome-to-qass-tools-networking-s-documentation" title="Link to this heading"></a></h1>
+<p>This package provides tools to work remote with the Analyzer4D Software and build a communication interface between remote control and Analyzer4D.
+If you run into a bug or compatibility problems please contact <a class="reference external" href="mailto:ewiebelitz&#37;&#52;&#48;qass&#46;net">ewiebelitz<span>&#64;</span>qass<span>&#46;</span>net</a> or <a class="reference external" href="mailto:okowollik&#37;&#52;&#48;qass&#46;net">okowollik<span>&#64;</span>qass<span>&#46;</span>net</a>.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Remote Control and Supervising</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="analyzer_socket.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#error-handling">Error Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#safety-mode">Safety Mode</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="analyzer_socket.html#examples">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#example-1-initalizing">Example 1: Initalizing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#example-2-access-functionalities">Example 2: Access functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#example-3-debug-mode">Example 3: Debug mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#example-4-callbacks">Example 4: Callbacks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#example-5-set-analyzer-settings">Example 5: Set analyzer settings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="analyzer_socket.html#analyzerremote">AnalyzerRemote</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.add_appvar_report_callback"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.add_appvar_report_callback()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.add_io_report_callback"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.add_io_report_callback()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.add_process_number_report_callback"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.add_process_number_report_callback()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.change_preamp_input"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.change_preamp_input()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.check_version"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.check_version()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.create_project"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.create_project()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.detect_preamps"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.detect_preamps()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.export_operator_network"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.export_operator_network()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.export_project_archive"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.export_project_archive()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.export_trigger_list"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.export_trigger_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.flash_preamp_firmware"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.flash_preamp_firmware()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.free_buffer_datablocks"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.free_buffer_datablocks()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_analyzer_version"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_analyzer_version()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_analyzer_versions"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_analyzer_versions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_appvar"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_appvar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_heartbeat"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_heartbeat()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_io_input"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_io_input()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_io_output"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_io_output()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_max_amp_per_band"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_max_amp_per_band()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_measure_positions"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_measure_positions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_preamp_firmware"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_preamp_firmware()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_preamp_info"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_preamp_info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_process_number"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_process_number()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_project_info"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_project_info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_service_parameter"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_service_parameter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.get_sine_gen_state"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.get_sine_gen_state</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.import_operator_network"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.import_operator_network()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.import_patterns"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.import_patterns()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.import_project_archive"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.import_project_archive()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.import_trigger_list"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.import_trigger_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.is_measuring"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.is_measuring()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.is_monitoring"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.is_monitoring()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.is_trigger_loop_activated"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.is_trigger_loop_activated()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.load_area_view"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.load_area_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.load_last_user_project"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.load_last_user_project()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.load_process"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.load_process()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.load_project"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.load_project()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.load_project_by_IOid"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.load_project_by_IOid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.load_simulation_buffer"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.load_simulation_buffer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.load_test_project"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.load_test_project()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.reboot_preamp"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.reboot_preamp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.remove_appvar"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.remove_appvar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.remove_appvar_report_callback"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.remove_appvar_report_callback()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.remove_default_project"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.remove_default_project()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.remove_delayed_trigger"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.remove_delayed_trigger()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.remove_io_report_callback"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.remove_io_report_callback()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.remove_process_number_report_callback"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.remove_process_number_report_callback()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.reset_failstate"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.reset_failstate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.restart_analyzer"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.restart_analyzer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.save_area_view"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.save_area_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.send_analyzer_to_sleep"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.send_analyzer_to_sleep()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.send_appcmd"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.send_appcmd()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_GUI_tools_acitvated"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_GUI_tools_acitvated()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_appvar"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_appvar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_appvar_container_visible"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_appvar_container_visible()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_area_colour"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_area_colour()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_area_scale"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_area_scale()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_area_time_range"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_area_time_range()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_area_view"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_area_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_buffer_buttons_visible"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_buffer_buttons_visible()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_classic_menu_view"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_classic_menu_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_comment_pending_process"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_comment_pending_process()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_default_project"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_default_project()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_failstate"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_failstate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_frequency_mask"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_frequency_mask()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_frq_mask_container_visible"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_frq_mask_container_visible()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_global_function_timeout"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_global_function_timeout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_human_confirmation"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_human_confirmation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_io_output"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_io_output()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_multiplexer"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_multiplexer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_process_comment"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_process_comment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_python_init_hook"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_python_init_hook()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_serial_number"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_serial_number()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_serial_number_pending_process"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_serial_number_pending_process()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_service_parameter"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_service_parameter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_simulated_io_input"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_simulated_io_input()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_simulated_io_input_line"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_simulated_io_input_line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_simulation_buffer"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_simulation_buffer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_sys_pengui_config"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_sys_pengui_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_sys_python_path"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_sys_python_path()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.set_toolbar_visible"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.set_toolbar_visible()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.start_frequency_test_channel"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.start_frequency_test_channel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.start_frequency_test_port"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.start_frequency_test_port()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.start_measuring"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.start_measuring()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.start_operator"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.start_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.start_pulsetest_channel"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.start_pulsetest_channel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.start_pulsetest_port"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.start_pulsetest_port()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.start_script_function"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.start_script_function()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.start_shell_program"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.start_shell_program()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.start_sineGenerator"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.start_sineGenerator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.stop_measuring"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.stop_measuring()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.stop_sineGenerator"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.stop_sineGenerator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.teach_frequency_mask"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.teach_frequency_mask()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.use_frequency_mask"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.use_frequency_mask()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.write_backup"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.write_backup()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.write_preamp_s_value"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.write_preamp_s_value()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.analyzer_socket.AnalyzerRemote.write_to_database"><code class="docutils literal notranslate"><span class="pre">AnalyzerRemote.write_to_database()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="analyzer_socket.html#analyzerremote-helper-classes">AnalyzerRemote Helper Classes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes"><code class="docutils literal notranslate"><span class="pre">Amplitudes</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_64_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_64_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_128_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_128_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_191_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_191_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_255_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_255_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_318_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_318_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_382_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_382_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_446_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_446_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_509_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_509_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_573_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_573_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_637_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_637_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_700_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_700_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_764_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_764_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_828_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_828_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_891_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_891_mV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Amplitudes.AMP_955_mV"><code class="docutils literal notranslate"><span class="pre">Amplitudes.AMP_955_mV</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Channels"><code class="docutils literal notranslate"><span class="pre">Channels</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Channels.CHANNEL_1"><code class="docutils literal notranslate"><span class="pre">Channels.CHANNEL_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Channels.CHANNEL_2"><code class="docutils literal notranslate"><span class="pre">Channels.CHANNEL_2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Channels.CHANNEL_3"><code class="docutils literal notranslate"><span class="pre">Channels.CHANNEL_3</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Channels.CHANNEL_4"><code class="docutils literal notranslate"><span class="pre">Channels.CHANNEL_4</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts"><code class="docutils literal notranslate"><span class="pre">ChannelPorts</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_PORT_1"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_PORT_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_PORT_2"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_PORT_2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_PORT_3"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_PORT_3</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_PORT_4"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_PORT_4</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_PORT_5"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_PORT_5</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_PORT_6"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_PORT_6</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_PORT_7"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_PORT_7</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_PORT_8"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_PORT_8</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_VIRT_PORT_9"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_VIRT_PORT_9</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_VIRT_PORT_10"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_VIRT_PORT_10</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_VIRT_PORT_11"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_VIRT_PORT_11</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_VIRT_PORT_12"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_VIRT_PORT_12</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_VIRT_PORT_13"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_VIRT_PORT_13</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_VIRT_PORT_14"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_VIRT_PORT_14</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_VIRT_PORT_15"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_VIRT_PORT_15</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_VIRT_PORT_16"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_VIRT_PORT_16</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ChannelPorts.CHANNEL_NOT_USED"><code class="docutils literal notranslate"><span class="pre">ChannelPorts.CHANNEL_NOT_USED</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.PreampPorts"><code class="docutils literal notranslate"><span class="pre">PreampPorts</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.PreampPorts.PREAMP_PORT_1"><code class="docutils literal notranslate"><span class="pre">PreampPorts.PREAMP_PORT_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.PreampPorts.PREAMP_PORT_2"><code class="docutils literal notranslate"><span class="pre">PreampPorts.PREAMP_PORT_2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.PreampPorts.PREAMP_PORT_3"><code class="docutils literal notranslate"><span class="pre">PreampPorts.PREAMP_PORT_3</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.PreampPorts.PREAMP_PORT_4"><code class="docutils literal notranslate"><span class="pre">PreampPorts.PREAMP_PORT_4</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.PreampPorts.PREAMP_PORT_5"><code class="docutils literal notranslate"><span class="pre">PreampPorts.PREAMP_PORT_5</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.PreampPorts.PREAMP_PORT_6"><code class="docutils literal notranslate"><span class="pre">PreampPorts.PREAMP_PORT_6</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.PreampPorts.PREAMP_PORT_7"><code class="docutils literal notranslate"><span class="pre">PreampPorts.PREAMP_PORT_7</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.PreampPorts.PREAMP_PORT_8"><code class="docutils literal notranslate"><span class="pre">PreampPorts.PREAMP_PORT_8</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Samplerates16Bit"><code class="docutils literal notranslate"><span class="pre">Samplerates16Bit</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Samplerates16Bit.SAMPLERATE_100_MHz"><code class="docutils literal notranslate"><span class="pre">Samplerates16Bit.SAMPLERATE_100_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Samplerates16Bit.SAMPLERATE_50_MHz"><code class="docutils literal notranslate"><span class="pre">Samplerates16Bit.SAMPLERATE_50_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Samplerates16Bit.SAMPLERATE_25_MHz"><code class="docutils literal notranslate"><span class="pre">Samplerates16Bit.SAMPLERATE_25_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Samplerates16Bit.SAMPLERATE_12_MHz"><code class="docutils literal notranslate"><span class="pre">Samplerates16Bit.SAMPLERATE_12_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Samplerates16Bit.SAMPLERATE_6_MHz"><code class="docutils literal notranslate"><span class="pre">Samplerates16Bit.SAMPLERATE_6_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Samplerates16Bit.SAMPLERATE_3_MHz"><code class="docutils literal notranslate"><span class="pre">Samplerates16Bit.SAMPLERATE_3_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Samplerates16Bit.SAMPLERATE_1600_kHz"><code class="docutils literal notranslate"><span class="pre">Samplerates16Bit.SAMPLERATE_1600_kHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Samplerates16Bit.SAMPLERATE_800_kHz"><code class="docutils literal notranslate"><span class="pre">Samplerates16Bit.SAMPLERATE_800_kHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Samplerates16Bit.SAMPLERATE_400_kHz"><code class="docutils literal notranslate"><span class="pre">Samplerates16Bit.SAMPLERATE_400_kHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Samplerates16Bit.SAMPLERATE_200_kHz"><code class="docutils literal notranslate"><span class="pre">Samplerates16Bit.SAMPLERATE_200_kHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.Samplerates16Bit.SAMPLERATE_100_kHz"><code class="docutils literal notranslate"><span class="pre">Samplerates16Bit.SAMPLERATE_100_kHz</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates16Bit"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates16Bit</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates16Bit.SAMPLERATE_100_MHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates16Bit.SAMPLERATE_100_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates16Bit.SAMPLERATE_50_MHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates16Bit.SAMPLERATE_50_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates16Bit.SAMPLERATE_25_MHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates16Bit.SAMPLERATE_25_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates16Bit.SAMPLERATE_12_MHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates16Bit.SAMPLERATE_12_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates16Bit.SAMPLERATE_6_MHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates16Bit.SAMPLERATE_6_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates16Bit.SAMPLERATE_3_MHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates16Bit.SAMPLERATE_3_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates16Bit.SAMPLERATE_1600_kHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates16Bit.SAMPLERATE_1600_kHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates16Bit.SAMPLERATE_800_kHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates16Bit.SAMPLERATE_800_kHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates16Bit.SAMPLERATE_400_kHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates16Bit.SAMPLERATE_400_kHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates16Bit.SAMPLERATE_200_kHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates16Bit.SAMPLERATE_200_kHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates16Bit.SAMPLERATE_100_kHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates16Bit.SAMPLERATE_100_kHz</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates24Bit"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates24Bit</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates24Bit.SAMPLERATE_4_MHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates24Bit.SAMPLERATE_4_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates24Bit.SAMPLERATE_2_MHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates24Bit.SAMPLERATE_2_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates24Bit.SAMPLERATE_1_MHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates24Bit.SAMPLERATE_1_MHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates24Bit.SAMPLERATE_500_kHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates24Bit.SAMPLERATE_500_kHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates24Bit.SAMPLERATE_250_kHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates24Bit.SAMPLERATE_250_kHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates24Bit.SAMPLERATE_125_kHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates24Bit.SAMPLERATE_125_kHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates24Bit.SAMPLERATE_60_kHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates24Bit.SAMPLERATE_60_kHz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.ExactSamplerates24Bit.SAMPLERATE_30_kHz"><code class="docutils literal notranslate"><span class="pre">ExactSamplerates24Bit.SAMPLERATE_30_kHz</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTOversampling"><code class="docutils literal notranslate"><span class="pre">FFTOversampling</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTOversampling.FFT_OVERSAMPLING_2_TIMES"><code class="docutils literal notranslate"><span class="pre">FFTOversampling.FFT_OVERSAMPLING_2_TIMES</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTOversampling.FFT_OVERSAMPLING_4_TIMES"><code class="docutils literal notranslate"><span class="pre">FFTOversampling.FFT_OVERSAMPLING_4_TIMES</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTOversampling.FFT_OVERSAMPLING_8_TIMES"><code class="docutils literal notranslate"><span class="pre">FFTOversampling.FFT_OVERSAMPLING_8_TIMES</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTOversampling.FFT_OVERSAMPLING_16_TIMES"><code class="docutils literal notranslate"><span class="pre">FFTOversampling.FFT_OVERSAMPLING_16_TIMES</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTOversampling.FFT_OVERSAMPLING_32_TIMES"><code class="docutils literal notranslate"><span class="pre">FFTOversampling.FFT_OVERSAMPLING_32_TIMES</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTOversampling.FFT_OVERSAMPLING_64_TIMES"><code class="docutils literal notranslate"><span class="pre">FFTOversampling.FFT_OVERSAMPLING_64_TIMES</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTOversampling.NONE_FFT_OVERSAMPLING"><code class="docutils literal notranslate"><span class="pre">FFTOversampling.NONE_FFT_OVERSAMPLING</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTWindowing"><code class="docutils literal notranslate"><span class="pre">FFTWindowing</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTWindowing.FFT_WINDOWING_HANNING"><code class="docutils literal notranslate"><span class="pre">FFTWindowing.FFT_WINDOWING_HANNING</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTWindowing.NONE_FFT_WINDOWING"><code class="docutils literal notranslate"><span class="pre">FFTWindowing.NONE_FFT_WINDOWING</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_1"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_2"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_3"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_3</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_4"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_4</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_5"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_5</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_6"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_6</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_7"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_7</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_8"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_8</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_9"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_9</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_10"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_10</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_11"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_11</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_12"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_12</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_13"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_13</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_14"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_14</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_15"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_15</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.FFT_LOGARITHMIC_BASE_16"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.FFT_LOGARITHMIC_BASE_16</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.FFTLogarithmic.NO_FFT_LOGARITHMIC_BASE"><code class="docutils literal notranslate"><span class="pre">FFTLogarithmic.NO_FFT_LOGARITHMIC_BASE</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysAmplitudesType"><code class="docutils literal notranslate"><span class="pre">SysAmplitudesType</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysAmplitudesType.AMPLITUDE_DEFAULT"><code class="docutils literal notranslate"><span class="pre">SysAmplitudesType.AMPLITUDE_DEFAULT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysAmplitudesType.AMPLITUDE_ADC_OUT"><code class="docutils literal notranslate"><span class="pre">SysAmplitudesType.AMPLITUDE_ADC_OUT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysAmplitudesType.AMPLITUDE_NORM_ENERGY"><code class="docutils literal notranslate"><span class="pre">SysAmplitudesType.AMPLITUDE_NORM_ENERGY</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysAmplitudesType.AMPLITUDE_NORM_ONE"><code class="docutils literal notranslate"><span class="pre">SysAmplitudesType.AMPLITUDE_NORM_ONE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysAmplitudesType.AMPLITUDE_MILLI_VOLT"><code class="docutils literal notranslate"><span class="pre">SysAmplitudesType.AMPLITUDE_MILLI_VOLT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysAmplitudesType.AMPLITUDE_MICRO_VOLT"><code class="docutils literal notranslate"><span class="pre">SysAmplitudesType.AMPLITUDE_MICRO_VOLT</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.AreaViews"><code class="docutils literal notranslate"><span class="pre">AreaViews</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.AreaViews.VIEW_1"><code class="docutils literal notranslate"><span class="pre">AreaViews.VIEW_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.AreaViews.VIEW_2"><code class="docutils literal notranslate"><span class="pre">AreaViews.VIEW_2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.AreaViews.VIEW_3"><code class="docutils literal notranslate"><span class="pre">AreaViews.VIEW_3</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.AreaViews.VIEW_4"><code class="docutils literal notranslate"><span class="pre">AreaViews.VIEW_4</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.NO_CLASS"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.NO_CLASS</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.VAR_SET_CLASS"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.VAR_SET_CLASS</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.SYSTEM_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.SYSTEM_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.USER_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.USER_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.GLOBAL_TRIGGER_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.GLOBAL_TRIGGER_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.GLOBAL_MEASURE_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.GLOBAL_MEASURE_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.MEASURE_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.MEASURE_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.CLIENT_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.CLIENT_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.VIDEO_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.VIDEO_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.COLOR_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.COLOR_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.NETWORK_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.NETWORK_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.FPGA_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.FPGA_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.PR_SEARCH_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.PR_SEARCH_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.GUI_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.GUI_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.SIM_BUFFER_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.SIM_BUFFER_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.SysSettingsClass.BACKUP_CONFIG"><code class="docutils literal notranslate"><span class="pre">SysSettingsClass.BACKUP_CONFIG</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.MultiPreampInput"><code class="docutils literal notranslate"><span class="pre">MultiPreampInput</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.MultiPreampInput.NONE_MULTI_INPUT"><code class="docutils literal notranslate"><span class="pre">MultiPreampInput.NONE_MULTI_INPUT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.MultiPreampInput.MULTI_INPUT_1"><code class="docutils literal notranslate"><span class="pre">MultiPreampInput.MULTI_INPUT_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.MultiPreampInput.MULTI_INPUT_2"><code class="docutils literal notranslate"><span class="pre">MultiPreampInput.MULTI_INPUT_2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.MultiPreampInput.MULTI_INPUT_3"><code class="docutils literal notranslate"><span class="pre">MultiPreampInput.MULTI_INPUT_3</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.MultiPreampInput.MULTI_INPUT_4"><code class="docutils literal notranslate"><span class="pre">MultiPreampInput.MULTI_INPUT_4</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.MultiPreampInput.MULTI_INPUT_5"><code class="docutils literal notranslate"><span class="pre">MultiPreampInput.MULTI_INPUT_5</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.MultiPreampInput.MULTI_INPUT_6"><code class="docutils literal notranslate"><span class="pre">MultiPreampInput.MULTI_INPUT_6</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.PreampType"><code class="docutils literal notranslate"><span class="pre">PreampType</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.PreampType.PASSIVE"><code class="docutils literal notranslate"><span class="pre">PreampType.PASSIVE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analyzer_socket.html#qass.tools.networking.constants.PreampType.ACTIVE"><code class="docutils literal notranslate"><span class="pre">PreampType.ACTIVE</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Package Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#unreleased">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id1">3.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id2">3.3.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id3">3.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id4">3.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id5">3.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id6">3.0.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id7">2.1.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id8">2.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id9">2.0.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id10">2.0.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id11">2.0.0</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contributing Guidlines</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#i-don-t-want-to-read-this-whole-thing-i-just-have-a-question">I don’t want to read this whole thing, I just have a question!!!</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#how-do-i-contribute">How do I Contribute?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#important-notes-for-functionality">Important notes for functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#testing">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#documentation">Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contributing_guide.html#functions-methods-and-variable-names">Functions, Methods and Variable Names</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing_guide.html#docstrings">Docstrings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_guide.html#releasing-a-new-package-version">Releasing a new package version</a></li>
+</ul>
+</div>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="analyzer_socket.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, QASS GmbH.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
